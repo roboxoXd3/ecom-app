@@ -1,0 +1,2 @@
+/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/RelWithDebInfo/274i641t/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/RelWithDebInfo/274i641t/armeabi-v7a/CMakeFiles/rebuild_cache.dir
