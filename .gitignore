@@ -48,3 +48,45 @@ app.*.map.json
 .env
 
 .codegpt
+
+# Additional Flutter build artifacts
+**/build/
+**/*.apk
+**/*.aab
+**/*.ipa
+**/*.dSYM.zip
+**/*.app
+**/kernel_blob.bin
+**/flutter_assets/
+**/intermediates/
+**/outputs/
+
+# iOS build artifacts
+**/ios/Runner.app
+**/ios/Runner.dSYM.zip
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# Android build artifacts
+**/android/app/build/
+**/android/build/
+**/android/.gradle/
+**/android/local.properties
+**/android/key.properties
+
+# Gradle
+**/.gradle/
+**/gradle-wrapper.jar
+
+# Coverage
+coverage/
+
+# Generated files
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart
