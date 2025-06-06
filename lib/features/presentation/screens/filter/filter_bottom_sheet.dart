@@ -6,6 +6,8 @@ import '../../../data/models/sort_option.dart' as sort;
 class FilterBottomSheet extends StatelessWidget {
   final FilterController controller = Get.find();
 
+  FilterBottomSheet({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -82,17 +84,10 @@ class FilterBottomSheet extends StatelessWidget {
             onChanged: (RangeValues values) {
               controller.updatePriceRange(values);
             },
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '\$${controller.currentFilter.value.priceRange?.start.toStringAsFixed(0)}',
-              ),
-              Text(
-                '\$${controller.currentFilter.value.priceRange?.end.toStringAsFixed(0)}',
-              ),
-            ],
+            labels: RangeLabels(
+              '₹${controller.currentFilter.value.priceRange?.start.toStringAsFixed(0)}',
+              '₹${controller.currentFilter.value.priceRange?.end.toStringAsFixed(0)}',
+            ),
           ),
         ],
       );

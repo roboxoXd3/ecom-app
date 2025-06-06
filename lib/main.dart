@@ -7,6 +7,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'core/routes/app_routes.dart';
+import 'features/presentation/controllers/product_controller.dart';
+import 'features/presentation/controllers/category_controller.dart';
+import 'features/data/services/product_search_service.dart';
 
 void main() async {
   await GetStorage.init();
@@ -30,6 +33,11 @@ void main() async {
     );
     print('Supabase initialized');
 
+    // Initialize services and controllers
+    Get.put(ProductSearchService());
+    Get.put(ProductController());
+    Get.put(CategoryController());
+
     runApp(const MyApp());
     print('App started');
   } catch (e, stackTrace) {
@@ -44,7 +52,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Shop Now',
+      title: 'Be Smart Mall',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

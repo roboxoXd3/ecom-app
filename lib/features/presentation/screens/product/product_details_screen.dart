@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -6,6 +7,10 @@ import '../../../../core/utils/snackbar_utils.dart';
 import '../../controllers/cart_controller.dart';
 import '../../../data/models/product_model.dart';
 import '../home/home_screen.dart';
+import '../../controllers/product_details_controller.dart';
+import '../../controllers/home_controller.dart';
+import '../../controllers/product_controller.dart';
+import '../vendor/vendor_profile_screen.dart';
 
 Color getColorFromString(String colorName) {
   switch (colorName.toLowerCase()) {
@@ -34,8 +39,11 @@ Color getColorFromString(String colorName) {
 
 class ProductDetailsScreen extends StatelessWidget {
   final Product product;
+  final productDetailsController = Get.put(ProductDetailsController());
+  final productController = Get.find<ProductController>();
+  final CartController cartController = Get.find<CartController>();
 
-  const ProductDetailsScreen({super.key, required this.product});
+  ProductDetailsScreen({super.key, required this.product});
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +52,6 @@ class ProductDetailsScreen extends StatelessWidget {
       Get.put(CartController());
     }
     final CartController cartController = Get.find<CartController>();
-    final RxInt currentImageIndex = 0.obs;
-    final RxString selectedSize = ''.obs;
-    final RxString selectedColor = ''.obs;
-    final RxInt quantity = 1.obs;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -63,7 +67,18 @@ class ProductDetailsScreen extends StatelessWidget {
             ),
             child: const Icon(Icons.arrow_back, color: Colors.black),
           ),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            try {
+              // Close any active snackbars first
+              if (Get.isSnackbarOpen) {
+                Get.closeAllSnackbars();
+              }
+              Navigator.pop(context);
+            } catch (e) {
+              // Fallback to Navigator.pop if GetX fails
+              Navigator.pop(context);
+            }
+          },
         ),
         actions: [
           Container(
@@ -72,11 +87,19 @@ class ProductDetailsScreen extends StatelessWidget {
               color: Colors.white.withOpacity(0.9),
               shape: BoxShape.circle,
             ),
-            child: IconButton(
-              icon: const Icon(Icons.favorite_border, color: Colors.black),
-              onPressed: () {
-                // TODO: Add to wishlist
-              },
+            child: Obx(
+              () => IconButton(
+                icon: Icon(
+                  productController.wishlistProductIds.contains(product.id)
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color:
+                      productController.wishlistProductIds.contains(product.id)
+                          ? Colors.red
+                          : Colors.black,
+                ),
+                onPressed: () => productController.toggleWishlist(product),
+              ),
             ),
           ),
           Container(
@@ -89,8 +112,12 @@ class ProductDetailsScreen extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.shopping_cart, color: Colors.black),
-                  onPressed:
-                      () => Get.off(() => const HomeScreen(), arguments: 2),
+                  onPressed: () {
+                    final homeController = Get.find<HomeController>();
+                    homeController.navigateToTab(2); // Set cart tab index first
+                    Get.delete<ProductDetailsController>();
+                    Get.off(() => const HomeScreen());
+                  },
                 ),
                 Positioned(
                   right: 0,
@@ -145,26 +172,29 @@ class ProductDetailsScreen extends StatelessWidget {
                   height: 400,
                   viewportFraction: 1,
                   onPageChanged: (index, reason) {
-                    currentImageIndex.value = index;
+                    productDetailsController.updateImageIndex(index);
                   },
                 ),
                 items:
-                    product.images.map((image) {
+                    product.imageList.map((image) {
                       return Container(
                         width: double.infinity,
                         color: Colors.grey[200],
-                        child: Image.asset(
-                          image,
+                        child: CachedNetworkImage(
+                          imageUrl: image,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Icon(
-                                Icons.image,
-                                size: 100,
-                                color: Colors.grey[400],
+                          placeholder:
+                              (context, url) => const Center(
+                                child: CircularProgressIndicator(),
                               ),
-                            );
-                          },
+                          errorWidget:
+                              (context, url, error) => Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 100,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
                         ),
                       );
                     }).toList(),
@@ -175,18 +205,26 @@ class ProductDetailsScreen extends StatelessWidget {
                   () => Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children:
-                        product.images.asMap().entries.map((entry) {
+                        product.images.split(',').asMap().entries.map((entry) {
                           return Container(
                             width:
-                                currentImageIndex.value == entry.key ? 24 : 8,
+                                productDetailsController
+                                            .currentImageIndex
+                                            .value ==
+                                        entry.key
+                                    ? 24
+                                    : 8,
                             height: 8,
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),
                               color:
-                                  currentImageIndex.value == entry.key
+                                  productDetailsController
+                                              .currentImageIndex
+                                              .value ==
+                                          entry.key
                                       ? AppTheme.primaryColor
-                                      : AppTheme.primaryColor.withOpacity(0.3),
+                                      : AppTheme.primaryColor.withAlpha(77),
                             ),
                           );
                         }).toList(),
@@ -215,7 +253,7 @@ class ProductDetailsScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '\$${product.price.toStringAsFixed(2)}',
+                        '₹${product.price.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -225,9 +263,44 @@ class ProductDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  // Vendor Information - NEW
                   Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 20),
+                      Icon(Icons.store, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Sold by ',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          if (product.vendor != null) {
+                            Get.to(
+                              () =>
+                                  VendorProfileScreen(vendor: product.vendor!),
+                            );
+                          }
+                        },
+                        child: Text(
+                          product.vendor?.businessName ?? 'Be Smart Mall',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: AppTheme.ratingStars,
+                        size: 20,
+                      ),
                       Text(
                         product.rating.toString(),
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -259,9 +332,13 @@ class ProductDetailsScreen extends StatelessWidget {
                           product.sizes.map((size) {
                             return ChoiceChip(
                               label: Text(size),
-                              selected: selectedSize.value == size,
+                              selected:
+                                  productDetailsController.selectedSize.value ==
+                                  size,
                               onSelected: (selected) {
-                                selectedSize.value = selected ? size : '';
+                                productDetailsController.updateSize(
+                                  selected ? size : '',
+                                );
                               },
                             );
                           }).toList(),
@@ -282,7 +359,7 @@ class ProductDetailsScreen extends StatelessWidget {
                           product.colors.map((colorName) {
                             return InkWell(
                               onTap: () {
-                                selectedColor.value = colorName;
+                                productDetailsController.updateColor(colorName);
                               },
                               child: Container(
                                 width: 40,
@@ -292,7 +369,10 @@ class ProductDetailsScreen extends StatelessWidget {
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color:
-                                        selectedColor.value == colorName
+                                        productDetailsController
+                                                    .selectedColor
+                                                    .value ==
+                                                colorName
                                             ? AppTheme.primaryColor
                                             : Colors.transparent,
                                     width: 2,
@@ -347,13 +427,15 @@ class ProductDetailsScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.remove),
                         onPressed: () {
-                          if (quantity.value > 1) quantity.value--;
+                          if (productDetailsController.quantity.value > 1) {
+                            productDetailsController.decrementQuantity();
+                          }
                         },
                         color: AppTheme.primaryColor,
                       ),
                       Obx(
                         () => Text(
-                          '${quantity.value}',
+                          '${productDetailsController.quantity.value}',
                           style: const TextStyle(
                             fontSize: 18,
                             color: AppTheme.primaryColor,
@@ -363,7 +445,8 @@ class ProductDetailsScreen extends StatelessWidget {
                       ),
                       IconButton(
                         icon: const Icon(Icons.add),
-                        onPressed: () => quantity.value++,
+                        onPressed:
+                            () => productDetailsController.incrementQuantity(),
                         color: AppTheme.primaryColor,
                       ),
                     ],
@@ -372,20 +455,24 @@ class ProductDetailsScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (selectedSize.value.isEmpty) {
+                    onPressed: () async {
+                      if (productDetailsController.selectedSize.value.isEmpty) {
                         SnackbarUtils.showError('Please select a size');
                         return;
                       }
-                      if (selectedColor.value.isEmpty) {
+                      if (productDetailsController
+                          .selectedColor
+                          .value
+                          .isEmpty) {
                         SnackbarUtils.showError('Please select a color');
                         return;
                       }
 
-                      cartController.addToCart(
+                      await cartController.addToCart(
                         product,
-                        selectedSize.value,
-                        selectedColor.value,
+                        productDetailsController.selectedSize.value,
+                        productDetailsController.selectedColor.value,
+                        productDetailsController.quantity.value,
                       );
 
                       SnackbarUtils.showSuccess('Added to cart successfully');

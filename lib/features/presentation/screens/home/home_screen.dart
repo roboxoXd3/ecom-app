@@ -5,25 +5,30 @@ import '../tabs/home_tab.dart';
 import '../tabs/categories_tab.dart';
 import '../tabs/cart_tab.dart';
 import '../tabs/profile_tab.dart';
+import '../../widgets/chatbot_fab.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get the controller but don't update state in build
     final homeController = Get.find<HomeController>();
 
-    // Check if we have arguments for tab index
-    if (Get.arguments != null) {
-      homeController.currentIndex.value = Get.arguments as int;
-    }
-
     return Scaffold(
-      body: Obx(
-        () => IndexedStack(
-          index: homeController.currentIndex.value,
-          children: [HomeTab(), CategoriesTab(), CartTab(), ProfileTab()],
-        ),
+      body: Stack(
+        children: [
+          // Main content
+          Obx(
+            () => IndexedStack(
+              index: homeController.currentIndex.value,
+              children: [HomeTab(), CategoriesTab(), CartTab(), ProfileTab()],
+            ),
+          ),
+
+          // Chatbot FAB overlay
+          const ChatbotFAB(),
+        ],
       ),
       bottomNavigationBar: Obx(
         () => NavigationBar(

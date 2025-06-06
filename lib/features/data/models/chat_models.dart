@@ -1,0 +1,158 @@
+class ChatConversation {
+  final String id;
+  final String userId;
+  final String title;
+  final DateTime lastMessageAt;
+  final bool isResolved;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  ChatConversation({
+    required this.id,
+    required this.userId,
+    required this.title,
+    required this.lastMessageAt,
+    required this.isResolved,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ChatConversation.fromJson(Map<String, dynamic> json) {
+    return ChatConversation(
+      id: json['id'],
+      userId: json['user_id'],
+      title: json['title'],
+      lastMessageAt: DateTime.parse(json['last_message_at']),
+      isResolved: json['is_resolved'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'title': title,
+      'last_message_at': lastMessageAt.toIso8601String(),
+      'is_resolved': isResolved,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}
+
+class ChatMessage {
+  final String id;
+  final String conversationId;
+  final String senderType; // 'user', 'bot', 'agent'
+  final String messageText;
+  final String messageType; // 'text', 'product', 'image', 'file'
+  final Map<String, dynamic>? metadata;
+  final bool isRead;
+  final DateTime createdAt;
+
+  ChatMessage({
+    required this.id,
+    required this.conversationId,
+    required this.senderType,
+    required this.messageText,
+    this.messageType = 'text',
+    this.metadata,
+    this.isRead = false,
+    required this.createdAt,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: json['id'],
+      conversationId: json['conversation_id'],
+      senderType: json['sender_type'],
+      messageText: json['message_text'],
+      messageType: json['message_type'] ?? 'text',
+      metadata: json['metadata'],
+      isRead: json['is_read'] ?? false,
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'conversation_id': conversationId,
+      'sender_type': senderType,
+      'message_text': messageText,
+      'message_type': messageType,
+      'metadata': metadata,
+      'is_read': isRead,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  // Helper getters
+  bool get isUser => senderType == 'user';
+  bool get isBot => senderType == 'bot';
+  bool get isAgent => senderType == 'agent';
+
+  String get timestamp {
+    final now = DateTime.now();
+    final difference = now.difference(createdAt);
+
+    if (difference.inMinutes < 1) {
+      return 'Just now';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
+  }
+
+  // Get product IDs from metadata for product messages
+  List<String> get productIds {
+    if (metadata != null && metadata!['product_ids'] != null) {
+      return List<String>.from(metadata!['product_ids']);
+    }
+    return [];
+  }
+}
+
+class ChatAnalytics {
+  final String id;
+  final String conversationId;
+  final String userId;
+  final String actionType;
+  final Map<String, dynamic>? actionData;
+  final DateTime createdAt;
+
+  ChatAnalytics({
+    required this.id,
+    required this.conversationId,
+    required this.userId,
+    required this.actionType,
+    this.actionData,
+    required this.createdAt,
+  });
+
+  factory ChatAnalytics.fromJson(Map<String, dynamic> json) {
+    return ChatAnalytics(
+      id: json['id'],
+      conversationId: json['conversation_id'],
+      userId: json['user_id'],
+      actionType: json['action_type'],
+      actionData: json['action_data'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'conversation_id': conversationId,
+      'user_id': userId,
+      'action_type': actionType,
+      'action_data': actionData,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+}

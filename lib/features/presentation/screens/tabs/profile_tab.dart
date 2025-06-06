@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
@@ -10,6 +9,7 @@ import '../profile/shipping_address_screen.dart';
 import '../profile/payment_methods_screen.dart';
 import '../profile/help_support_screen.dart';
 import '../profile/settings_screen.dart';
+import '../vendor/followed_vendors_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -17,8 +17,10 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
-    final user = Supabase.instance.client.auth.currentUser;
-    final userMetadata = user?.userMetadata;
+
+    // ✅ ADD THIS LINE - Refresh user data when profile tab is accessed
+    authController.updateUserData();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -39,15 +41,23 @@ class ProfileTab extends StatelessWidget {
             child: Icon(Icons.person, size: 50, color: Colors.white),
           ),
           const SizedBox(height: 16),
-          Text(
-            userMetadata?['full_name'] ?? 'User',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Obx(
+            () => Text(
+              authController.userName.value.isNotEmpty
+                  ? authController.userName.value
+                  : 'User', // Simplified fallback
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
           ),
-          Text(
-            user?.email ?? 'No email',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          Obx(
+            () => Text(
+              authController.userEmail.value.isNotEmpty
+                  ? authController.userEmail.value
+                  : 'No email',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -55,22 +65,27 @@ class ProfileTab extends StatelessWidget {
           _buildProfileOption(
             icon: Icons.shopping_bag,
             title: 'My Orders',
-            onTap: () => Get.to(() => const MyOrdersScreen()),
+            onTap: () => Get.to(() => MyOrdersScreen()),
           ),
           _buildProfileOption(
             icon: Icons.favorite,
             title: 'Wishlist',
-            onTap: () => Get.to(() => const WishlistScreen()),
+            onTap: () => Get.to(() => WishlistScreen()),
           ),
           _buildProfileOption(
             icon: Icons.location_on,
             title: 'Shipping Address',
-            onTap: () => Get.to(() => const ShippingAddressScreen()),
+            onTap: () => Get.to(() => ShippingAddressScreen()),
           ),
           _buildProfileOption(
             icon: Icons.payment,
             title: 'Payment Methods',
-            onTap: () => Get.to(() => const PaymentMethodsScreen()),
+            onTap: () => Get.to(() => PaymentMethodsScreen()),
+          ),
+          _buildProfileOption(
+            icon: Icons.store,
+            title: 'Followed Vendors',
+            onTap: () => Get.to(() => const FollowedVendorsScreen()),
           ),
           _buildProfileOption(
             icon: Icons.analytics_outlined,
@@ -80,7 +95,7 @@ class ProfileTab extends StatelessWidget {
           _buildProfileOption(
             icon: Icons.help,
             title: 'Help & Support',
-            onTap: () => Get.to(() => const HelpSupportScreen()),
+            onTap: () => Get.to(() => HelpSupportScreen()),
           ),
           _buildProfileOption(
             icon: Icons.logout,

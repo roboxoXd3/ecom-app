@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_model.dart';
 import '../../controllers/search_controller.dart';
 import '../../controllers/search_controller.dart' as app;
@@ -113,30 +114,33 @@ class SearchResultsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '\$${product.price.toStringAsFixed(2)}',
+                    '₹${product.price.toStringAsFixed(2)}',
                     style: TextStyle(
                       color: Theme.of(Get.context!).primaryColor,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  if (product.rating != null)
-                    Row(
-                      children: [
-                        const Icon(Icons.star, size: 16, color: Colors.amber),
-                        Text(
-                          ' ${product.rating}',
-                          style: const TextStyle(fontSize: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        size: 16,
+                        color: AppTheme.ratingStars,
+                      ),
+                      Text(
+                        ' ${product.rating}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      Text(
+                        ' (${product.reviews})',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
                         ),
-                        Text(
-                          ' (${product.reviews})',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

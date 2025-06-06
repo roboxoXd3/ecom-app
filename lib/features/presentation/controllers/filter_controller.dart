@@ -8,6 +8,7 @@ class FilterController extends GetxController {
   final Rx<ProductFilter> currentFilter = ProductFilter().obs;
   final RxList<Product> filteredProducts = <Product>[].obs;
   final RxList<String> availableBrands = <String>[].obs;
+  final RxList<String> availableVendors = <String>[].obs;
   final RxDouble maxPrice = 0.0.obs;
   final RxDouble minPrice = 0.0.obs;
 
@@ -23,10 +24,13 @@ class FilterController extends GetxController {
         .reduce((min, price) => price < min ? price : min);
 
     // Initialize available brands
-    availableBrands.value =
+    availableBrands.value = products.map((p) => p.brand).toSet().toList();
+
+    // Initialize available vendors
+    availableVendors.value =
         products
-            .where((p) => p.brand != null)
-            .map((p) => p.brand!)
+            .where((p) => p.vendor != null)
+            .map((p) => p.vendor!.businessName)
             .toSet()
             .toList();
 
@@ -60,7 +64,7 @@ class FilterController extends GetxController {
       categories.add(category);
     }
     currentFilter.update((filter) {
-      filter?.categories = categories;
+      filter?.categories = categories.toSet();
     });
   }
 
@@ -72,7 +76,19 @@ class FilterController extends GetxController {
       brands.add(brand);
     }
     currentFilter.update((filter) {
-      filter?.brands = brands;
+      filter?.brands = brands.toSet();
+    });
+  }
+
+  void toggleVendor(String vendorName) {
+    final vendors = List<String>.from(currentFilter.value.vendors);
+    if (vendors.contains(vendorName)) {
+      vendors.remove(vendorName);
+    } else {
+      vendors.add(vendorName);
+    }
+    currentFilter.update((filter) {
+      filter?.vendors = vendors.toSet();
     });
   }
 
@@ -121,7 +137,15 @@ class FilterController extends GetxController {
 
       // Brands Filter
       if (filter.brands.isNotEmpty) {
-        if (product.brand == null || !filter.brands.contains(product.brand)) {
+        if (!filter.brands.contains(product.brand)) {
+          return false;
+        }
+      }
+
+      // Vendors Filter
+      if (filter.vendors.isNotEmpty) {
+        if (product.vendor == null ||
+            !filter.vendors.contains(product.vendor!.businessName)) {
           return false;
         }
       }

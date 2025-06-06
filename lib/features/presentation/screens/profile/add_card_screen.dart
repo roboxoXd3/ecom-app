@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../controllers/payment_method_controller.dart';
 
 class AddCardScreen extends StatefulWidget {
   const AddCardScreen({super.key});
@@ -15,6 +17,9 @@ class _AddCardScreenState extends State<AddCardScreen> {
   final _nameController = TextEditingController();
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
+  final _isDefault = false.obs;
+
+  final paymentMethodController = Get.find<PaymentMethodController>();
 
   @override
   void dispose() {
@@ -23,6 +28,58 @@ class _AddCardScreenState extends State<AddCardScreen> {
     _expiryController.dispose();
     _cvvController.dispose();
     super.dispose();
+  }
+
+  String _detectCardType(String cardNumber) {
+    if (cardNumber.startsWith('4')) {
+      return 'Visa';
+    } else if (cardNumber.startsWith('5')) {
+      return 'Mastercard';
+    } else {
+      return 'Unknown';
+    }
+  }
+
+  void _saveCard() {
+    if (_formKey.currentState!.validate()) {
+      final cardNumber = _cardNumberController.text;
+      final expiryText = _expiryController.text;
+
+      // Parse expiry date (MM/YY format)
+      String expiryMonth = '';
+      String expiryYear = '';
+
+      if (expiryText.contains('/')) {
+        final expiryParts = expiryText.split('/');
+        if (expiryParts.length == 2) {
+          expiryMonth = expiryParts[0].padLeft(2, '0'); // Ensure 2 digits
+          expiryYear = expiryParts[1].padLeft(2, '0'); // Ensure 2 digits
+        }
+      } else {
+        // Handle case where user entered without slash
+        final cleanExpiry = expiryText.replaceAll(RegExp(r'\D'), '');
+        if (cleanExpiry.length >= 4) {
+          expiryMonth = cleanExpiry.substring(0, 2);
+          expiryYear = cleanExpiry.substring(2, 4);
+        }
+      }
+
+      print(
+        'Adding card: ${_detectCardType(cardNumber)} ending in ${cardNumber.substring(cardNumber.length - 4)}',
+      );
+      print('Expiry: $expiryMonth/$expiryYear');
+
+      paymentMethodController.addPaymentMethod(
+        type: 'card',
+        displayName: _nameController.text,
+        last4: cardNumber.substring(cardNumber.length - 4),
+        cardBrand: _detectCardType(cardNumber),
+        expiryMonth: expiryMonth,
+        expiryYear: expiryYear,
+      );
+
+      Get.back();
+    }
   }
 
   @override
@@ -264,17 +321,24 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Obx(
+                    () => Checkbox(
+                      value: _isDefault.value,
+                      onChanged: (value) => _isDefault.value = value!,
+                    ),
+                  ),
+                  const Text('Set as default payment method'),
+                ],
+              ),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // TODO: Implement card saving logic
-                      Navigator.pop(context);
-                    }
-                  },
+                  onPressed: _saveCard,
                   child: const Text('Add Card'),
                 ),
               ),

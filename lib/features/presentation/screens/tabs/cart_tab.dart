@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/cart_controller.dart';
 import '../checkout/checkout_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CartTab extends StatelessWidget {
   const CartTab({super.key});
@@ -64,8 +65,51 @@ class CartTab extends StatelessWidget {
                                 color: Colors.white,
                               ),
                             ),
-                            onDismissed: (_) {
+                            onDismissed: (direction) {
                               cartController.removeFromCart(item);
+
+                              Get.snackbar(
+                                'Item Removed',
+                                '${item.product.name} was removed from cart',
+                                mainButton: TextButton(
+                                  onPressed: () {
+                                    cartController.addToCart(
+                                      item.product,
+                                      item.selectedSize,
+                                      item.selectedColor,
+                                      item.quantity,
+                                    );
+                                  },
+                                  child: const Text('UNDO'),
+                                ),
+                                duration: const Duration(seconds: 3),
+                              );
+                            },
+                            confirmDismiss: (direction) async {
+                              return await Get.dialog<bool>(
+                                    AlertDialog(
+                                      title: const Text('Remove Item'),
+                                      content: Text(
+                                        'Are you sure you want to remove ${item.product.name} from cart?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Get.back(result: false),
+                                          child: const Text('CANCEL'),
+                                        ),
+                                        TextButton(
+                                          onPressed:
+                                              () => Get.back(result: true),
+                                          child: const Text(
+                                            'REMOVE',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ) ??
+                                  false;
                             },
                             child: Card(
                               margin: const EdgeInsets.only(bottom: 16),
@@ -81,10 +125,19 @@ class CartTab extends StatelessWidget {
                                       ),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(12),
-                                        child: Image.asset(
-                                          item.product.images[0],
+                                        child: CachedNetworkImage(
+                                          imageUrl:
+                                              item.product.imageList.first,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (
+                                          placeholder:
+                                              (context, url) => Container(
+                                                color: Colors.grey[200],
+                                                child: const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                ),
+                                              ),
+                                          errorWidget: (
                                             context,
                                             error,
                                             stackTrace,
@@ -122,7 +175,7 @@ class CartTab extends StatelessWidget {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '\$${item.product.price}',
+                                            '₹${item.product.price}',
                                             style: TextStyle(
                                               color: AppTheme.primaryColor,
                                               fontWeight: FontWeight.bold,
@@ -194,7 +247,7 @@ class CartTab extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                '\$${cartController.items.fold(0.0, (sum, item) => sum + item.product.price * item.quantity).toStringAsFixed(2)}',
+                                '₹${cartController.items.fold(0.0, (sum, item) => sum + item.product.price * item.quantity).toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,

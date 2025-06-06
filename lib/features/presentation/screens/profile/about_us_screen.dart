@@ -32,7 +32,7 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Shop Now',
+                    'Be Smart Mall',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -56,7 +56,7 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Shop Now is your one-stop destination for all your shopping needs. '
+                    'Be Smart Mall is your one-stop destination for all your shopping needs. '
                     'We started with a simple mission: to make quality products accessible '
                     'to everyone, everywhere. Our journey began in 2023, and since then, '
                     'we\'ve been committed to providing the best shopping experience to our customers.',

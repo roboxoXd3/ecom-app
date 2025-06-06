@@ -40,4 +40,24 @@ class Category {
       'is_active': isActive,
     };
   }
+
+  Category copyWith({
+    String? id,
+    String? name,
+    String? description,
+    String? imageUrl,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isActive,
+  }) {
+    return Category(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      imageUrl: imageUrl ?? this.imageUrl,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }

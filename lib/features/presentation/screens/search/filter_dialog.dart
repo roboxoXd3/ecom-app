@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../controllers/search_controller.dart' as app;
 import '../../controllers/category_controller.dart';
 import '../../controllers/search_controller.dart';
+import '../../controllers/vendor_controller.dart';
 
 class FilterDialog extends StatefulWidget {
   const FilterDialog({super.key});
@@ -14,9 +16,11 @@ class FilterDialog extends StatefulWidget {
 class _FilterDialogState extends State<FilterDialog> {
   final app.SearchController _searchController = Get.find();
   final CategoryController _categoryController = Get.find();
+  final VendorController _vendorController = Get.find();
 
   late RangeValues _priceRange;
   late List<String> _selectedCategories;
+  late List<String> _selectedVendors;
   late double? _minRating;
 
   @override
@@ -26,6 +30,7 @@ class _FilterDialogState extends State<FilterDialog> {
     _selectedCategories = List.from(
       _searchController.currentFilter.value.categories,
     );
+    _selectedVendors = List.from(_searchController.currentFilter.value.vendors);
     _minRating = _searchController.currentFilter.value.minRating;
   }
 
@@ -53,6 +58,7 @@ class _FilterDialogState extends State<FilterDialog> {
                   setState(() {
                     _priceRange = const RangeValues(0, 1000);
                     _selectedCategories = [];
+                    _selectedVendors = [];
                     _minRating = null;
                   });
                 },
@@ -73,8 +79,8 @@ class _FilterDialogState extends State<FilterDialog> {
             max: 1000,
             divisions: 20,
             labels: RangeLabels(
-              '\$${_priceRange.start.round()}',
-              '\$${_priceRange.end.round()}',
+              '₹${_priceRange.start.round()}',
+              '₹${_priceRange.end.round()}',
             ),
             onChanged: (RangeValues values) {
               setState(() {
@@ -108,6 +114,46 @@ class _FilterDialogState extends State<FilterDialog> {
                 }).toList(),
           ),
 
+          const SizedBox(height: 16),
+
+          // Vendors
+          const Text('Vendors', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Obx(() {
+            print(
+              '🔍 FilterDialog: ${_vendorController.vendors.length} vendors available',
+            );
+
+            if (_vendorController.vendors.isEmpty) {
+              return const Text(
+                'No vendors available',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              );
+            }
+
+            return Wrap(
+              spacing: 8,
+              children:
+                  _vendorController.vendors.map((vendor) {
+                    return FilterChip(
+                      label: Text(vendor.businessName),
+                      selected: _selectedVendors.contains(vendor.id),
+                      onSelected: (bool selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedVendors.add(vendor.id);
+                          } else {
+                            _selectedVendors.remove(vendor.id);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+            );
+          }),
+
+          const SizedBox(height: 16),
+
           // Rating
           const Text(
             'Minimum Rating',
@@ -120,7 +166,7 @@ class _FilterDialogState extends State<FilterDialog> {
                   index + 1 <= (_minRating ?? 0)
                       ? Icons.star
                       : Icons.star_border,
-                  color: Colors.amber,
+                  color: AppTheme.ratingStars,
                 ),
                 onPressed: () {
                   setState(() {
@@ -141,6 +187,7 @@ class _FilterDialogState extends State<FilterDialog> {
                   ProductFilter(
                     priceRange: _priceRange,
                     categories: _selectedCategories,
+                    vendors: _selectedVendors,
                     minRating: _minRating,
                   ),
                 );
