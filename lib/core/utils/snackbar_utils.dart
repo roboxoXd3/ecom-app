@@ -35,4 +35,14 @@ class SnackbarUtils {
       icon: const Icon(Icons.error, color: Colors.white),
     );
   }
+
+  static void showInfo(String message) {
+    Get.snackbar(
+      'Info',
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.blue,
+      colorText: Colors.white,
+    );
+  }
 }

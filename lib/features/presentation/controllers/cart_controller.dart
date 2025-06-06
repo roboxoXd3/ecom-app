@@ -68,7 +68,12 @@ class CartController extends GetxController {
     }
   }
 
-  Future<void> addToCart(Product product, String size, String color) async {
+  Future<void> addToCart(
+    Product product,
+    String size,
+    String color, [
+    int quantity = 1,
+  ]) async {
     try {
       isLoading.value = true;
 
@@ -110,14 +115,14 @@ class CartController extends GetxController {
         // Update quantity if item exists
         await supabase
             .from('cart_items')
-            .update({'quantity': existingItem['quantity'] + 1})
+            .update({'quantity': existingItem['quantity'] + quantity})
             .eq('id', existingItem['id']);
       } else {
         // Add new item
         await supabase.from('cart_items').insert({
           'cart_id': cartId,
           'product_id': product.id,
-          'quantity': 1,
+          'quantity': quantity,
           'selected_size': size,
           'selected_color': color,
         });

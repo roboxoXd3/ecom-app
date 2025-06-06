@@ -1,96 +1,261 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../data/repositories/product_repository.dart';
 import '../../data/models/product_model.dart';
-import '../../presentation/controllers/filter_controller.dart';
-import '../screens/filter/filter_bottom_sheet.dart';
+import '../../data/models/product_filter.dart';
+import '../../data/models/sort_option.dart';
+import '../../data/repositories/wishlist_repository.dart';
 
 class ProductController extends GetxController {
-  final supabase = Supabase.instance.client;
-  final RxList<Product> products = <Product>[].obs;
+  final ProductRepository _repository = ProductRepository();
+  final WishlistRepository _wishlistRepository = WishlistRepository();
   final RxBool isLoading = false.obs;
-  final FilterController filterController = Get.put(FilterController());
+  final RxList<Product> allProducts = <Product>[].obs;
+  final RxList<Product> newArrivals = <Product>[].obs;
+  final RxList<Product> featuredProducts = <Product>[].obs;
+  final RxList<Product> wishlist = <Product>[].obs;
+  final RxSet<String> wishlistProductIds = <String>{}.obs;
+
+  // Filter related variables
+  final Rx<ProductFilter> currentFilter = ProductFilter().obs;
+  final RxDouble minPrice = 0.0.obs;
+  final RxDouble maxPrice = 1000.0.obs;
+
+  void initializeFilterRanges(List<Product> products) {
+    if (products.isEmpty) return;
+
+    minPrice.value = products.map((p) => p.price).reduce(min);
+    maxPrice.value = products.map((p) => p.price).reduce(max);
+    currentFilter.value = ProductFilter(
+      priceRange: RangeValues(minPrice.value, maxPrice.value),
+    );
+  }
+
+  List<Product> filterProducts(List<Product> products) {
+    return products.where((product) {
+      // Price filter
+      if (currentFilter.value.priceRange != null) {
+        if (product.price < currentFilter.value.priceRange!.start ||
+            product.price > currentFilter.value.priceRange!.end) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (currentFilter.value.categories.isNotEmpty) {
+        if (!currentFilter.value.categories.contains(product.categoryId)) {
+          return false;
+        }
+      }
+
+      // Brand filter
+      if (currentFilter.value.brands.isNotEmpty) {
+        if (!currentFilter.value.brands.contains(product.brand)) {
+          return false;
+        }
+      }
+
+      // Rating filter
+      if (currentFilter.value.minRating != null) {
+        if (product.rating < currentFilter.value.minRating!) {
+          return false;
+        }
+      }
+
+      // Stock filter
+      if (currentFilter.value.inStock != null) {
+        if (product.inStock != currentFilter.value.inStock) {
+          return false;
+        }
+      }
+
+      // Sale filter
+      if (currentFilter.value.onSale != null) {
+        if (product.isOnSale != currentFilter.value.onSale) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  List<Product> sortProducts(List<Product> products) {
+    switch (currentFilter.value.sortBy) {
+      case SortOption.priceHighToLow:
+        return List.from(products)..sort((a, b) => b.price.compareTo(a.price));
+      case SortOption.priceLowToHigh:
+        return List.from(products)..sort((a, b) => a.price.compareTo(b.price));
+      case SortOption.rating:
+        return List.from(products)
+          ..sort((a, b) => b.rating.compareTo(a.rating));
+      case SortOption.newest:
+      default:
+        return List.from(products)
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+  }
+
+  void showFilterBottomSheet() {
+    // Implement your filter bottom sheet here
+    // You can create a separate widget for this
+  }
+
+  void updatePriceRange(RangeValues? range) {
+    currentFilter.update((val) {
+      val?.priceRange = range;
+    });
+  }
+
+  void toggleCategory(String category) {
+    currentFilter.update((val) {
+      if (val?.categories.contains(category) ?? false) {
+        val?.categories.remove(category);
+      } else {
+        val?.categories.add(category);
+      }
+    });
+  }
+
+  void toggleBrand(String brand) {
+    currentFilter.update((val) {
+      if (val?.brands.contains(brand) ?? false) {
+        val?.brands.remove(brand);
+      } else {
+        val?.brands.add(brand);
+      }
+    });
+  }
+
+  void updateRating(double? rating) {
+    currentFilter.update((val) {
+      val?.minRating = rating;
+    });
+  }
+
+  void toggleInStock() {
+    currentFilter.update((val) {
+      val?.inStock = !(val.inStock ?? false);
+    });
+  }
+
+  void toggleOnSale() {
+    currentFilter.update((val) {
+      val?.onSale = !(val.onSale ?? false);
+    });
+  }
+
+  void updateSortOption(SortOption option) {
+    currentFilter.update((val) {
+      val?.sortBy = option;
+    });
+  }
+
+  void resetFilters() {
+    currentFilter.value = ProductFilter();
+  }
+
+  // void toggleWishlist(Product product) {
+  //   if (wishlist.contains(product)) {
+  //     wishlist.remove(product);
+  //   } else {
+  //     wishlist.add(product);
+  //   }
+  // }
 
   @override
   void onInit() {
     super.onInit();
-    fetchProducts().then((_) {
-      filterController.initializeFilterRanges(products);
-    });
+    fetchAllProducts();
+    loadWishlist();
   }
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchAllProducts() async {
     try {
       isLoading.value = true;
-      final response = await supabase
-          .from('products')
-          .select()
-          .order('created_at', ascending: false);
 
-      products.value =
-          (response as List<dynamic>)
-              .map((json) => Product.fromJson(json))
-              .toList();
+      // Fetch all data in parallel
+      final results = await Future.wait([
+        _repository.getProducts(),
+        _repository.getNewArrivals(),
+        _repository.getFeaturedProducts(),
+      ]);
+
+      allProducts.value = results[0];
+      newArrivals.value = results[1];
+      featuredProducts.value = results[2];
     } catch (e) {
       print('Error fetching products: $e');
+      // You might want to show an error message to the user
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<List<Product>> getNewArrivals() async {
-    try {
-      final response = await supabase
-          .from('products')
-          .select()
-          .order('created_at', ascending: false)
-          .limit(5);
-
-      return (response as List<dynamic>)
-          .map((json) => Product.fromJson(json))
-          .toList();
-    } catch (e) {
-      print('Error fetching new arrivals: $e');
-      return [];
+    if (newArrivals.isEmpty) {
+      try {
+        final products = await _repository.getNewArrivals();
+        newArrivals.value = products;
+      } catch (e) {
+        print('Error fetching new arrivals: $e');
+        return [];
+      }
     }
+    return newArrivals;
   }
 
   Future<List<Product>> getFeaturedProducts() async {
+    if (featuredProducts.isEmpty) {
+      try {
+        final products = await _repository.getFeaturedProducts();
+        featuredProducts.value = products;
+      } catch (e) {
+        print('Error fetching featured products: $e');
+        return [];
+      }
+    }
+    return featuredProducts;
+  }
+
+  // Method to refresh all data
+  Future<void> refreshProducts() async {
+    await fetchAllProducts();
+  }
+
+  Future<void> loadWishlist() async {
     try {
-      final response = await supabase
-          .from('products')
-          .select()
-          .eq('rating', 5) // Example: featured products have 5-star rating
-          .limit(5);
-
-      return (response as List<dynamic>)
-          .map((json) => Product.fromJson(json))
-          .toList();
+      final ids = await _wishlistRepository.getWishlistProductIds();
+      wishlistProductIds.value = ids.toSet();
     } catch (e) {
-      print('Error fetching featured products: $e');
-      return [];
+      print('Error loading wishlist: $e');
     }
   }
 
-  Future<void> showFilterBottomSheet() async {
-    final result = await Get.bottomSheet(
-      FilterBottomSheet(),
-      isScrollControlled: true,
-      backgroundColor: Theme.of(Get.context!).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-    );
-
-    if (result == true) {
-      // Apply filters and refresh products
-      applyFilters();
+  Future<void> toggleWishlist(Product product) async {
+    try {
+      if (wishlistProductIds.contains(product.id)) {
+        await _wishlistRepository.removeFromWishlist(product.id);
+        wishlistProductIds.remove(product.id);
+        wishlist.remove(product);
+      } else {
+        await _wishlistRepository.addToWishlist(product.id);
+        wishlistProductIds.add(product.id);
+        wishlist.add(product);
+      }
+    } catch (e) {
+      print('Error toggling wishlist: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to update wishlist. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
-  void applyFilters() {
-    final filteredList = filterController.filterProducts(products);
-    final sortedList = filterController.sortProducts(filteredList);
-    products.value = sortedList;
+  bool isInWishlist(String productId) {
+    return wishlistProductIds.contains(productId);
   }
 }

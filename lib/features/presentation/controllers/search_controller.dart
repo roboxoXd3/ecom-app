@@ -10,11 +10,13 @@ enum SortOption { newest, priceHighToLow, priceLowToHigh, popularity }
 class ProductFilter {
   final RangeValues priceRange;
   final List<String> categories;
+  final List<String> vendors;
   final double? minRating;
 
   ProductFilter({
     required this.priceRange,
     required this.categories,
+    required this.vendors,
     this.minRating,
   });
 }
@@ -32,6 +34,7 @@ class SearchController extends GetxController {
       ProductFilter(
         priceRange: const RangeValues(0, 1000),
         categories: [],
+        vendors: [],
         minRating: null,
       ).obs;
   final RxList<Product> originalResults = <Product>[].obs;
@@ -49,8 +52,9 @@ class SearchController extends GetxController {
       isLoading.value = true;
       final response = await supabase
           .from('products')
-          .select()
+          .select('*, vendors(*)')
           .ilike('name', '%$query%')
+          .eq('approval_status', 'approved')
           .order('created_at', ascending: false);
 
       originalResults.value =
@@ -61,20 +65,29 @@ class SearchController extends GetxController {
       _filterResults(); // This will update searchResults
 
       // Track search analytics
-      await _analytics.trackSearch(
-        query: query,
-        resultCount: searchResults.length,
-        userId: supabase.auth.currentUser?.id ?? 'anonymous',
-        filters: {
-          'price_range': {
-            'start': currentFilter.value.priceRange.start,
-            'end': currentFilter.value.priceRange.end,
+      try {
+        print(
+          '🔍 Tracking search analytics for: "$query" with ${searchResults.length} results',
+        );
+        await _analytics.trackSearch(
+          query: query,
+          resultCount: searchResults.length,
+          userId: supabase.auth.currentUser?.id ?? 'anonymous',
+          filters: {
+            'price_range': {
+              'start': currentFilter.value.priceRange.start,
+              'end': currentFilter.value.priceRange.end,
+            },
+            'categories': currentFilter.value.categories,
+            'vendors': currentFilter.value.vendors,
+            'min_rating': currentFilter.value.minRating,
+            'sort_option': currentSort.value.toString(),
           },
-          'categories': currentFilter.value.categories,
-          'min_rating': currentFilter.value.minRating,
-          'sort_option': currentSort.value.toString(),
-        },
-      );
+        );
+        print('✅ Search analytics tracked successfully');
+      } catch (e) {
+        print('❌ Error tracking search analytics: $e');
+      }
 
       addToRecentSearches(query);
     } catch (e) {
@@ -168,14 +181,20 @@ class SearchController extends GetxController {
 
           final matchesCategory =
               currentFilter.value.categories.isEmpty ||
-              (product.categoryId != null &&
-                  currentFilter.value.categories.contains(product.categoryId));
+              (currentFilter.value.categories.contains(product.categoryId));
+
+          final matchesVendor =
+              currentFilter.value.vendors.isEmpty ||
+              (currentFilter.value.vendors.contains(product.vendorId));
 
           final matchesRating =
               currentFilter.value.minRating == null ||
               product.rating >= currentFilter.value.minRating!;
 
-          return matchesPrice && matchesCategory && matchesRating;
+          return matchesPrice &&
+              matchesCategory &&
+              matchesVendor &&
+              matchesRating;
         }).toList();
   }
 }

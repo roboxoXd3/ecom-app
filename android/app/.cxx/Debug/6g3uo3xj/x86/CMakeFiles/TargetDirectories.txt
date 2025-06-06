@@ -1,0 +1,2 @@
+/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/Debug/6g3uo3xj/x86/CMakeFiles/edit_cache.dir
+/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/Debug/6g3uo3xj/x86/CMakeFiles/rebuild_cache.dir

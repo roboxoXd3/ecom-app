@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:get/get.dart';
+import '../../controllers/order_controller.dart';
+import '../../controllers/address_controller.dart';
+import '../../controllers/payment_method_controller.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
-  final int orderId;
-  final bool isDelivered;
-  final String date;
-  final double total;
+  final String orderId;
+  final orderController = Get.find<OrderController>();
+  final addressController = Get.find<AddressController>();
+  final paymentController = Get.find<PaymentMethodController>();
 
-  const OrderDetailsScreen({
-    super.key,
-    required this.orderId,
-    required this.isDelivered,
-    required this.date,
-    required this.total,
-  });
+  OrderDetailsScreen({super.key, required this.orderId});
 
   @override
   Widget build(BuildContext context) {
+    final order = orderController.orders.firstWhere((o) => o.id == orderId);
+    final address = addressController.addresses.firstWhere(
+      (a) => a.id == order.addressId,
+    );
+    final paymentMethod = paymentController.paymentMethods.firstWhere(
+      (p) => p.id == order.paymentMethodId,
+    );
+
     return Scaffold(
-      appBar: AppBar(title: Text('Order #$orderId')),
+      appBar: AppBar(title: Text('Order #${order.id.substring(0, 8)}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -37,16 +43,20 @@ class OrderDetailsScreen extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        isDelivered ? Icons.check_circle : Icons.local_shipping,
+                        order.status == 'delivered'
+                            ? Icons.check_circle
+                            : Icons.local_shipping,
                         color:
-                            isDelivered ? Colors.green : AppTheme.primaryColor,
+                            order.status == 'delivered'
+                                ? Colors.green
+                                : AppTheme.primaryColor,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        isDelivered ? 'Delivered' : 'In Progress',
+                        order.status.capitalizeFirst!,
                         style: TextStyle(
                           color:
-                              isDelivered
+                              order.status == 'delivered'
                                   ? Colors.green
                                   : AppTheme.primaryColor,
                           fontWeight: FontWeight.bold,
@@ -54,7 +64,7 @@ class OrderDetailsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (!isDelivered) ...[
+                  if (order.status != 'delivered') ...[
                     const SizedBox(height: 16),
                     const LinearProgressIndicator(),
                     const SizedBox(height: 16),
@@ -81,12 +91,15 @@ class OrderDetailsScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildDetailRow('Order Date', date),
-                  _buildDetailRow('Order ID', '#$orderId'),
-                  _buildDetailRow('Payment Method', 'Credit Card (**** 1234)'),
+                  _buildDetailRow(
+                    'Order Date',
+                    order.createdAt.toString().split(' ')[0],
+                  ),
+                  _buildDetailRow('Order ID', '#${order.id}'),
+                  _buildDetailRow('Payment Method', paymentMethod.displayName),
                   _buildDetailRow(
                     'Shipping Address',
-                    '123 Main St, New York, NY 10001',
+                    '${address.addressLine1}, ${address.city}, ${address.state} ${address.zip}',
                   ),
                 ],
               ),
@@ -106,19 +119,18 @@ class OrderDetailsScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  // Sample items - replace with actual order items
-                  _buildOrderItem(
-                    'Product 1',
-                    'Size: M, Color: Black',
-                    2,
-                    49.99,
-                  ),
-                  const Divider(),
-                  _buildOrderItem(
-                    'Product 2',
-                    'Size: L, Color: Blue',
-                    1,
-                    39.99,
+                  ...order.items.map(
+                    (item) => Column(
+                      children: [
+                        _buildOrderItem(
+                          'Product ${item.productId}', // TODO: Get actual product name
+                          'Size: ${item.selectedSize}, Color: ${item.selectedColor}',
+                          item.quantity,
+                          item.price,
+                        ),
+                        if (item != order.items.last) const Divider(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -138,10 +150,10 @@ class OrderDetailsScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  _buildPriceRow('Subtotal', total - 10),
-                  _buildPriceRow('Shipping', 10.00),
+                  _buildPriceRow('Subtotal', order.subtotal),
+                  _buildPriceRow('Shipping', order.shippingFee),
                   const Divider(),
-                  _buildPriceRow('Total', total, isBold: true),
+                  _buildPriceRow('Total', order.total, isBold: true),
                 ],
               ),
             ),
@@ -150,9 +162,7 @@ class OrderDetailsScreen extends StatelessWidget {
 
           // Support Button
           ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Implement support
-            },
+            onPressed: () => Get.toNamed('/help-support'),
             icon: const Icon(Icons.support_agent),
             label: const Text('Need Help?'),
             style: ElevatedButton.styleFrom(
@@ -226,7 +236,7 @@ class OrderDetailsScreen extends StatelessWidget {
           ),
         ),
         Text(
-          '\$${(price * quantity).toStringAsFixed(2)}',
+          '₹${(price * quantity).toStringAsFixed(2)}',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ],
@@ -246,7 +256,7 @@ class OrderDetailsScreen extends StatelessWidget {
             ),
           ),
           Text(
-            '\$${amount.toStringAsFixed(2)}',
+            '₹${amount.toStringAsFixed(2)}',
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),

@@ -13,6 +13,9 @@ class AuthController extends GetxController {
   final RxString confirmPassword = ''.obs;
   final RxBool isLoading = false.obs;
   final RxBool isPasswordVisible = false.obs;
+  final Rx<User?> currentUser = Rx<User?>(null);
+  final RxString userName = ''.obs;
+  final RxString userEmail = ''.obs;
 
   void togglePasswordVisibility() => isPasswordVisible.toggle();
 
@@ -92,6 +95,9 @@ class AuthController extends GetxController {
           SnackbarUtils.showError('Please verify your email first');
           return;
         }
+
+        updateUserData();
+
         SnackbarUtils.showSuccess('Login successful');
         Get.offAll(() => const HomeScreen());
       } else {
@@ -162,5 +168,29 @@ class AuthController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void updateUserData() {
+    final user = supabase.auth.currentUser;
+    if (user != null) {
+      userEmail.value = user.email ?? '';
+
+      print('User metadata: ${user.userMetadata}');
+      print('Full name from metadata: ${user.userMetadata?['full_name']}');
+
+      userName.value =
+          user.userMetadata?['full_name'] ??
+          user.userMetadata?['name'] ??
+          user.email?.split('@')[0] ??
+          'User';
+
+      print('Final userName value: ${userName.value}');
+    }
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    updateUserData();
   }
 }

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/analytics_controller.dart';
+import '../../../../core/services/analytics_service.dart';
 import 'package:fl_chart/fl_chart.dart'; // Add this package to pubspec.yaml
 
 class AnalyticsScreen extends StatelessWidget {
   final AnalyticsController controller = Get.find();
+
+  AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +21,12 @@ class AnalyticsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => controller.loadAnalytics(),
+            onPressed: () => controller.refreshAnalytics(),
           ),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => controller.loadAnalytics(),
+        onRefresh: () => controller.refreshAnalytics(),
         child: Obx(() {
           if (controller.isLoading.value) {
             return const Center(child: CircularProgressIndicator());
@@ -35,7 +38,11 @@ class AnalyticsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildFiltersCard(),
+                const SizedBox(height: 16),
                 _buildOverviewCard(),
+                const SizedBox(height: 16),
+                _buildRecentSearchesCard(),
                 const SizedBox(height: 16),
                 _buildPopularSearchesCard(),
                 const SizedBox(height: 16),
@@ -46,6 +53,214 @@ class AnalyticsScreen extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+
+  Widget _buildFiltersCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Filters & Sorting',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Obx(
+                      () => DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: controller.sortBy.value,
+                          isExpanded: true,
+                          hint: const Text('Sort by'),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'timestamp',
+                              child: Text('Date'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'query',
+                              child: Text('Search Term'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'result_count',
+                              child: Text('Results Count'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              controller.setSorting(
+                                value,
+                                controller.ascending.value,
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Obx(
+                  () => IconButton(
+                    icon: Icon(
+                      controller.ascending.value
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                    ),
+                    onPressed: () {
+                      controller.setSorting(
+                        controller.sortBy.value,
+                        !controller.ascending.value,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: InkWell(
+                    onTap: () => _selectDateRange(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.date_range, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Obx(
+                              () => Text(
+                                controller.startDate.value != null
+                                    ? 'Date: ${_formatDate(controller.startDate.value!)} - ${controller.endDate.value != null ? _formatDate(controller.endDate.value!) : "Now"}'
+                                    : 'All Dates',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () => controller.clearFilters(),
+                    child: const Text('Clear Filters'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSearchesCard() {
+    final recentSearches =
+        controller.analyticsData.value['recent_searches'] as List? ?? [];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Recent Searches',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            if (recentSearches.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No recent searches found',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              Container(
+                constraints: const BoxConstraints(maxHeight: 400),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children:
+                        recentSearches
+                            .take(10)
+                            .map(
+                              (search) => Container(
+                                margin: const EdgeInsets.only(bottom: 4),
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor:
+                                        search['result_count'] > 0
+                                            ? Colors.green.withOpacity(0.2)
+                                            : Colors.red.withOpacity(0.2),
+                                    child: Icon(
+                                      search['result_count'] > 0
+                                          ? Icons.check
+                                          : Icons.close,
+                                      color:
+                                          search['result_count'] > 0
+                                              ? Colors.green
+                                              : Colors.red,
+                                      size: 14,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    search['query'],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    '${search['result_count']} results • ${_formatDateTime(search['timestamp'])}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing: Text(
+                                    _formatTime(search['timestamp']),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -108,12 +323,21 @@ class AnalyticsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...popularSearches.map(
-              (search) => ListTile(
-                title: Text(search['query']),
-                trailing: Text(search['count'].toString()),
+            if (popularSearches.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No popular searches yet',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ...popularSearches.map(
+                (search) => ListTile(
+                  title: Text(search['query']),
+                  trailing: Text(search['count'].toString()),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -134,12 +358,21 @@ class AnalyticsScreen extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            ...noResults.map(
-              (search) => ListTile(
-                title: Text(search['query']),
-                trailing: Text(search['count'].toString()),
+            if (noResults.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'No failed searches yet',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ...noResults.map(
+                (search) => ListTile(
+                  title: Text(search['query']),
+                  trailing: Text(search['count'].toString()),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -147,30 +380,135 @@ class AnalyticsScreen extends StatelessWidget {
   }
 
   Widget _buildSearchTrendsChart() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Search Trends',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                // Implement chart using fl_chart package
-                // This is just a basic example
-                LineChartData(
-                  // Configure chart data here
-                ),
+    return Obx(() {
+      final searchTrends = controller.searchTrends;
+
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Search Trends',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 200,
+                child:
+                    searchTrends.isEmpty
+                        ? const Center(
+                          child: Text(
+                            'No search trend data available',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        )
+                        : LineChart(
+                          LineChartData(
+                            gridData: const FlGridData(show: true),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 40,
+                                  getTitlesWidget: (value, meta) {
+                                    return Text(
+                                      value.toInt().toString(),
+                                      style: const TextStyle(fontSize: 12),
+                                    );
+                                  },
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  reservedSize: 32,
+                                  getTitlesWidget: (value, meta) {
+                                    if (value.toInt() >= 0 &&
+                                        value.toInt() < searchTrends.length) {
+                                      final dateStr =
+                                          searchTrends[value.toInt()]['date']
+                                              as String;
+                                      final date = DateTime.parse(dateStr);
+                                      return Text(
+                                        '${date.month}/${date.day}',
+                                        style: const TextStyle(fontSize: 10),
+                                      );
+                                    }
+                                    return const Text('');
+                                  },
+                                ),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            borderData: FlBorderData(show: true),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots:
+                                    searchTrends
+                                        .asMap()
+                                        .entries
+                                        .map(
+                                          (entry) => FlSpot(
+                                            entry.key.toDouble(),
+                                            (entry.value['count'] as int)
+                                                .toDouble(),
+                                          ),
+                                        )
+                                        .toList(),
+                                isCurved: true,
+                                color: Theme.of(Get.context!).primaryColor,
+                                barWidth: 3,
+                                dotData: const FlDotData(show: true),
+                              ),
+                            ],
+                          ),
+                        ),
+              ),
+            ],
+          ),
         ),
-      ),
+      );
+    });
+  }
+
+  // Utility methods for date formatting and selection
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatDateTime(String timestamp) {
+    final date = DateTime.parse(timestamp);
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  String _formatTime(String timestamp) {
+    final date = DateTime.parse(timestamp);
+    return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: Get.context!,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange:
+          controller.startDate.value != null && controller.endDate.value != null
+              ? DateTimeRange(
+                start: controller.startDate.value!,
+                end: controller.endDate.value!,
+              )
+              : null,
     );
+
+    if (picked != null) {
+      controller.setDateRange(picked.start, picked.end);
+    }
   }
 }

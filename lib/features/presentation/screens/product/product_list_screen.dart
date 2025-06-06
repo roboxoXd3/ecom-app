@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../data/models/product_model.dart';
 import '../../../data/models/product_filter.dart' as filter;
 import '../../controllers/product_controller.dart';
-import '../../controllers/search_controller.dart';
 import 'product_details_screen.dart';
 import '../../../data/models/sort_option.dart' as sort;
 
 class ProductListScreen extends StatelessWidget {
   final String title;
-  final List<Product> products;
   final ProductController productController = Get.find();
 
-  ProductListScreen({super.key, required this.title, required this.products}) {
-    // Initialize filter ranges when screen is created
-    productController.filterController.initializeFilterRanges(products);
+  ProductListScreen({super.key, required this.title}) {
+    // Fetch products when screen is created
+    productController.fetchAllProducts();
   }
 
   @override
@@ -31,88 +28,98 @@ class ProductListScreen extends StatelessWidget {
         ],
       ),
       body: Obx(() {
-        final filter = productController.filterController.currentFilter.value;
-        final filteredProducts = productController.filterController
-            .filterProducts(products);
-        final sortedProducts = productController.filterController.sortProducts(
-          filteredProducts,
+        if (productController.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final filter = productController.currentFilter.value;
+        final filteredProducts = productController.filterProducts(
+          productController.allProducts,
         );
+        final sortedProducts = productController.sortProducts(filteredProducts);
+
+        if (sortedProducts.isEmpty) {
+          return const Center(child: Text('No products found'));
+        }
 
         return Column(
           children: [
             if (filter.hasFilters) _buildActiveFilters(filter),
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: sortedProducts.length,
-                itemBuilder: (context, index) {
-                  final product = sortedProducts[index];
-                  return Card(
-                    child: InkWell(
-                      onTap:
-                          () => Get.to(
-                            () => ProductDetailsScreen(product: product),
-                          ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4),
+              child: RefreshIndicator(
+                onRefresh: () => productController.fetchAllProducts(),
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: sortedProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = sortedProducts[index];
+                    return Card(
+                      child: InkWell(
+                        onTap:
+                            () => Get.to(
+                              () => ProductDetailsScreen(product: product),
+                            ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(4),
+                                ),
+                                child: Image.network(
+                                  product.imageList.first,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: Icon(
+                                        Icons.image,
+                                        size: 40,
+                                        color: Colors.grey[400],
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                              child: Image.asset(
-                                product.images[0],
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: Colors.grey[200],
-                                    child: Icon(
-                                      Icons.image,
-                                      size: 40,
-                                      color: Colors.grey[400],
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                  );
-                                },
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '₹${product.price.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: AppTheme.primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  product.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '\$${product.price.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    color: AppTheme.primaryColor,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -139,8 +146,7 @@ class ProductListScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               TextButton(
-                onPressed:
-                    () => productController.filterController.resetFilters(),
+                onPressed: () => productController.resetFilters(),
                 child: const Text('Clear All'),
               ),
             ],
@@ -151,43 +157,40 @@ class ProductListScreen extends StatelessWidget {
             children: [
               if (filter.priceRange != null)
                 _buildFilterChip(
-                  'Price: \$${filter.priceRange!.start.toStringAsFixed(0)} - \$${filter.priceRange!.end.toStringAsFixed(0)}',
-                  () =>
-                      productController.filterController.updatePriceRange(null),
+                  'Price: ₹${filter.priceRange!.start.toStringAsFixed(0)} - ₹${filter.priceRange!.end.toStringAsFixed(0)}',
+                  () => productController.updatePriceRange(null),
                 ),
               ...filter.categories.map(
                 (category) => _buildFilterChip(
                   category,
-                  () => productController.filterController.toggleCategory(
-                    category,
-                  ),
+                  () => productController.toggleCategory(category),
                 ),
               ),
               ...filter.brands.map(
                 (brand) => _buildFilterChip(
                   brand,
-                  () => productController.filterController.toggleBrand(brand),
+                  () => productController.toggleBrand(brand),
                 ),
               ),
               if (filter.minRating != null)
                 _buildFilterChip(
                   '${filter.minRating}+ Stars',
-                  () => productController.filterController.updateRating(null),
+                  () => productController.updateRating(null),
                 ),
               if (filter.inStock == true)
                 _buildFilterChip(
                   'In Stock',
-                  () => productController.filterController.toggleInStock(),
+                  () => productController.toggleInStock(),
                 ),
               if (filter.onSale == true)
                 _buildFilterChip(
                   'On Sale',
-                  () => productController.filterController.toggleOnSale(),
+                  () => productController.toggleOnSale(),
                 ),
               if (filter.sortBy != sort.SortOption.newest)
                 _buildFilterChip(
                   'Sort: ${filter.sortBy.displayName}',
-                  () => productController.filterController.updateSortOption(
+                  () => productController.updateSortOption(
                     sort.SortOption.newest,
                   ),
                 ),

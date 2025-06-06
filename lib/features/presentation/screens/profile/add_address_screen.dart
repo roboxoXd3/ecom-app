@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'package:get/get.dart';
+
+import '../../../data/models/address_model.dart';
+import '../../controllers/address_controller.dart';
 
 class AddAddressScreen extends StatefulWidget {
   final bool isEditing;
@@ -21,19 +25,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final _stateController = TextEditingController();
   final _zipController = TextEditingController();
   bool _isDefault = false;
+  final AddressController addressController = Get.find<AddressController>();
 
   @override
   void initState() {
     super.initState();
     if (widget.isEditing && widget.address != null) {
-      _nameController.text = widget.address!['name'];
-      _phoneController.text = widget.address!['phone'];
-      _addressLine1Controller.text = widget.address!['addressLine1'];
-      _addressLine2Controller.text = widget.address!['addressLine2'];
-      _cityController.text = widget.address!['city'];
-      _stateController.text = widget.address!['state'];
-      _zipController.text = widget.address!['zip'];
-      _isDefault = widget.address!['isDefault'];
+      _nameController.text = widget.address!['name'] ?? '';
+      _phoneController.text = widget.address!['phone'] ?? '';
+      _addressLine1Controller.text = widget.address!['address_line1'] ?? '';
+      _addressLine2Controller.text = widget.address!['address_line2'] ?? '';
+      _cityController.text = widget.address!['city'] ?? '';
+      _stateController.text = widget.address!['state'] ?? '';
+      _zipController.text = widget.address!['zip'] ?? '';
+      _isDefault = widget.address!['is_default'] ?? false;
     }
   }
 
@@ -199,8 +204,38 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // TODO: Implement address saving logic
-                      Navigator.pop(context);
+                      if (widget.isEditing) {
+                        // Update existing address
+                        addressController.updateAddress(
+                          Address(
+                            id: widget.address!['id'],
+                            userId: '', // Will be handled by repository
+                            name: _nameController.text,
+                            phone: _phoneController.text,
+                            addressLine1: _addressLine1Controller.text,
+                            addressLine2: _addressLine2Controller.text,
+                            city: _cityController.text,
+                            state: _stateController.text,
+                            zip: _zipController.text,
+                            country: 'United States',
+                            isDefault: _isDefault,
+                            createdAt: DateTime.now(),
+                          ),
+                        );
+                      } else {
+                        // Add new address
+                        addressController.addAddress(
+                          name: _nameController.text,
+                          phone: _phoneController.text,
+                          addressLine1: _addressLine1Controller.text,
+                          addressLine2: _addressLine2Controller.text,
+                          city: _cityController.text,
+                          state: _stateController.text,
+                          zip: _zipController.text,
+                          country: 'United States',
+                          isDefault: _isDefault,
+                        );
+                      }
                     }
                   },
                   child: const Text('Save Address'),
