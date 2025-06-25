@@ -5,17 +5,21 @@ import '../../../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 
 import '../../../data/models/product_model.dart';
+import '../../../data/models/category_model.dart';
 import '../product/product_details_screen.dart';
 import '../search/search_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../notifications/notification_controller.dart';
 import '../product/product_list_screen.dart';
+import '../category/category_details_screen.dart';
 import '../../controllers/product_controller.dart';
+import '../../controllers/category_controller.dart';
 import '../../controllers/home_controller.dart';
 import '../chat/chatbot_screen.dart';
 
 class HomeTab extends StatelessWidget {
   final ProductController productController = Get.find<ProductController>();
+  final CategoryController categoryController = Get.find<CategoryController>();
 
   final List<Map<String, dynamic>> banners = [
     {
@@ -33,14 +37,6 @@ class HomeTab extends StatelessWidget {
       'title': 'Premium Collection',
       'subtitle': 'Luxury Brands',
     },
-  ];
-
-  final List<Map<String, dynamic>> categories = [
-    {'icon': 'assets/images/category/men.jpeg', 'name': 'Men'},
-    {'icon': 'assets/images/category/women.jpeg', 'name': 'Women'},
-    {'icon': 'assets/images/category/kids.jpeg', 'name': 'Kids'},
-    {'icon': 'assets/images/category/accessories.jpeg', 'name': 'Accessories'},
-    {'icon': 'assets/images/category/shoes.jpeg', 'name': 'Shoes'},
   ];
 
   HomeTab({super.key});
@@ -342,88 +338,123 @@ class HomeTab extends StatelessWidget {
           homeController.changeTab(1);
         }),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 120,
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return Container(
-                width: 90,
-                margin: EdgeInsets.only(
-                  right: index == categories.length - 1 ? 0 : 16,
+        Obx(() {
+          if (categoryController.isLoading.value) {
+            return SizedBox(
+              height: 120,
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryColor,
+                  ),
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      final homeController = Get.find<HomeController>();
-                      homeController.changeTab(1);
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            spreadRadius: 0,
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              color: AppTheme.grey100,
+              ),
+            );
+          }
+
+          final displayCategories =
+              categoryController.categories.take(5).toList();
+
+          return SizedBox(
+            height: 120,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: displayCategories.length,
+              itemBuilder: (context, index) {
+                final category = displayCategories[index];
+
+                // Map category names to local icons for better UI
+                final iconMap = {
+                  'men': 'assets/images/category/men.jpeg',
+                  'women': 'assets/images/category/women.jpeg',
+                  'kids': 'assets/images/category/kids.jpeg',
+                  'accessories': 'assets/images/category/accessories.jpeg',
+                  'shoes': 'assets/images/category/shoes.jpeg',
+                  'electronics': 'assets/images/category/electronics.jpeg',
+                  'beauty': 'assets/images/category/beauty.jpeg',
+                  'sports': 'assets/images/category/sports.jpeg',
+                };
+
+                final iconPath =
+                    iconMap[category.name.toLowerCase()] ??
+                    'assets/images/category/accessories.jpeg';
+
+                return Container(
+                  width: 90,
+                  margin: EdgeInsets.only(
+                    right: index == displayCategories.length - 1 ? 0 : 16,
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Navigate to category details screen with real category
+                        Get.to(() => CategoryDetailsScreen(category: category));
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              spreadRadius: 0,
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                category['icon'],
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.category_outlined,
-                                    size: 28,
-                                    color: AppTheme.primaryColor,
-                                  );
-                                },
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                color: AppTheme.grey100,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.asset(
+                                  iconPath,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.category_outlined,
+                                      size: 28,
+                                      color: AppTheme.primaryColor,
+                                    );
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            category['name'],
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
+                            const SizedBox(height: 12),
+                            Text(
+                              category.name,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ),
+                );
+              },
+            ),
+          );
+        }),
         const SizedBox(height: 32),
       ],
     );
