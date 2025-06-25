@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/analytics_controller.dart';
-import '../../../../core/services/analytics_service.dart';
 import 'package:fl_chart/fl_chart.dart'; // Add this package to pubspec.yaml
 
 class AnalyticsScreen extends StatelessWidget {

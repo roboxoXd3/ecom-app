@@ -28,7 +28,6 @@ dependencies:
   supabase_flutter: ^2.8.2
   flutter_dotenv: ^5.2.1
   shared_preferences: ^2.3.4
-  # flutter_native_splash: ^2.3.13
   get_storage: ^2.1.1
   fl_chart: ^0.70.0
   package_info_plus: ^8.1.2
@@ -65,11 +64,4 @@ flutter_launcher_icons:
   adaptive_icon_foreground: "assets/images/logo.png"
   min_sdk_android: 21
   remove_alpha_ios: true
- 
-
-# flutter_native_splash:
-#   # Disable native splash to avoid duplicate splash screens
-#   android: false
-#   ios: false
-#   web: false
  

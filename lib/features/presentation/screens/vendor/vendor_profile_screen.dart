@@ -5,9 +5,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../controllers/vendor_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../../data/models/vendor_model.dart';
-import '../../../data/models/product_model.dart';
 import '../category/widgets/product_card.dart';
-import '../product/product_details_screen.dart';
 
 class VendorProfileScreen extends StatelessWidget {
   final Vendor vendor;
