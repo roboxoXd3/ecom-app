@@ -163,12 +163,14 @@ class VendorRepository {
       final updateData = <String, dynamic>{};
 
       if (businessName != null) updateData['business_name'] = businessName;
-      if (businessDescription != null)
+      if (businessDescription != null) {
         updateData['business_description'] = businessDescription;
+      }
       if (businessEmail != null) updateData['business_email'] = businessEmail;
       if (businessPhone != null) updateData['business_phone'] = businessPhone;
-      if (businessAddress != null)
+      if (businessAddress != null) {
         updateData['business_address'] = businessAddress;
+      }
       if (businessLogo != null) updateData['business_logo'] = businessLogo;
 
       if (updateData.isEmpty) return null;

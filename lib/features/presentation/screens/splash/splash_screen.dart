@@ -24,12 +24,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeAndNavigate() async {
     try {
-      // Test Supabase connection
-      final supabase = Supabase.instance.client;
+      // Supabase is already initialized in main.dart
       final AuthController authController = Get.find<AuthController>();
 
-      // Keep your existing delay for animations
-      await Future.delayed(const Duration(seconds: 3));
+      // Show animations for 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
 
       // Check if user is already logged in
       if (authController.isLoggedIn()) {
@@ -61,22 +60,20 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<bool> _hasSeenOnboarding() async {
-    // You can use shared preferences to store this value
-    // For now, returning false to always show onboarding
-    // TODO: Implement proper storage of onboarding status
     return await StorageUtils.hasSeenOnboarding();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // Ensure consistent background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo animation (keeping your existing animation)
+            // Logo animation with faster timing
             FadeInDown(
-              duration: const Duration(milliseconds: 1500),
+              duration: const Duration(milliseconds: 1000),
               child: Image.asset(
                 'assets/images/logo.png',
                 height: 120,
@@ -84,15 +81,31 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // Title animation (keeping your existing animation)
+            // Title animation with faster timing
             FadeInUp(
-              duration: const Duration(milliseconds: 1500),
+              duration: const Duration(milliseconds: 1000),
+              delay: const Duration(milliseconds: 300),
               child: const Text(
                 'Your One stop solution',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.normal,
                   letterSpacing: 1.5,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            // Loading indicator
+            FadeInUp(
+              duration: const Duration(milliseconds: 800),
+              delay: const Duration(milliseconds: 600),
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black54),
                 ),
               ),
             ),

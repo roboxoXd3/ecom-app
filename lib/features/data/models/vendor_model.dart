@@ -106,7 +106,7 @@ class Vendor {
   // Helper getters
   String get displayRating {
     if (totalReviews == 0) return 'No reviews yet';
-    return '${averageRating.toStringAsFixed(1)} ⭐ (${totalReviews} reviews)';
+    return '${averageRating.toStringAsFixed(1)} ⭐ ($totalReviews reviews)';
   }
 
   bool get isApproved => status == VendorStatus.approved;
