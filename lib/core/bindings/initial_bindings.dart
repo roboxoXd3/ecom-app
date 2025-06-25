@@ -27,7 +27,7 @@ class InitialBindings extends Bindings {
     Get.put(SearchController());
     Get.put(AddressController());
     Get.put(PaymentMethodController());
-    Get.lazyPut(() => CategoryController());
+    Get.put(CategoryController());
     Get.put(OrderController());
     Get.put(VendorController());
   }
