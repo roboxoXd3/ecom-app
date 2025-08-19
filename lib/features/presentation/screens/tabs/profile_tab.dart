@@ -10,6 +10,7 @@ import '../profile/payment_methods_screen.dart';
 import '../profile/help_support_screen.dart';
 import '../profile/settings_screen.dart';
 import '../vendor/followed_vendors_screen.dart';
+import '../vendor/vendors_list_screen.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -83,14 +84,14 @@ class ProfileTab extends StatelessWidget {
             onTap: () => Get.to(() => PaymentMethodsScreen()),
           ),
           _buildProfileOption(
+            icon: Icons.storefront,
+            title: 'Browse Vendors',
+            onTap: () => Get.to(() => const VendorsListScreen()),
+          ),
+          _buildProfileOption(
             icon: Icons.store,
             title: 'Followed Vendors',
             onTap: () => Get.to(() => const FollowedVendorsScreen()),
-          ),
-          _buildProfileOption(
-            icon: Icons.analytics_outlined,
-            title: 'Search Analytics',
-            onTap: () => Get.toNamed('/analytics'),
           ),
           _buildProfileOption(
             icon: Icons.help,

@@ -1,7 +1,8 @@
 import 'package:get/get.dart';
 import '../../features/presentation/controllers/payment_method_controller.dart';
 import '../../features/presentation/screens/category/category_details_screen.dart';
-import '../../features/presentation/screens/product/product_details_screen.dart';
+
+import '../../features/presentation/screens/product/real_enhanced_product_details_screen.dart';
 import '../../features/presentation/screens/profile/add_address_screen.dart';
 import '../../features/presentation/screens/profile/my_orders_screen.dart';
 import '../../features/presentation/screens/profile/order_details_screen.dart';
@@ -11,11 +12,12 @@ import '../../features/presentation/screens/auth/login_screen.dart';
 import '../../features/presentation/screens/home/home_screen.dart';
 import '../../features/presentation/screens/search/search_screen.dart';
 import '../../features/presentation/screens/search/search_results_screen.dart';
-import '../../features/presentation/screens/analytics/analytics_screen.dart';
-import '../../features/presentation/controllers/analytics_controller.dart';
-import '../../features/presentation/controllers/product_details_controller.dart';
+
+import '../../features/presentation/controllers/enhanced_product_controller.dart';
+import '../../features/presentation/controllers/product_controller.dart';
 import '../../features/presentation/screens/profile/payment_methods_screen.dart';
 import '../../features/presentation/screens/profile/add_card_screen.dart';
+import '../../features/presentation/screens/vendor/vendors_list_screen.dart';
 
 import '../../features/presentation/controllers/order_controller.dart';
 
@@ -26,7 +28,7 @@ class AppRoutes {
   static const String search = '/search';
   static const String searchResults = '/search-results';
   static const String productDetails = '/product-details';
-  static const String analytics = '/analytics';
+  static const String enhancedProductDetails = '/enhanced-product-details';
   static const String categoryDetails = '/category/:id';
   static const String shippingAddresses = '/shipping-addresses';
   static const String addAddress = '/add-address';
@@ -34,6 +36,7 @@ class AppRoutes {
   static const String addCard = '/add-card';
   static const String orders = '/orders';
   static const String orderDetails = '/order-details';
+  static const String vendorsList = '/vendors-list';
 
   static final routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -46,16 +49,18 @@ class AppRoutes {
     ),
     GetPage(
       name: productDetails,
-      page: () => ProductDetailsScreen(product: Get.arguments),
+      page: () => RealEnhancedProductDetailsScreen(productId: Get.arguments),
       binding: BindingsBuilder(() {
-        Get.put(ProductDetailsController());
+        Get.put(EnhancedProductController());
+        Get.lazyPut(() => ProductController()); // For wishlist functionality
       }),
     ),
     GetPage(
-      name: analytics,
-      page: () => AnalyticsScreen(),
+      name: enhancedProductDetails,
+      page: () => RealEnhancedProductDetailsScreen(productId: Get.arguments),
       binding: BindingsBuilder(() {
-        Get.put(AnalyticsController());
+        Get.put(EnhancedProductController());
+        Get.lazyPut(() => ProductController()); // For wishlist functionality
       }),
     ),
     GetPage(
@@ -93,5 +98,6 @@ class AppRoutes {
         Get.put(OrderController());
       }),
     ),
+    GetPage(name: vendorsList, page: () => const VendorsListScreen()),
   ];
 }
