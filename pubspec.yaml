@@ -31,6 +31,18 @@ dependencies:
   get_storage: ^2.1.1
   fl_chart: ^0.70.0
   package_info_plus: ^8.1.2
+  image_picker: ^1.0.7
+  http: ^1.2.1
+  path: ^1.9.0
+  mime: ^1.0.4
+  country_state_city_pro: ^0.0.6
+  google_maps_flutter: ^2.5.0
+  google_places_flutter: ^2.0.9
+  geocoding: ^3.0.0
+  geolocator: ^10.1.0
+  permission_handler: ^11.3.1
+  video_player: ^2.8.2
+  chewie: ^1.7.5
   
 
 dev_dependencies:
