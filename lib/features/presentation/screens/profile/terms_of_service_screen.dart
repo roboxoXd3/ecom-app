@@ -22,14 +22,14 @@ class TermsOfServiceScreen extends StatelessWidget {
             // Introduction
             _buildSection(
               'Introduction',
-              'Welcome to Be Smart Mall. By accessing or using our mobile application, '
+              'Welcome to Be Smart. By accessing or using our mobile application, '
                   'you agree to be bound by these Terms of Service. Please read them carefully.',
             ),
 
             // Definitions
             _buildSection(
               'Definitions',
-              '"App" refers to the Be Smart Mall mobile application\n'
+              '"App" refers to the Be Smart mobile application\n'
                   '"Services" refers to all services provided through the App\n'
                   '"User" refers to anyone who accesses or uses the App\n'
                   '"Content" refers to all materials and information displayed on the App',
@@ -63,7 +63,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             // Intellectual Property
             _buildSection(
               'Intellectual Property',
-              'All content, designs, and intellectual property in the App are owned by Be Smart Mall. '
+              'All content, designs, and intellectual property in the App are owned by Be Smart. '
                   'Users may not copy, modify, or distribute our content without permission.',
             ),
 
@@ -79,7 +79,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             // Limitation of Liability
             _buildSection(
               'Limitation of Liability',
-              'Be Smart Mall is not liable for any indirect, incidental, or consequential damages '
+              'Be Smart is not liable for any indirect, incidental, or consequential damages '
                   'arising from your use of the App or any content provided through the App.',
             ),
 

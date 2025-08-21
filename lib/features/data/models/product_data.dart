@@ -10,7 +10,7 @@
 //       price: 29.99,
 //       images: ['assets/images/products/cottonTshirt.jpeg'],
 //       sizes: ['S', 'M', 'L', 'XL'],
-//       colors: ['Black', 'White', 'Navy', 'Grey'],
+//       colors: ['Black', 'White', 'Sage Green', 'Grey'],
 //       rating: 4.5,
 //       reviews: 128,
 //       inStock: true,

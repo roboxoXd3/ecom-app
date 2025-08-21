@@ -17,8 +17,53 @@ class SearchResultsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Results for "$query"'),
+        title: Obx(
+          () => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                query == 'Image Search'
+                    ? 'Image Search Results'
+                    : 'Results for "$query"',
+                style: const TextStyle(fontSize: 16),
+              ),
+              // Show image search indicator
+              if (_searchController.selectedImage.value != null)
+                const Text(
+                  '🖼️ Searched by image',
+                  style: TextStyle(fontSize: 12, color: Colors.blue),
+                ),
+            ],
+          ),
+        ),
         actions: [
+          // Show selected image thumbnail if available
+          Obx(
+            () =>
+                _searchController.selectedImage.value != null
+                    ? Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: GestureDetector(
+                        onTap: () => _showImagePreview(),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue, width: 2),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: Image.file(
+                              _searchController.selectedImage.value!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                    : const SizedBox.shrink(),
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () {
@@ -77,7 +122,7 @@ class SearchResultsScreen extends StatelessWidget {
 
   Widget _buildProductCard(Product product) {
     return GestureDetector(
-      onTap: () => Get.toNamed('/product-details', arguments: product),
+      onTap: () => Get.toNamed('/product-details', arguments: product.id),
       child: Card(
         elevation: 2,
         child: Column(
@@ -92,11 +137,31 @@ class SearchResultsScreen extends StatelessWidget {
                   ),
                 ),
                 child:
-                    product.images.isNotEmpty
-                        ? Image.asset(
-                          product.images[0],
+                    product.primaryImage.isNotEmpty
+                        ? Image.network(
+                          product.primaryImage,
                           fit: BoxFit.cover,
                           width: double.infinity,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.image,
+                              size: 50,
+                              color: Colors.grey,
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                              ),
+                            );
+                          },
                         )
                         : const Icon(Icons.image, size: 50, color: Colors.grey),
               ),
@@ -203,5 +268,34 @@ class SearchResultsScreen extends StatelessWidget {
       case SortOption.popularity:
         return 'Most Popular';
     }
+  }
+
+  /// Show image preview dialog
+  void _showImagePreview() {
+    if (_searchController.selectedImage.value == null) return;
+
+    Get.dialog(
+      Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              title: const Text('Search Image'),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Get.back(),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Image.file(_searchController.selectedImage.value!),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

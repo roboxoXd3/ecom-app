@@ -10,6 +10,7 @@ import 'package:get_storage/get_storage.dart';
 import 'core/routes/app_routes.dart';
 import 'features/presentation/controllers/product_controller.dart';
 import 'features/presentation/controllers/category_controller.dart';
+import 'features/presentation/controllers/vendor_controller.dart';
 import 'features/data/services/product_search_service.dart';
 
 void main() async {
@@ -46,7 +47,10 @@ void main() async {
     print('Supabase initialized');
 
     // Initialize controllers in background after app starts
-    _initializeControllersInBackground();
+    // Note: This will run after InitialBindings
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _initializeControllersInBackground();
+    });
 
     runApp(const MyApp());
     print('App started');
@@ -60,10 +64,20 @@ Future<void> _initializeControllersInBackground() async {
   try {
     // Initialize services and controllers
     Get.put(ProductSearchService());
-    Get.put(ProductController());
-    Get.put(CategoryController());
 
-    print('All controllers initialized');
+    // Get existing controllers instead of creating new ones
+    final productController = Get.find<ProductController>();
+    final categoryController = Get.find<CategoryController>();
+    final vendorController = Get.find<VendorController>();
+
+    // Manually trigger data fetching if needed
+    await Future.wait([
+      productController.fetchAllProducts(),
+      categoryController.fetchCategories(),
+      vendorController.fetchVendors(),
+    ]);
+
+    print('All controllers initialized and data fetched');
   } catch (e, stackTrace) {
     print('Error during controller initialization: $e');
     print('Stack trace: $stackTrace');
@@ -76,7 +90,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Be Smart Mall',
+      title: 'Be Smart',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

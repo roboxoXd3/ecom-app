@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:animate_do/animate_do.dart';
 import '../../controllers/auth_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {
   ForgotPasswordScreen({super.key});
@@ -11,49 +13,213 @@ class ForgotPasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Enter your email address to receive a password reset link',
-              style: TextStyle(fontSize: 16),
+      backgroundColor: AppTheme.scaffoldLightColor,
+      appBar: AppBar(
+        backgroundColor: AppTheme.scaffoldLightColor,
+        elevation: 0,
+        title: const Text(
+          'Reset Password',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+
+                // Icon and Title
+                FadeInDown(
+                  duration: const Duration(milliseconds: 500),
+                  child: Center(
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(40),
+                      ),
+                      child: Icon(
+                        Icons.email_outlined,
+                        size: 40,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Title
+                FadeInDown(
+                  delay: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 500),
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Description
+                FadeInDown(
+                  delay: const Duration(milliseconds: 400),
+                  duration: const Duration(milliseconds: 500),
+                  child: Text(
+                    'No worries! Enter your email address and we\'ll send you a reset link.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.grey600,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Email Field
+                FadeInUp(
+                  delay: const Duration(milliseconds: 600),
+                  duration: const Duration(milliseconds: 500),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.grey300.withValues(alpha: 0.3),
+                          spreadRadius: 1,
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email Address',
+                        hintText: 'Enter your email address',
+                        prefixIcon: Icon(
+                          Icons.email_outlined,
+                          color: AppTheme.primaryColor,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Send Reset Link Button
+                FadeInUp(
+                  delay: const Duration(milliseconds: 800),
+                  duration: const Duration(milliseconds: 500),
+                  child: Obx(
+                    () => Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.8),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed:
+                            authController.isLoading.value
+                                ? null
+                                : () => authController.forgotPassword(
+                                  _emailController.text,
+                                ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child:
+                            authController.isLoading.value
+                                ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'Send Reset Link',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Back to Login
+                FadeInUp(
+                  delay: const Duration(milliseconds: 1000),
+                  duration: const Duration(milliseconds: 500),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Remember your password? ',
+                        style: TextStyle(color: AppTheme.grey600),
+                      ),
+                      TextButton(
+                        onPressed: () => Get.back(),
+                        child: Text(
+                          'Back to Login',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 24),
-            Obx(
-              () => ElevatedButton(
-                onPressed:
-                    authController.isLoading.value
-                        ? null
-                        : () {
-                          if (_emailController.text.isEmpty) {
-                            Get.snackbar(
-                              'Error',
-                              'Please enter your email',
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
-                            return;
-                          }
-                          authController.forgotPassword(_emailController.text);
-                        },
-                child:
-                    authController.isLoading.value
-                        ? const CircularProgressIndicator()
-                        : const Text('Send Reset Link'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -22,7 +22,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             // Introduction
             _buildSection(
               'Introduction',
-              'At Be Smart Mall, we take your privacy seriously. This Privacy Policy explains how '
+              'At Be Smart, we take your privacy seriously. This Privacy Policy explains how '
                   'we collect, use, disclose, and safeguard your information when you use our mobile application.',
             ),
 

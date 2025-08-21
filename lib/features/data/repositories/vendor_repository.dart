@@ -285,7 +285,11 @@ class VendorRepository {
           .order('created_at', ascending: false);
 
       return (response as List)
-          .map((follow) => Vendor.fromJson(follow['vendors']))
+          .where((follow) => follow['vendors'] != null)
+          .map(
+            (follow) =>
+                Vendor.fromJson(follow['vendors'] as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
       print('Error fetching followed vendors: $e');

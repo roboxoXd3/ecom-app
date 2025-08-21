@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/cart_controller.dart';
-import '../product/product_details_screen.dart';
+
 import 'package:cached_network_image/cached_network_image.dart';
 
 enum WishlistSortOption { dateAdded, priceLowToHigh, priceHighToLow, name }
@@ -692,19 +692,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
             },
             onDismissed: (direction) {
               productController.toggleWishlist(product);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${product.name} removed from wishlist'),
-                  action: SnackBarAction(
-                    label: 'Undo',
-                    onPressed: () => productController.toggleWishlist(product),
-                  ),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              );
             },
             child: Card(
               elevation: 0,
@@ -714,10 +701,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
               ),
               child: InkWell(
                 onTap:
-                    () => Get.to(
-                      () => ProductDetailsScreen(product: product),
-                      transition: Transition.fadeIn,
-                    ),
+                    () =>
+                        Get.toNamed('/product-details', arguments: product.id),
                 borderRadius: BorderRadius.circular(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -733,7 +718,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                 top: Radius.circular(16),
                               ),
                               child: CachedNetworkImage(
-                                imageUrl: product.imageList.first,
+                                imageUrl:
+                                    product.imageList.isNotEmpty
+                                        ? product.imageList.first
+                                        : '',
                                 width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
@@ -783,18 +771,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                 constraints: const BoxConstraints(),
                                 onPressed: () {
                                   productController.toggleWishlist(product);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text(
-                                        'Removed from wishlist',
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                  );
                                 },
                               ),
                             ),
@@ -985,7 +961,10 @@ class _QuickAddToCartSheetState extends State<_QuickAddToCartSheet> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
-                  imageUrl: widget.product.imageList.first,
+                  imageUrl:
+                      widget.product.imageList.isNotEmpty
+                          ? widget.product.imageList.first
+                          : '',
                   width: 60,
                   height: 60,
                   fit: BoxFit.cover,

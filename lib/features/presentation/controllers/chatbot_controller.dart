@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/product_search_service.dart';
+import '../../data/services/ujunwa_ai_service.dart';
+import '../../data/services/conversation_context_service.dart';
+
 import '../../data/models/product_model.dart';
 import '../../data/models/chat_models.dart';
 import '../../data/repositories/chat_repository.dart';
-import 'auth_controller.dart';
 
 class ChatMessage {
   final String id;
@@ -14,6 +18,12 @@ class ChatMessage {
   final DateTime createdAt;
   final List<Product>? products; // Add products for rich responses
   final String? messageType; // 'text', 'products', 'recommendations'
+  // final UjunwaResponse? ujunwaResponse; // TODO: Add structured response data
+
+  // NEW: Image support
+  final String? imagePath; // Local image path
+  final String? imageUrl; // Remote image URL
+  final bool hasImage; // Quick check for image presence
 
   ChatMessage({
     required this.id,
@@ -22,7 +32,32 @@ class ChatMessage {
     required this.createdAt,
     this.products,
     this.messageType = 'text',
+    // this.ujunwaResponse, // TODO: Include structured response
+    // NEW: Image parameters
+    this.imagePath,
+    this.imageUrl,
+    this.hasImage = false,
   });
+
+  // Factory for image messages
+  factory ChatMessage.withImage({
+    required String id,
+    required String text,
+    required bool isUser,
+    required DateTime createdAt,
+    String? imagePath,
+    String? imageUrl,
+  }) {
+    return ChatMessage(
+      id: id,
+      text: text,
+      isUser: isUser,
+      createdAt: createdAt,
+      imagePath: imagePath,
+      imageUrl: imageUrl,
+      hasImage: imagePath != null || imageUrl != null,
+    );
+  }
 
   String get timestamp {
     final now = DateTime.now();
@@ -48,9 +83,16 @@ class ChatbotController extends GetxController {
   final ScrollController scrollController = ScrollController();
   final ProductSearchService _searchService = Get.find<ProductSearchService>();
 
+  // NEW: UJUNWA AI Services
+  final UjunwaAIService _ujunwaService = UjunwaAIService();
+  final ConversationContextService _contextService =
+      ConversationContextService();
+
+  // NEW: Image picker instance
+  final ImagePicker _imagePicker = ImagePicker();
+
   // Enhanced features
   final ChatRepository _chatRepository = ChatRepository();
-  late final AuthController _authController;
 
   // Current conversation for persistence
   ChatConversation? currentConversation;
@@ -59,7 +101,7 @@ class ChatbotController extends GetxController {
   // Sample bot responses
   final Map<String, List<String>> botResponses = {
     'hello': [
-      'Hello! Welcome to Be Smart Mall! How can I assist you today?',
+      'Hello! Welcome to Be Smart! How can I assist you today?',
       'Hi there! I\'m here to help with your shopping needs. What can I do for you?',
     ],
     'track order': [
@@ -92,11 +134,6 @@ class ChatbotController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    try {
-      _authController = Get.find<AuthController>();
-    } catch (e) {
-      print('AuthController not found, some features may not work');
-    }
     _initializeChat();
   }
 
@@ -161,13 +198,117 @@ class ChatbotController extends GetxController {
       final welcomeMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         text:
-            'Hello! I\'m your shopping assistant. I can help you with:\n\n• Finding products\n• Tracking orders\n• Returns & exchanges\n• Size guides\n• General support\n\nHow can I help you today?',
+            'Hello! I\'m UJUNWA, your intelligent shopping assistant! 🛍️\n\nI can help you with:\n• Finding the perfect products\n• Smart recommendations\n• Order tracking & support\n• Product comparisons\n• Size guides & details\n• And much more!\n\nWhat can I help you discover today?',
         isUser: false,
         createdAt: DateTime.now(),
       );
       messages.add(welcomeMessage);
       _scrollToBottom();
     });
+  }
+
+  /// NEW: Handle UJUNWA AI responses
+  Future<void> _handleUjunwaResponse(String userMessage) async {
+    isTyping.value = true;
+
+    try {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) return;
+
+      final userId = currentUser.id;
+
+      // Get conversation context
+      List<ConversationContext>? context;
+      if (currentConversation != null) {
+        context = await _contextService.getConversationContext(
+          conversationId: currentConversation!.id,
+          limit: 5, // Last 5 interactions for context
+        );
+      }
+
+      // Generate UJUNWA response
+      final ujunwaResponse = await _ujunwaService.generateResponse(
+        userMessage: userMessage,
+        userId: userId,
+        conversationId: currentConversation?.id,
+        context: context,
+      );
+
+      // Create bot message
+      final botMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: ujunwaResponse.text,
+        isUser: false,
+        createdAt: DateTime.now(),
+        products: ujunwaResponse.products,
+        messageType: ujunwaResponse.products.isNotEmpty ? 'products' : 'text',
+        // ujunwaResponse: ujunwaResponse, // TODO: Add structured response support
+      );
+
+      // Add typing delay for natural feel
+      await Future.delayed(const Duration(milliseconds: 1500));
+      isTyping.value = false;
+      messages.add(botMessage);
+      _scrollToBottom();
+
+      // Save bot response to database
+      if (currentConversation != null) {
+        try {
+          await _chatRepository.addMessage(
+            conversationId: currentConversation!.id,
+            senderType: 'bot',
+            messageText: ujunwaResponse.text,
+            metadata: {
+              'intent_type': ujunwaResponse.intent?.type.toString(),
+              'intent_confidence': ujunwaResponse.intent?.confidence,
+              'products_count': ujunwaResponse.products.length,
+              'suggestions': ujunwaResponse.suggestions,
+            },
+          );
+
+          // Track analytics
+          await _chatRepository.trackChatAction(
+            conversationId: currentConversation!.id,
+            userId: userId,
+            actionType: 'ujunwa_response',
+            actionData: {
+              'intent_type': ujunwaResponse.intent?.type.toString(),
+              'intent_confidence': ujunwaResponse.intent?.confidence,
+              'response_length': ujunwaResponse.text.length,
+              'products_shown': ujunwaResponse.products.length,
+            },
+          );
+        } catch (e) {
+          print('Error saving UJUNWA response: $e');
+        }
+      }
+
+      // Show suggestions if available
+      if (ujunwaResponse.suggestions.isNotEmpty) {
+        _showSuggestions(ujunwaResponse.suggestions);
+      }
+    } catch (e) {
+      print('❌ Error in UJUNWA response: $e');
+      isTyping.value = false;
+
+      // Fallback to simple response
+      final fallbackMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            'I apologize, but I\'m having trouble processing your request right now. Please try again or ask me something else!',
+        isUser: false,
+        createdAt: DateTime.now(),
+      );
+
+      messages.add(fallbackMessage);
+      _scrollToBottom();
+    }
+  }
+
+  /// Show suggestions as quick action buttons
+  void _showSuggestions(List<String> suggestions) {
+    // For now, we'll just print them. In the future, we can show them as quick action buttons
+    print('💡 UJUNWA Suggestions: ${suggestions.join(', ')}');
   }
 
   void sendMessage(String text) async {
@@ -218,214 +359,8 @@ class ChatbotController extends GetxController {
       }
     }
 
-    // Check if this is a product search query
-    if (_isProductSearchQuery(text)) {
-      await _handleProductSearch(text);
-    } else {
-      // Simulate bot typing and response
-      _simulateBotResponse(text);
-    }
-  }
-
-  bool _isProductSearchQuery(String text) {
-    final productKeywords = [
-      'find',
-      'search',
-      'looking for',
-      'show me',
-      'products',
-      'shirts',
-      'pants',
-      'shoes',
-      'bags',
-      'dresses',
-      'jackets',
-      'watches',
-      'phones',
-      'laptops',
-      'clothes',
-      'buy',
-      'purchase',
-      'men',
-      'women',
-      'kids',
-      'accessories',
-      'sale',
-      'cheap',
-      'affordable',
-    ];
-
-    final lowerText = text.toLowerCase();
-    return productKeywords.any((keyword) => lowerText.contains(keyword));
-  }
-
-  Future<void> _handleProductSearch(String query) async {
-    isTyping.value = true;
-
-    try {
-      // Extract search terms
-      final searchQuery = _extractSearchTerms(query);
-
-      // Search for products
-      List<Product> products = [];
-      String responseText = '';
-
-      if (searchQuery.isNotEmpty) {
-        products = await _searchService.searchProducts(
-          query: searchQuery,
-          limit: 5,
-        );
-
-        if (products.isNotEmpty) {
-          responseText = 'I found ${products.length} products for you:';
-        } else {
-          // Try semantic search if no direct results
-          products = await _searchService.semanticSearch(
-            query: searchQuery,
-            limit: 5,
-          );
-
-          if (products.isNotEmpty) {
-            responseText = 'Here are some similar products I found:';
-          } else {
-            responseText =
-                'I couldn\'t find products matching "$searchQuery". Let me show you some popular items instead:';
-            products = await _searchService.getTrendingProducts(limit: 5);
-          }
-        }
-      } else {
-        // Show trending products for general queries
-        products = await _searchService.getTrendingProducts(limit: 5);
-        responseText = 'Here are some popular products you might like:';
-      }
-
-      // Add bot response with products
-      final botMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: responseText,
-        isUser: false,
-        createdAt: DateTime.now(),
-        products: products,
-        messageType: 'products',
-      );
-
-      await Future.delayed(const Duration(milliseconds: 1500));
-      isTyping.value = false;
-      messages.add(botMessage);
-      _scrollToBottom();
-    } catch (e) {
-      print('Error handling product search: $e');
-      isTyping.value = false;
-      _simulateBotResponse(query);
-    }
-  }
-
-  String _extractSearchTerms(String query) {
-    // Remove common words and extract product-related terms
-    final commonWords = [
-      'find',
-      'search',
-      'looking',
-      'for',
-      'show',
-      'me',
-      'i',
-      'want',
-      'need',
-      'buy',
-      'purchase',
-    ];
-    final words = query.toLowerCase().split(' ');
-    final searchTerms = words
-        .where((word) => !commonWords.contains(word))
-        .join(' ');
-    return searchTerms.trim();
-  }
-
-  void _simulateBotResponse(String userMessage) {
-    isTyping.value = true;
-
-    // Simulate typing delay
-    Future.delayed(const Duration(milliseconds: 1500), () async {
-      isTyping.value = false;
-
-      final response = _generateBotResponse(userMessage);
-      final botMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: response,
-        isUser: false,
-        createdAt: DateTime.now(),
-      );
-
-      messages.add(botMessage);
-      _scrollToBottom();
-
-      // Save bot response to database
-      if (currentConversation != null) {
-        try {
-          await _chatRepository.addMessage(
-            conversationId: currentConversation!.id,
-            senderType: 'bot',
-            messageText: response,
-          );
-
-          final userId = Supabase.instance.client.auth.currentUser?.id;
-          if (userId != null) {
-            await _chatRepository.trackChatAction(
-              conversationId: currentConversation!.id,
-              userId: userId,
-              actionType: 'bot_response',
-              actionData: {'message_type': 'text', 'response_type': 'general'},
-            );
-          }
-        } catch (e) {
-          print('Error saving bot message: $e');
-        }
-      }
-    });
-  }
-
-  String _generateBotResponse(String userMessage) {
-    final message = userMessage.toLowerCase();
-
-    // Check for keywords
-    for (final entry in botResponses.entries) {
-      if (message.contains(entry.key)) {
-        final responses = entry.value;
-        return responses[DateTime.now().millisecond % responses.length];
-      }
-    }
-
-    // Check for common greetings
-    if (message.contains('hi') ||
-        message.contains('hello') ||
-        message.contains('hey')) {
-      return botResponses['hello']![0];
-    }
-
-    // Check for thanks
-    if (message.contains('thank') || message.contains('thanks')) {
-      return 'You\'re welcome! Is there anything else I can help you with?';
-    }
-
-    // Check for product searches
-    if (message.contains('product') ||
-        message.contains('buy') ||
-        message.contains('shop')) {
-      return 'I can help you find products! What specific item or category are you looking for?';
-    }
-
-    // Check for order related queries
-    if (message.contains('order') ||
-        message.contains('delivery') ||
-        message.contains('shipping')) {
-      return 'For order-related queries, I can help you track your order or provide shipping information. Do you have an order number?';
-    }
-
-    // Default response
-    final defaultResponses = botResponses['default']!;
-    return defaultResponses[DateTime.now().millisecond %
-        defaultResponses.length];
+    // Use UJUNWA AI for intelligent responses
+    await _handleUjunwaResponse(text);
   }
 
   void _scrollToBottom() {
@@ -556,6 +491,135 @@ class ChatbotController extends GetxController {
     print('   - User logged in: ${currentUser != null}');
     print('   - User ID: ${currentUser?.id}');
     print('   - User Email: ${currentUser?.email}');
-    print('   - Auth Controller found: ${_authController != null}');
+    print('   - Auth Controller found: true');
+  }
+
+  /// NEW: Handle image selection and search
+  Future<void> handleImageSearch() async {
+    try {
+      // Show image source selection dialog
+      final ImageSource? source = await _showImageSourceDialog();
+      if (source == null) return;
+
+      // Pick image
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      // Create user message with image
+      final userMessage = ChatMessage.withImage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: 'Find products similar to this image',
+        isUser: true,
+        createdAt: DateTime.now(),
+        imagePath: pickedFile.path,
+      );
+
+      messages.add(userMessage);
+      _scrollToBottom();
+
+      // Show typing indicator
+      isTyping.value = true;
+
+      // Process image search
+      await _processImageSearch(File(pickedFile.path));
+    } catch (e) {
+      print('❌ Error in image search: $e');
+      Get.snackbar(
+        'Image Search Error',
+        'Failed to process image: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      isTyping.value = false;
+    }
+  }
+
+  /// NEW: Process image search and show results
+  Future<void> _processImageSearch(File imageFile) async {
+    try {
+      // Search products using image
+      final products = await _searchService.searchByImage(
+        imageFile: imageFile,
+        limit: 5,
+      );
+
+      // Create bot response
+      String responseText;
+      List<Product> productsToShow;
+
+      if (products.isNotEmpty) {
+        responseText =
+            'I found ${products.length} products similar to your image:';
+        productsToShow = products;
+      } else {
+        responseText =
+            'I couldn\'t find products matching your image. Here are some popular items instead:';
+        // Fallback to trending products
+        productsToShow = await _searchService.getTrendingProducts(limit: 5);
+      }
+
+      // Add bot response with products (following the existing pattern)
+      final botMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: responseText,
+        isUser: false,
+        createdAt: DateTime.now(),
+        products: productsToShow,
+        messageType: 'products',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+      messages.add(botMessage);
+      _scrollToBottom();
+    } catch (e) {
+      print('❌ Error processing image search: $e');
+
+      // Add simple error message
+      final errorMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            'Sorry, I had trouble analyzing your image. Please try again or describe what you\'re looking for.',
+        isUser: false,
+        createdAt: DateTime.now(),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1000));
+      messages.add(errorMessage);
+      _scrollToBottom();
+    }
+  }
+
+  /// NEW: Show image source selection dialog
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return await Get.dialog<ImageSource>(
+      AlertDialog(
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () => Get.back(result: ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () => Get.back(result: ImageSource.gallery),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+        ],
+      ),
+    );
   }
 }

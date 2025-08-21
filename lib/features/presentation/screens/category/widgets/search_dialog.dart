@@ -131,7 +131,7 @@ class _SearchDialogState extends State<SearchDialog>
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.getTextPrimary(context),
                     height: 1.2,
                   ),
                 ),
@@ -141,7 +141,7 @@ class _SearchDialogState extends State<SearchDialog>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.getTextSecondary(context),
                     height: 1.3,
                   ),
                 ),
@@ -159,7 +159,7 @@ class _SearchDialogState extends State<SearchDialog>
               },
               icon: Icon(
                 Icons.close_rounded,
-                color: AppTheme.textSecondary,
+                color: AppTheme.getTextSecondary(context),
                 size: 20,
               ),
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
@@ -186,7 +186,7 @@ class _SearchDialogState extends State<SearchDialog>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: AppTheme.textPrimary,
+            color: AppTheme.getTextPrimary(context),
             height: 1.4,
           ),
           decoration: InputDecoration(
@@ -194,13 +194,13 @@ class _SearchDialogState extends State<SearchDialog>
             hintStyle: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w400,
-              color: AppTheme.textSecondary.withOpacity(0.7),
+              color: AppTheme.getHintText(context),
             ),
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
               child: Icon(
                 Icons.search_rounded,
-                color: AppTheme.textSecondary,
+                color: AppTheme.getTextSecondary(context),
                 size: 20,
               ),
             ),
@@ -216,7 +216,7 @@ class _SearchDialogState extends State<SearchDialog>
                         },
                         icon: Icon(
                           Icons.clear_rounded,
-                          color: AppTheme.textSecondary,
+                          color: AppTheme.getTextSecondary(context),
                           size: 18,
                         ),
                         constraints: const BoxConstraints(
@@ -269,7 +269,7 @@ class _SearchDialogState extends State<SearchDialog>
                   _animationController.reverse().then((_) => Get.back());
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.textSecondary,
+                  foregroundColor: AppTheme.getTextSecondary(context),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -280,7 +280,7 @@ class _SearchDialogState extends State<SearchDialog>
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.getTextSecondary(context),
                   ),
                 ),
               ),

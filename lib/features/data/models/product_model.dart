@@ -336,7 +336,10 @@ class Product {
       videoUrl: json['video_url'], // NEW: Parse video URL from JSON
       // New vendor-related fields
       vendorId: json['vendor_id'] ?? '',
-      vendor: json['vendors'] != null ? Vendor.fromJson(json['vendors']) : null,
+      vendor:
+          json['vendors'] != null
+              ? Vendor.fromJson(json['vendors'] as Map<String, dynamic>)
+              : null,
       approvalStatus: json['approval_status'] ?? 'approved',
 
       // Size chart related fields
@@ -512,7 +515,10 @@ class Product {
     }
     // Fallback to original images
     if (images.isNotEmpty && images != '') {
-      return imageList.first;
+      final imagesList = imageList;
+      if (imagesList.isNotEmpty) {
+        return imagesList.first;
+      }
     }
     // Final fallback
     return '';

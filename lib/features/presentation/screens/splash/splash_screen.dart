@@ -66,7 +66,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Ensure consistent background
+      backgroundColor:
+          Theme.of(
+            context,
+          ).scaffoldBackgroundColor, // Use theme-aware background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -78,6 +81,11 @@ class _SplashScreenState extends State<SplashScreen> {
                 'assets/images/logo.png',
                 height: 120,
                 width: 120,
+                // Apply theme-aware color filter for dark mode visibility
+                color:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Colors.white
+                        : null,
               ),
             ),
             const SizedBox(height: 24),
@@ -85,13 +93,15 @@ class _SplashScreenState extends State<SplashScreen> {
             FadeInUp(
               duration: const Duration(milliseconds: 1000),
               delay: const Duration(milliseconds: 300),
-              child: const Text(
+              child: Text(
                 'Your One stop solution',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.normal,
                   letterSpacing: 1.5,
-                  color: Colors.black87,
+                  color:
+                      Theme.of(context).textTheme.bodyLarge?.color ??
+                      Colors.black87,
                 ),
               ),
             ),
@@ -100,12 +110,17 @@ class _SplashScreenState extends State<SplashScreen> {
             FadeInUp(
               duration: const Duration(milliseconds: 800),
               delay: const Duration(milliseconds: 600),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black54),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.6) ??
+                        Colors.black54,
+                  ),
                 ),
               ),
             ),

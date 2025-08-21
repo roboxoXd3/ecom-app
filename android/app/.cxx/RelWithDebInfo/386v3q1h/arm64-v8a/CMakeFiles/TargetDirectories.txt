@@ -1,0 +1,2 @@
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/.cxx/RelWithDebInfo/386v3q1h/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/.cxx/RelWithDebInfo/386v3q1h/arm64-v8a/CMakeFiles/rebuild_cache.dir

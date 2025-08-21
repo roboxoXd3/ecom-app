@@ -3,20 +3,24 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_filter.dart' as filter;
 import '../../controllers/product_controller.dart';
-import 'product_details_screen.dart';
+
 import '../../../data/models/sort_option.dart' as sort;
 
 class ProductListScreen extends StatelessWidget {
   final String title;
   final ProductController productController = Get.find();
 
-  ProductListScreen({super.key, required this.title}) {
-    // Fetch products when screen is created
-    productController.fetchAllProducts();
-  }
+  ProductListScreen({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
+    // Fetch products when widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (productController.allProducts.isEmpty) {
+        productController.fetchAllProducts();
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -62,8 +66,9 @@ class ProductListScreen extends StatelessWidget {
                     return Card(
                       child: InkWell(
                         onTap:
-                            () => Get.to(
-                              () => ProductDetailsScreen(product: product),
+                            () => Get.toNamed(
+                              '/product-details',
+                              arguments: product.id,
                             ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +79,11 @@ class ProductListScreen extends StatelessWidget {
                                   top: Radius.circular(4),
                                 ),
                                 child: Image.network(
-                                  product.imageList.first,
+                                  product.primaryImage.isNotEmpty
+                                      ? product.primaryImage
+                                      : (product.imageList.isNotEmpty
+                                          ? product.imageList.first
+                                          : ''),
                                   width: double.infinity,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {

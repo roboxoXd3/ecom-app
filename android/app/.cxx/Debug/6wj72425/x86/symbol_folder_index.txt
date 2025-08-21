@@ -1,1 +1,1 @@
-/Users/rian/Downloads/portfolio/ecom_app/android/app/build/intermediates/cxx/Debug/6wj72425/obj/x86
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/build/intermediates/cxx/Debug/6wj72425/obj/x86
