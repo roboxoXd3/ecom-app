@@ -23,6 +23,11 @@ class AboutUsScreen extends StatelessWidget {
                   Image.asset(
                     'assets/images/logo.png',
                     height: 100,
+                    // Apply theme-aware color filter for dark mode visibility
+                    color:
+                        Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : null,
                     errorBuilder:
                         (context, error, stackTrace) => Icon(
                           Icons.shopping_bag,
@@ -32,7 +37,7 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Be Smart Mall',
+                    'Be Smart',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -56,7 +61,7 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Be Smart Mall is your one-stop destination for all your shopping needs. '
+                    'Be Smart is your one-stop destination for all your shopping needs. '
                     'We started with a simple mission: to make quality products accessible '
                     'to everyone, everywhere. Our journey began in 2023, and since then, '
                     'we\'ve been committed to providing the best shopping experience to our customers.',

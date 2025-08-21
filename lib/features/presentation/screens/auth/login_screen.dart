@@ -11,7 +11,11 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AuthController controller = Get.put(AuthController());
+    // Use Get.put with permanent: true to ensure the controller persists across auth screens
+    final AuthController controller = Get.put(
+      AuthController(),
+      permanent: true,
+    );
 
     return Scaffold(
       body: SafeArea(

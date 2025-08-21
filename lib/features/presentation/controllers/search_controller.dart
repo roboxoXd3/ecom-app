@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 import '../../../core/services/analytics_service.dart';
 import '../../data/models/product_model.dart';
+import '../../data/services/product_search_service.dart';
 
 enum SortOption { newest, priceHighToLow, priceLowToHigh, popularity }
 
@@ -24,6 +26,7 @@ class ProductFilter {
 class SearchController extends GetxController {
   final supabase = Supabase.instance.client;
   final AnalyticsService _analytics = Get.find<AnalyticsService>();
+  final ProductSearchService _searchService = ProductSearchService();
 
   final RxList<Product> searchResults = <Product>[].obs;
   final RxList<String> recentSearches = <String>[].obs;
@@ -38,6 +41,11 @@ class SearchController extends GetxController {
         minRating: null,
       ).obs;
   final RxList<Product> originalResults = <Product>[].obs;
+  
+  // Image search related variables
+  final RxBool isImageSearching = false.obs;
+  final Rx<File?> selectedImage = Rx<File?>(null);
+  final RxString imageSearchQuery = ''.obs;
 
   @override
   void onInit() {
@@ -50,17 +58,19 @@ class SearchController extends GetxController {
 
     try {
       isLoading.value = true;
-      final response = await supabase
-          .from('products')
-          .select('*, vendors(*)')
-          .ilike('name', '%$query%')
-          .eq('approval_status', 'approved')
-          .order('created_at', ascending: false);
 
-      originalResults.value =
-          (response as List<dynamic>)
-              .map((json) => Product.fromJson(json))
-              .toList();
+      // Use hybrid search for better results combining keyword and semantic search
+      originalResults.value = await _searchService.hybridSearch(
+        query: query,
+        limit: 50,
+        filters: {
+          'min_price': currentFilter.value.priceRange.start,
+          'max_price': currentFilter.value.priceRange.end,
+          'categories': currentFilter.value.categories,
+          'vendors': currentFilter.value.vendors,
+          'min_rating': currentFilter.value.minRating,
+        },
+      );
 
       _filterResults(); // This will update searchResults
 
@@ -97,6 +107,68 @@ class SearchController extends GetxController {
     }
   }
 
+  /// Search products using image
+  Future<void> searchProductsByImage(File imageFile) async {
+    try {
+      isImageSearching.value = true;
+      isLoading.value = true;
+      selectedImage.value = imageFile;
+
+      print('🖼️ Starting image-based product search...');
+
+      // Use the existing searchByImage method from ProductSearchService
+      originalResults.value = await _searchService.searchByImage(
+        imageFile: imageFile,
+        limit: 50,
+      );
+
+      _filterResults(); // This will update searchResults
+
+      // Track image search analytics
+      try {
+        await _analytics.trackSearch(
+          query: 'Image Search',
+          resultCount: searchResults.length,
+          userId: supabase.auth.currentUser?.id ?? 'anonymous',
+          filters: {
+            'search_type': 'image',
+            'image_size_mb': _getFileSizeInMB(imageFile),
+          },
+        );
+        print('✅ Image search analytics tracked successfully');
+      } catch (e) {
+        print('❌ Error tracking image search analytics: $e');
+      }
+
+      // Add to recent searches with a special indicator
+      addToRecentSearches('🖼️ Image Search');
+    } catch (e) {
+      print('❌ Error in image search: $e');
+      Get.snackbar(
+        'Search Error',
+        'Failed to search products by image. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+    } finally {
+      isImageSearching.value = false;
+      isLoading.value = false;
+    }
+  }
+
+  /// Helper method to get file size in MB
+  double _getFileSizeInMB(File file) {
+    final bytes = file.lengthSync();
+    return bytes / (1024 * 1024);
+  }
+
+  /// Clear image search state
+  void clearImageSearch() {
+    selectedImage.value = null;
+    imageSearchQuery.value = '';
+  }
+
   Future<void> getSuggestions(String query) async {
     if (query.isEmpty) {
       suggestions.clear();
@@ -104,16 +176,10 @@ class SearchController extends GetxController {
     }
 
     try {
-      final response = await supabase
-          .from('products')
-          .select('name')
-          .ilike('name', '%$query%')
-          .limit(5);
-
-      suggestions.value =
-          (response as List<dynamic>)
-              .map((json) => json['name'] as String)
-              .toList();
+      final searchSuggestions = await _searchService.getSearchSuggestions(
+        query,
+      );
+      suggestions.value = searchSuggestions;
     } catch (e) {
       print('Error getting suggestions: $e');
       suggestions.clear();

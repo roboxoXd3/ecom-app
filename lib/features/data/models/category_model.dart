@@ -19,12 +19,18 @@ class Category {
 
   factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      imageUrl: json['image_url'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString(),
+      imageUrl: json['image_url']?.toString(),
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'].toString())
+              : DateTime.now(),
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'].toString())
+              : DateTime.now(),
       isActive: json['is_active'] ?? true,
     );
   }

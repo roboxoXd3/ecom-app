@@ -127,7 +127,9 @@ class CartTab extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(12),
                                         child: CachedNetworkImage(
                                           imageUrl:
-                                              item.product.imageList.first,
+                                              item.product.imageList.isNotEmpty
+                                                  ? item.product.imageList.first
+                                                  : '',
                                           fit: BoxFit.cover,
                                           placeholder:
                                               (context, url) => Container(

@@ -7,6 +7,7 @@ import '../../data/models/product_model.dart';
 import '../../data/models/product_filter.dart';
 import '../../data/models/sort_option.dart';
 import '../../data/repositories/wishlist_repository.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class ProductController extends GetxController {
   final ProductRepository _repository = ProductRepository();
@@ -240,18 +241,16 @@ class ProductController extends GetxController {
         await _wishlistRepository.removeFromWishlist(product.id);
         wishlistProductIds.remove(product.id);
         wishlist.remove(product);
+        SnackbarUtils.showSuccess('Removed from wishlist');
       } else {
         await _wishlistRepository.addToWishlist(product.id);
         wishlistProductIds.add(product.id);
         wishlist.add(product);
+        SnackbarUtils.showSuccess('Added to wishlist');
       }
     } catch (e) {
       print('Error toggling wishlist: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update wishlist. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      SnackbarUtils.showError('Failed to update wishlist. Please try again.');
     }
   }
 

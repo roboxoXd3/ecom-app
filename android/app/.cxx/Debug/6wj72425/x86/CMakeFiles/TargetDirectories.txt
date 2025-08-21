@@ -1,2 +1,2 @@
-/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/Debug/6wj72425/x86/CMakeFiles/edit_cache.dir
-/Users/rian/Downloads/portfolio/ecom_app/android/app/.cxx/Debug/6wj72425/x86/CMakeFiles/rebuild_cache.dir
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/.cxx/Debug/6wj72425/x86/CMakeFiles/edit_cache.dir
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/.cxx/Debug/6wj72425/x86/CMakeFiles/rebuild_cache.dir

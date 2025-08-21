@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../data/models/address_model.dart';
@@ -47,7 +48,8 @@ class AddressController extends GetxController {
       isLoading.value = true;
       final address = Address(
         id: '',
-        userId: '',
+        userId:
+            '', // This will be ignored by repository, which uses authenticated user ID
         name: name,
         phone: phone,
         addressLine1: addressLine1,
@@ -67,13 +69,27 @@ class AddressController extends GetxController {
         'Success',
         'Address added successfully',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
       );
     } catch (e) {
       print('Error adding address: $e');
+
+      String errorMessage = 'Failed to add address';
+      if (e.toString().contains('not authenticated')) {
+        errorMessage = 'Please log in to save your address';
+        // Optionally redirect to login screen
+        // Get.toNamed('/login');
+      } else if (e.toString().contains('network')) {
+        errorMessage = 'Network error. Please check your connection';
+      }
+
       Get.snackbar(
         'Error',
-        'Failed to add address: ${e.toString()}',
+        errorMessage,
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     } finally {
       isLoading.value = false;

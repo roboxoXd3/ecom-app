@@ -2,62 +2,43 @@ PODS:
   - app_links (0.0.2):
     - Flutter
   - Flutter (1.0.0)
-  - flutter_native_splash (2.4.3):
+  - image_picker_ios (0.0.1):
     - Flutter
-  - fluttertoast (0.0.2):
-    - Flutter
-    - Toast
   - package_info_plus (0.4.5):
     - Flutter
   - path_provider_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - razorpay-pod (1.3.14)
-  - razorpay_flutter (1.1.10):
-    - Flutter
-    - razorpay-pod
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
   - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
-  - Toast (4.1.1)
   - url_launcher_ios (0.0.1):
     - Flutter
 
 DEPENDENCIES:
   - app_links (from `.symlinks/plugins/app_links/ios`)
   - Flutter (from `Flutter`)
-  - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
-  - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
+  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
-  - razorpay_flutter (from `.symlinks/plugins/razorpay_flutter/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
-
-SPEC REPOS:
-  trunk:
-    - razorpay-pod
-    - Toast
 
 EXTERNAL SOURCES:
   app_links:
     :path: ".symlinks/plugins/app_links/ios"
   Flutter:
     :path: Flutter
-  flutter_native_splash:
-    :path: ".symlinks/plugins/flutter_native_splash/ios"
-  fluttertoast:
-    :path: ".symlinks/plugins/fluttertoast/ios"
+  image_picker_ios:
+    :path: ".symlinks/plugins/image_picker_ios/ios"
   package_info_plus:
     :path: ".symlinks/plugins/package_info_plus/ios"
   path_provider_foundation:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
-  razorpay_flutter:
-    :path: ".symlinks/plugins/razorpay_flutter/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sqflite_darwin:
@@ -68,15 +49,11 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   app_links: e7a6750a915a9e161c58d91bc610e8cd1d4d0ad0
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_native_splash: f71420956eb811e6d310720fee915f1d42852e7a
-  fluttertoast: e9a18c7be5413da53898f660530c56f35edfba9c
+  image_picker_ios: c560581cceedb403a6ff17f2f816d7fea1421fc1
   package_info_plus: c0502532a26c7662a62a356cebe2692ec5fe4ec4
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
-  razorpay-pod: ffee2198928e2a5ed2556863af4db6b79722cea3
-  razorpay_flutter: 84b3bfd206ae9c9c2a9ba585524a1b3d8102b6c1
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
-  Toast: 1f5ea13423a1e6674c4abdac5be53587ae481c4e
   url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
 
 PODFILE CHECKSUM: b8cc6807cb7b704b2e688e41975e546946163943

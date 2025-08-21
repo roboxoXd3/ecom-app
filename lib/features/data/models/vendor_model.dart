@@ -33,20 +33,29 @@ class Vendor {
 
   factory Vendor.fromJson(Map<String, dynamic> json) {
     return Vendor(
-      id: json['id'] as String,
-      userId: json['user_id'] as String?,
-      businessName: json['business_name'] as String,
-      businessDescription: json['business_description'] as String?,
-      businessLogo: json['business_logo'] as String?,
-      businessEmail: json['business_email'] as String,
-      businessPhone: json['business_phone'] as String?,
-      businessAddress: json['business_address'] as String?,
-      status: VendorStatus.fromString(json['status'] as String),
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString(),
+      businessName: json['business_name']?.toString() ?? '',
+      businessDescription: json['business_description']?.toString(),
+      businessLogo: json['business_logo']?.toString(),
+      businessEmail: json['business_email']?.toString() ?? '',
+      businessPhone: json['business_phone']?.toString(),
+      businessAddress: json['business_address']?.toString(),
+      status:
+          json['status'] != null
+              ? VendorStatus.fromString(json['status'].toString())
+              : VendorStatus.pending,
       isFeatured: json['is_featured'] as bool? ?? false,
       averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
       totalReviews: json['total_reviews'] as int? ?? 0,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt:
+          json['created_at'] != null
+              ? DateTime.parse(json['created_at'].toString())
+              : DateTime.now(),
+      updatedAt:
+          json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'].toString())
+              : DateTime.now(),
     );
   }
 

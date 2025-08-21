@@ -55,6 +55,7 @@ class CartController extends GetxController {
 
       items.value =
           (response as List<dynamic>)
+              .where((item) => item['products'] != null)
               .map((item) => CartItem.fromJson(item))
               .toList();
     } catch (e) {

@@ -57,8 +57,22 @@ class AnalyticsService extends GetxService {
     bool ascending = false,
   }) async {
     try {
+      // Fix end date to include the entire day
+      DateTime? adjustedEndDate;
+      if (endDate != null) {
+        adjustedEndDate = DateTime(
+          endDate.year,
+          endDate.month,
+          endDate.day,
+          23,
+          59,
+          59,
+          999,
+        );
+      }
+
       print(
-        '📊 Fetching analytics with filters: startDate=$startDate, endDate=$endDate, sortBy=$sortBy',
+        '📊 Fetching analytics with filters: startDate=$startDate, endDate=$endDate (adjusted: $adjustedEndDate), sortBy=$sortBy',
       );
 
       // Get all searches with timestamps for detailed analysis
@@ -68,10 +82,14 @@ class AnalyticsService extends GetxService {
 
       // Apply date filtering if provided
       if (startDate != null) {
-        query = query.filter('timestamp', 'gte', startDate.toIso8601String());
+        final startDateStr = startDate.toIso8601String();
+        print('📊 Applying start date filter: $startDateStr');
+        query = query.filter('timestamp', 'gte', startDateStr);
       }
-      if (endDate != null) {
-        query = query.filter('timestamp', 'lte', endDate.toIso8601String());
+      if (adjustedEndDate != null) {
+        final endDateStr = adjustedEndDate.toIso8601String();
+        print('📊 Applying end date filter: $endDateStr');
+        query = query.filter('timestamp', 'lte', endDateStr);
       }
 
       final allSearchesResponse = await query.order(
@@ -80,6 +98,19 @@ class AnalyticsService extends GetxService {
       );
 
       print('📊 Found ${allSearchesResponse.length} searches');
+
+      // Debug: Print first few timestamps to help diagnose date issues
+      if (allSearchesResponse.isNotEmpty &&
+          (startDate != null || endDate != null)) {
+        print('📊 Sample timestamps in results:');
+        for (
+          int i = 0;
+          i < (allSearchesResponse.length > 3 ? 3 : allSearchesResponse.length);
+          i++
+        ) {
+          print('📊   ${allSearchesResponse[i]['timestamp']}');
+        }
+      }
 
       // Get total count (same filters)
       var countQuery = supabase.from('search_analytics').select('id');
@@ -90,18 +121,18 @@ class AnalyticsService extends GetxService {
           startDate.toIso8601String(),
         );
       }
-      if (endDate != null) {
+      if (adjustedEndDate != null) {
         countQuery = countQuery.filter(
           'timestamp',
           'lte',
-          endDate.toIso8601String(),
+          adjustedEndDate.toIso8601String(),
         );
       }
 
       final totalCountResponse = await countQuery.count(CountOption.exact);
       final totalCount = totalCountResponse.count;
 
-      print('📊 Found ${allSearchesResponse.length} searches');
+      print('📊 Total count: $totalCount');
 
       // Calculate average results
       double avgResults = 0;
@@ -186,6 +217,30 @@ class AnalyticsService extends GetxService {
     } catch (e) {
       print('Error fetching search trends: $e');
       return [];
+    }
+  }
+
+  /// Get the date range of available search analytics data
+  Future<Map<String, DateTime?>> getAvailableDateRange() async {
+    try {
+      final response = await supabase
+          .from('search_analytics')
+          .select('timestamp')
+          .order('timestamp', ascending: true);
+
+      if (response.isEmpty) {
+        return {'earliest': null, 'latest': null};
+      }
+
+      final earliest = DateTime.parse(response.first['timestamp']);
+      final latest = DateTime.parse(response.last['timestamp']);
+
+      print('📊 Available data range: $earliest to $latest');
+
+      return {'earliest': earliest, 'latest': latest};
+    } catch (e) {
+      print('Error getting date range: $e');
+      return {'earliest': null, 'latest': null};
     }
   }
 }

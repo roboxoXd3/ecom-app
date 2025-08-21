@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../data/models/product_model.dart';
-import '../../product/product_details_screen.dart';
+
 import '../../../../../core/theme/app_theme.dart';
 import '../../vendor/vendor_profile_screen.dart';
 
@@ -34,7 +34,7 @@ class ProductCard extends StatelessWidget {
           child: InkWell(
             onTap: () {
               HapticFeedback.lightImpact();
-              Get.to(() => ProductDetailsScreen(product: product));
+              Get.toNamed('/product-details', arguments: product.id);
             },
             borderRadius: BorderRadius.circular(20),
             child: Column(
@@ -57,7 +57,12 @@ class ProductCard extends StatelessWidget {
                             top: Radius.circular(20),
                           ),
                           child: CachedNetworkImage(
-                            imageUrl: product.imageList.first,
+                            imageUrl:
+                                product.primaryImage.isNotEmpty
+                                    ? product.primaryImage
+                                    : (product.imageList.isNotEmpty
+                                        ? product.imageList.first
+                                        : ''),
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
@@ -222,7 +227,7 @@ class ProductCard extends StatelessWidget {
                                 }
                               },
                               child: Text(
-                                product.vendor?.businessName ?? 'Be Smart Mall',
+                                product.vendor?.businessName ?? 'Be Smart',
                                 style: TextStyle(
                                   fontSize: 10,
                                   color: AppTheme.primaryColor,

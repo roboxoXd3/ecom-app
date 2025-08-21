@@ -1,0 +1,1 @@
+/Users/rian/Downloads/portfolio/be-smart/ecom_app/android/app/build/intermediates/cxx/RelWithDebInfo/386v3q1h/obj/armeabi-v7a

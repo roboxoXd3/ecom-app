@@ -580,7 +580,9 @@ class HomeTab extends StatelessWidget {
                       imageUrl:
                           product.primaryImage.isNotEmpty
                               ? product.primaryImage
-                              : product.imageList.first,
+                              : (product.imageList.isNotEmpty
+                                  ? product.imageList.first
+                                  : ''),
                       fit: BoxFit.cover,
                       placeholder:
                           (context, url) => Container(

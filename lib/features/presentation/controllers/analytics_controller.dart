@@ -15,10 +15,25 @@ class AnalyticsController extends GetxController {
   final RxString sortBy = 'timestamp'.obs;
   final RxBool ascending = false.obs;
 
+  // Available date range for data
+  final Rx<DateTime?> earliestDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> latestDate = Rx<DateTime?>(null);
+
   @override
   void onInit() {
     super.onInit();
     loadAnalytics();
+    _loadAvailableDateRange();
+  }
+
+  Future<void> _loadAvailableDateRange() async {
+    try {
+      final dateRange = await _analyticsService.getAvailableDateRange();
+      earliestDate.value = dateRange['earliest'];
+      latestDate.value = dateRange['latest'];
+    } catch (e) {
+      print('Error loading date range: $e');
+    }
   }
 
   Future<void> loadAnalytics() async {
@@ -39,6 +54,7 @@ class AnalyticsController extends GetxController {
   }
 
   Future<void> refreshAnalytics() async {
+    await _loadAvailableDateRange();
     await loadAnalytics();
   }
 

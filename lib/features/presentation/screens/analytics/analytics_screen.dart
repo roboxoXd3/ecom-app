@@ -31,6 +31,76 @@ class AnalyticsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Check if filters are applied but no data found
+          final hasFilters =
+              controller.startDate.value != null ||
+              controller.endDate.value != null ||
+              controller.sortBy.value != 'timestamp';
+          final totalSearches =
+              controller.analyticsData.value['total_searches'] ?? 0;
+
+          if (hasFilters && totalSearches == 0) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildFiltersCard(),
+                  const SizedBox(height: 32),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Data Found',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No search analytics found for the selected date range.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey[500]),
+                          ),
+                          const SizedBox(height: 16),
+                          Obx(() {
+                            final earliest = controller.earliestDate.value;
+                            final latest = controller.latestDate.value;
+                            if (earliest != null && latest != null) {
+                              return Text(
+                                'Available data: ${_formatDate(earliest)} - ${_formatDate(latest)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          }),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => controller.clearFilters(),
+                            child: const Text('Clear Filters'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
           return SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
@@ -493,17 +563,57 @@ class AnalyticsScreen extends StatelessWidget {
   }
 
   Future<void> _selectDateRange() async {
+    // Get available date range
+    final earliestDate = controller.earliestDate.value;
+    final latestDate = controller.latestDate.value;
+
+    // Show info about available data if no data exists
+    if (earliestDate == null || latestDate == null) {
+      Get.snackbar(
+        'No Data Available',
+        'No search analytics data found. Try searching for some products first.',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: Get.context!,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      firstDate: earliestDate,
+      lastDate: latestDate,
       initialDateRange:
           controller.startDate.value != null && controller.endDate.value != null
               ? DateTimeRange(
                 start: controller.startDate.value!,
                 end: controller.endDate.value!,
               )
-              : null,
+              : DateTimeRange(start: earliestDate, end: latestDate),
+      helpText: 'Select Date Range for Analytics',
+      confirmText: 'Apply Filter',
+      cancelText: 'Cancel',
+      fieldStartHintText: 'Start Date',
+      fieldEndHintText: 'End Date',
+      errorFormatText: 'Invalid date format',
+      errorInvalidText: 'Date out of range',
+      errorInvalidRangeText: 'Invalid date range',
+      builder: (context, child) {
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Available data: ${_formatDate(earliestDate)} - ${_formatDate(latestDate)}',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Expanded(child: child!),
+          ],
+        );
+      },
     );
 
     if (picked != null) {

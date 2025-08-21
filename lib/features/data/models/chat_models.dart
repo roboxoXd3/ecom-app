@@ -1,3 +1,5 @@
+import 'product_model.dart';
+
 class ChatConversation {
   final String id;
   final String userId;
@@ -115,6 +117,83 @@ class ChatMessage {
       return List<String>.from(metadata!['product_ids']);
     }
     return [];
+  }
+}
+
+// UI Model for Chatbot Screen (simplified for display purposes)
+class ChatbotMessage {
+  final String id;
+  final String text;
+  final bool isUser;
+  final DateTime createdAt;
+  final List<Product>? products;
+  final bool isTyping;
+
+  // NEW: Image support
+  final String? imagePath; // Local image path
+  final String? imageUrl; // Remote image URL
+  final bool hasImage; // Quick check for image presence
+
+  ChatbotMessage({
+    required this.id,
+    required this.text,
+    required this.isUser,
+    required this.createdAt,
+    this.products,
+    this.isTyping = false,
+
+    // NEW: Image parameters
+    this.imagePath,
+    this.imageUrl,
+    this.hasImage = false,
+  });
+
+  // Factory for image messages
+  factory ChatbotMessage.withImage({
+    required String id,
+    required String text,
+    required bool isUser,
+    required DateTime createdAt,
+    String? imagePath,
+    String? imageUrl,
+  }) {
+    return ChatbotMessage(
+      id: id,
+      text: text,
+      isUser: isUser,
+      createdAt: createdAt,
+      imagePath: imagePath,
+      imageUrl: imageUrl,
+      hasImage: imagePath != null || imageUrl != null,
+    );
+  }
+
+  // Factory for product results
+  factory ChatbotMessage.withProducts({
+    required String id,
+    required String text,
+    required bool isUser,
+    required DateTime createdAt,
+    required List<Product> products,
+  }) {
+    return ChatbotMessage(
+      id: id,
+      text: text,
+      isUser: isUser,
+      createdAt: createdAt,
+      products: products,
+    );
+  }
+
+  // Factory for typing indicator
+  factory ChatbotMessage.typing({required String id}) {
+    return ChatbotMessage(
+      id: id,
+      text: '',
+      isUser: false,
+      createdAt: DateTime.now(),
+      isTyping: true,
+    );
   }
 }
 

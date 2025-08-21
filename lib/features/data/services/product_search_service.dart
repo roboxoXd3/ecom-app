@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_model.dart';
+import 'image_search_service.dart';
 
 class ProductSearchService {
   final SupabaseClient _supabase = Supabase.instance.client;
+  final ImageSearchService _imageSearchService = ImageSearchService(); // NEW
 
   /// Basic text search using PostgreSQL full-text search
   Future<List<Product>> searchProducts({
@@ -54,60 +57,162 @@ class ProductSearchService {
     }
   }
 
-  /// Semantic search - finds similar products based on meaning
+  /// Natural language semantic search using vector embeddings
   Future<List<Product>> semanticSearch({
     required String query,
     int limit = 10,
+    double threshold = 0.1, // Very low threshold for testing
   }) async {
     try {
-      print('🧠 Semantic search for: "$query"');
+      print('🧠 Starting semantic search for: "$query"');
 
-      // Get enhanced query with synonyms and stemming
-      final expandedQuery = _expandSearchQuery(query);
-      final queryWords =
-          expandedQuery
-              .split(' ')
-              .where((word) => word.trim().isNotEmpty)
-              .toList();
+      // Generate embedding for the search query
+      final embeddingResponse = await _supabase.functions.invoke(
+        'generate-query-embedding',
+        body: {'query': query},
+      );
 
-      // Build a more flexible OR query
-      final searchConditions = <String>[];
+      // Check if there's an error in the response
+      if (embeddingResponse.data == null) {
+        print('❌ Error generating query embedding: No data returned');
+        print('🔄 Falling back to enhanced keyword search...');
+        return enhancedKeywordSearch(
+          query: query,
+          limit: limit,
+          threshold: threshold,
+        );
+      }
 
-      // Add conditions for each word in the expanded query
-      for (final word in queryWords) {
-        if (word.length > 2) {
-          // Skip very short words
-          searchConditions.add('name.ilike.%$word%');
-          searchConditions.add('description.ilike.%$word%');
-          searchConditions.add('brand.ilike.%$word%');
+      final queryEmbedding = embeddingResponse.data['embedding'];
+      if (queryEmbedding == null) {
+        print('❌ No embedding received from function');
+        print('🔄 Falling back to enhanced keyword search...');
+        return enhancedKeywordSearch(
+          query: query,
+          limit: limit,
+          threshold: threshold,
+        );
+      }
+
+      print('🧠 Query embedding generated, performing vector search...');
+
+      // Perform vector similarity search using RPC
+      final response = await _supabase.rpc(
+        'match_products',
+        params: {
+          'query_embedding': queryEmbedding,
+          'match_threshold': threshold,
+          'match_count': limit,
+        },
+      );
+
+      if (response == null) {
+        print('❌ No response from vector search');
+        return [];
+      }
+
+      print('🧠 Vector search found: ${response.length} products');
+
+      // Convert response to Product objects
+      final products = <Product>[];
+      for (final productData in response) {
+        try {
+          // The RPC function returns flattened data, we need to restructure for vendors
+          final productMap = Map<String, dynamic>.from(productData);
+
+          // Add missing fields that might be expected by Product.fromJson
+          productMap['approval_status'] = 'approved';
+          productMap['is_on_sale'] = productMap['is_on_sale'] ?? false;
+          productMap['is_featured'] = productMap['is_featured'] ?? false;
+          productMap['is_new_arrival'] = productMap['is_new_arrival'] ?? false;
+          productMap['created_at'] =
+              productMap['created_at'] ?? DateTime.now().toIso8601String();
+          productMap['updated_at'] =
+              productMap['updated_at'] ?? DateTime.now().toIso8601String();
+          productMap['added_date'] =
+              productMap['added_date'] ?? DateTime.now().toIso8601String();
+
+          final product = Product.fromJson(productMap);
+          products.add(product);
+        } catch (e) {
+          print('❌ Error parsing product: $e');
+          print('Product data: $productData');
         }
       }
 
-      if (searchConditions.isEmpty) {
-        print('🧠 No valid search conditions, falling back to trending');
-        return getTrendingProducts(limit: limit);
-      }
-
-      final orCondition = searchConditions.join(',');
-      print('🧠 Search conditions: $orCondition');
-
-      final response = await _supabase
-          .from('products')
-          .select('*, vendors(*)')
-          .or(orCondition)
-          .eq('in_stock', true)
-          .eq('approval_status', 'approved')
-          .order('rating', ascending: false)
-          .limit(limit);
-
-      print('🧠 Semantic search found: ${response.length} products');
-
-      return (response as List)
-          .map((product) => Product.fromJson(product))
-          .toList();
+      return products;
     } catch (e) {
       print('❌ Error in semantic search: $e');
-      return [];
+      // Fallback to enhanced keyword search
+      return enhancedKeywordSearch(
+        query: query,
+        limit: limit,
+        threshold: threshold,
+      );
+    }
+  }
+
+  /// Hybrid search combining keyword and semantic search for best results
+  Future<List<Product>> hybridSearch({
+    required String query,
+    int limit = 20,
+    Map<String, dynamic>? filters,
+  }) async {
+    try {
+      print('🔄 Starting hybrid search for: "$query"');
+
+      // Run both searches in parallel
+      final futures = await Future.wait([
+        semanticSearch(query: query, limit: limit ~/ 2, threshold: 0.1),
+        searchProducts(query: query, limit: limit ~/ 2, filters: filters),
+      ]);
+
+      final semanticResults = futures[0];
+      final keywordResults = futures[1];
+
+      print('🔄 Semantic results: ${semanticResults.length}');
+      print('🔄 Keyword results: ${keywordResults.length}');
+
+      // Score and rank products for image search
+      final productScores = <String, double>{};
+      final allProducts = <String, Product>{};
+
+      // Score semantic results higher (they're more relevant for image descriptions)
+      for (int i = 0; i < semanticResults.length; i++) {
+        final product = semanticResults[i];
+        allProducts[product.id] = product;
+        productScores[product.id] =
+            (productScores[product.id] ?? 0) +
+            (10.0 - i); // Higher score for earlier results
+      }
+
+      // Score keyword results lower
+      for (int i = 0; i < keywordResults.length; i++) {
+        final product = keywordResults[i];
+        allProducts[product.id] = product;
+        productScores[product.id] =
+            (productScores[product.id] ?? 0) + (5.0 - i * 0.5); // Lower scoring
+      }
+
+      // Sort by score and return top results
+      final sortedProducts =
+          allProducts.values.toList()..sort(
+            (a, b) =>
+                (productScores[b.id] ?? 0).compareTo(productScores[a.id] ?? 0),
+          );
+
+      print('🔄 Hybrid search found ${sortedProducts.length} unique products');
+      for (final product in sortedProducts.take(3)) {
+        print(
+          '🔄 Top result: ${product.name} (score: ${productScores[product.id]?.toStringAsFixed(1)})',
+        );
+      }
+
+      return sortedProducts.take(limit).toList();
+    } catch (e) {
+      print('❌ Error in hybrid search: $e');
+      // Fallback to keyword search only
+      return searchProducts(query: query, limit: limit, filters: filters);
     }
   }
 
@@ -488,6 +593,413 @@ class ProductSearchService {
           .toList();
     } catch (e) {
       print('❌ Error getting all products: $e');
+      return [];
+    }
+  }
+
+  /// NEW: Search products using image
+  Future<List<Product>> searchByImage({
+    required File imageFile,
+    int limit = 10,
+  }) async {
+    try {
+      print('🖼️ Starting image-based product search...');
+
+      // Validate image
+      if (!_imageSearchService.isValidImageFile(imageFile)) {
+        throw Exception('Invalid image file format');
+      }
+
+      // Check file size (max 20MB for OpenAI)
+      if (_imageSearchService.getFileSizeInMB(imageFile) > 20) {
+        throw Exception('Image file too large (max 20MB)');
+      }
+
+      // Analyze image with OpenAI Vision
+      final productDescription = await _imageSearchService
+          .analyzeImageForProductSearch(imageFile);
+
+      // Use enhanced search with better relevance scoring for image search
+      print('🔍 Searching products with description: "$productDescription"');
+
+      // Try semantic search first with stricter threshold
+      final semanticProducts = await semanticSearch(
+        query: productDescription,
+        limit: limit,
+        threshold: 0.05, // Slightly higher threshold for better relevance
+      );
+
+      if (semanticProducts.isNotEmpty) {
+        print('✅ Semantic search found ${semanticProducts.length} products');
+
+        // Score products based on name relevance to image description
+        final scoredProducts = _scoreProductsByRelevance(
+          semanticProducts,
+          productDescription,
+        );
+        return scoredProducts.take(limit).toList();
+      } else {
+        // Fallback to keyword search with enhanced scoring
+        print('🔄 Fallback: Using enhanced keyword search...');
+        final keywordProducts = await enhancedKeywordSearch(
+          query: productDescription,
+          limit: limit,
+        );
+
+        if (keywordProducts.isNotEmpty) {
+          final scoredProducts = _scoreProductsByRelevance(
+            keywordProducts,
+            productDescription,
+          );
+          return scoredProducts.take(limit).toList();
+        }
+      }
+
+      // No products found, return empty list
+      print('❌ No products found matching the image');
+      return [];
+    } catch (e) {
+      print('❌ Error in image search: $e');
+      throw Exception('Image search failed: $e');
+    }
+  }
+
+  /// Score products by relevance to image description
+  List<Product> _scoreProductsByRelevance(
+    List<Product> products,
+    String description,
+  ) {
+    final descriptionLower = description.toLowerCase();
+
+    print('🔍 Analyzing description: "$descriptionLower"');
+
+    // Score each product
+    final scoredProducts =
+        products.map((product) {
+          double score = 0.0;
+          final productName = product.name.toLowerCase();
+          final productDesc = product.description.toLowerCase();
+
+          print('🔍 Scoring product: "${product.name}"');
+
+          // FOOTWEAR DETECTION (for running shoes search)
+          if (descriptionLower.contains('shoes') ||
+              descriptionLower.contains('sneakers') ||
+              descriptionLower.contains('running shoes') ||
+              descriptionLower.contains('athletic') ||
+              descriptionLower.contains('footwear')) {
+            if (productName.contains('shoe') ||
+                productName.contains('sneaker') ||
+                productName.contains('running')) {
+              score += 100.0; // Very high bonus for footwear match
+              print('   ✅ Footwear match bonus: +100');
+            }
+          }
+
+          // SMARTWATCH DETECTION (for watch searches)
+          if (descriptionLower.contains('smartwatch') ||
+              descriptionLower.contains('smart watch') ||
+              descriptionLower.contains('watch') ||
+              descriptionLower.contains('wearable')) {
+            if (productName.contains('smart') &&
+                productName.contains('watch')) {
+              score += 100.0; // Very high bonus for smartwatch match
+              print('   ✅ Smartwatch match bonus: +100');
+            } else if (productName.contains('watch')) {
+              score += 50.0; // High bonus for watch match
+              print('   ✅ Watch match bonus: +50');
+            }
+          }
+
+          // CLOTHING DETECTION
+          if (descriptionLower.contains('shirt') ||
+              descriptionLower.contains('t-shirt') ||
+              descriptionLower.contains('top') ||
+              descriptionLower.contains('clothing')) {
+            if (productName.contains('shirt') ||
+                productName.contains('t-shirt')) {
+              score += 100.0;
+              print('   ✅ Clothing match bonus: +100');
+            }
+          }
+
+          // YOGA/FITNESS CLOTHING
+          if (descriptionLower.contains('yoga') ||
+              descriptionLower.contains('pants') ||
+              descriptionLower.contains('leggings') ||
+              descriptionLower.contains('workout')) {
+            if (productName.contains('yoga') || productName.contains('pants')) {
+              score += 100.0;
+              print('   ✅ Yoga/Pants match bonus: +100');
+            }
+          }
+
+          // ACCESSORIES DETECTION
+          if (descriptionLower.contains('sunglasses') ||
+              descriptionLower.contains('glasses') ||
+              descriptionLower.contains('eyewear')) {
+            if (productName.contains('sunglasses') ||
+                productName.contains('glasses')) {
+              score += 100.0;
+              print('   ✅ Sunglasses match bonus: +100');
+            }
+          }
+
+          // WALLET/LEATHER GOODS
+          if (descriptionLower.contains('wallet') ||
+              descriptionLower.contains('leather')) {
+            if (productName.contains('wallet') ||
+                productName.contains('leather')) {
+              score += 100.0;
+              print('   ✅ Wallet/Leather match bonus: +100');
+            }
+          }
+
+          // ELECTRONICS/EARBUDS
+          if (descriptionLower.contains('earbuds') ||
+              descriptionLower.contains('headphones') ||
+              descriptionLower.contains('wireless') ||
+              descriptionLower.contains('bluetooth')) {
+            if (productName.contains('earbuds') ||
+                productName.contains('headphones') ||
+                productName.contains('wireless')) {
+              score += 100.0;
+              print('   ✅ Electronics match bonus: +100');
+            }
+          }
+
+          // COLOR MATCHING BONUS (smaller bonus)
+          final colors = [
+            'black',
+            'white',
+            'gray',
+            'grey',
+            'pink',
+            'blue',
+            'red',
+            'green',
+            'silver',
+            'gold',
+          ];
+          for (final color in colors) {
+            if (descriptionLower.contains(color) &&
+                (productName.contains(color) || productDesc.contains(color))) {
+              score += 10.0;
+              print('   ✅ Color match bonus ($color): +10');
+            }
+          }
+
+          // PENALTY for completely unrelated items
+          bool isFootwearSearch =
+              descriptionLower.contains('shoe') ||
+              descriptionLower.contains('sneaker') ||
+              descriptionLower.contains('running shoes');
+          bool isWatchSearch =
+              descriptionLower.contains('watch') ||
+              descriptionLower.contains('smartwatch');
+
+          if (isFootwearSearch &&
+              !productName.contains('shoe') &&
+              !productName.contains('sneaker')) {
+            score -= 50.0; // Penalty for non-footwear when searching shoes
+            print('   ❌ Non-footwear penalty: -50');
+          }
+
+          if (isWatchSearch &&
+              !productName.contains('watch') &&
+              !productName.contains('smart')) {
+            score -= 50.0; // Penalty for non-watch when searching watches
+            print('   ❌ Non-watch penalty: -50');
+          }
+
+          print('   📊 Final score: ${score.toStringAsFixed(1)}');
+          return MapEntry(product, score);
+        }).toList();
+
+    // Sort by score (highest first)
+    scoredProducts.sort((a, b) => b.value.compareTo(a.value));
+
+    // Filter out products with negative or very low scores
+    final filteredProducts =
+        scoredProducts.where((entry) => entry.value > 0.0).toList();
+
+    // Log top results
+    print('🎯 Product relevance scores:');
+    for (final entry in scoredProducts.take(3)) {
+      print('   ${entry.key.name}: ${entry.value.toStringAsFixed(1)}');
+    }
+
+    print('🎯 Filtered results (score > 0):');
+    for (final entry in filteredProducts.take(3)) {
+      print('   ${entry.key.name}: ${entry.value.toStringAsFixed(1)} ✅');
+    }
+
+    // Return only products with positive scores
+    final result = filteredProducts.map((entry) => entry.key).toList();
+    print(
+      '🎯 Final result count: ${result.length} products (filtered from ${scoredProducts.length})',
+    );
+
+    return result;
+  }
+
+  /// Enhanced keyword search with semantic-like matching
+  Future<List<Product>> enhancedKeywordSearch({
+    required String query,
+    int limit = 10,
+    double threshold = 0.3,
+  }) async {
+    try {
+      print('🔍 Starting enhanced keyword search for: "$query"');
+
+      // Enhanced query expansion
+      final expandedQuery = _expandSearchQuery(query);
+      final queryWords =
+          expandedQuery
+              .toLowerCase()
+              .replaceAll(RegExp(r'[^\w\s]'), '') // Remove punctuation
+              .split(' ')
+              .where((word) => word.trim().isNotEmpty && word.length > 2)
+              .toSet() // Remove duplicates
+              .toList();
+
+      if (queryWords.isEmpty) {
+        return getTrendingProducts(limit: limit);
+      }
+
+      print('🔍 Query words: $queryWords');
+
+      // Use a more reliable search approach - search for each word individually and combine
+      final allResults = <Product>[];
+      final seenIds = <String>{};
+
+      // Prioritize important keywords for image search
+      final priorityWords =
+          queryWords
+              .where(
+                (word) => [
+                  // Electronics & Tech
+                  'smartwatch',
+                  'watch',
+                  'smart',
+                  'fitness',
+                  'tracking',
+                  'tracker',
+                  'wireless', 'earbuds', 'headphones', 'bluetooth',
+
+                  // Clothing & Accessories
+                  'shirt',
+                  'tshirt',
+                  't-shirt',
+                  'pants',
+                  'jeans',
+                  'shoes',
+                  'sneakers',
+                  'dress', 'jacket', 'coat', 'wallet', 'bag', 'purse',
+                  'sunglasses', 'glasses', 'hat', 'cap',
+
+                  // Materials & Colors (important for visual matching)
+                  'leather', 'cotton', 'silicone', 'metal', 'plastic', 'fabric',
+                  'black',
+                  'white',
+                  'blue',
+                  'red',
+                  'green',
+                  'gray',
+                  'brown',
+                  'teal',
+                  'silver', 'gold', 'pink', 'purple', 'yellow', 'orange',
+
+                  // Descriptive terms
+                  'round', 'square', 'rectangular', 'oval', 'long', 'short',
+                  'casual', 'formal', 'sporty', 'elegant', 'modern', 'classic',
+                ].contains(word),
+              )
+              .toList();
+
+      final otherWords =
+          queryWords
+              .where(
+                (word) =>
+                    !priorityWords.contains(word) &&
+                    ![
+                      'with',
+                      'and',
+                      'for',
+                      'the',
+                      'this',
+                      'that',
+                    ].contains(word),
+              )
+              .toList();
+
+      // Search priority words first, then others
+      final wordsToSearch = [
+        ...priorityWords,
+        ...otherWords.take(5),
+      ]; // Limit to avoid too many searches
+
+      for (final word in wordsToSearch) {
+        try {
+          print('🔍 Searching for word: "$word"');
+
+          // Search in name
+          var nameResults = await _supabase
+              .from('products')
+              .select('*, vendors(*)')
+              .ilike('name', '%$word%')
+              .eq('in_stock', true)
+              .eq('approval_status', 'approved')
+              .limit(limit);
+
+          // Search in description
+          var descResults = await _supabase
+              .from('products')
+              .select('*, vendors(*)')
+              .ilike('description', '%$word%')
+              .eq('in_stock', true)
+              .eq('approval_status', 'approved')
+              .limit(limit);
+
+          // Search in brand
+          var brandResults = await _supabase
+              .from('products')
+              .select('*, vendors(*)')
+              .ilike('brand', '%$word%')
+              .eq('in_stock', true)
+              .eq('approval_status', 'approved')
+              .limit(limit);
+
+          // Combine all results
+          final wordResults = [...nameResults, ...descResults, ...brandResults];
+          print('🔍 Found ${wordResults.length} results for word "$word"');
+
+          for (final productData in wordResults) {
+            final productId = productData['id'] as String;
+            if (!seenIds.contains(productId)) {
+              try {
+                final product = Product.fromJson(productData);
+                allResults.add(product);
+                seenIds.add(productId);
+              } catch (e) {
+                print('❌ Error parsing product: $e');
+              }
+            }
+          }
+        } catch (e) {
+          print('❌ Error searching for word "$word": $e');
+        }
+      }
+
+      print(
+        '🔍 Enhanced keyword search found: ${allResults.length} unique products',
+      );
+
+      // Sort by rating and return
+      allResults.sort((a, b) => b.rating.compareTo(a.rating));
+      return allResults.take(limit).toList();
+    } catch (e) {
+      print('❌ Error in enhanced keyword search: $e');
       return [];
     }
   }

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
 import '../../controllers/search_controller.dart' as app;
@@ -14,6 +17,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final app.SearchController _searchCtrl = Get.find<app.SearchController>();
   final RxBool _isSearching = false.obs;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void dispose() {
@@ -28,6 +32,74 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  /// Handle image search
+  Future<void> _handleImageSearch() async {
+    try {
+      HapticFeedback.lightImpact();
+      
+      // Show image source selection
+      final ImageSource? source = await _showImageSourceDialog();
+      if (source == null) return;
+
+      // Pick image
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        final File imageFile = File(pickedFile.path);
+        
+        // Start image search
+        await _searchCtrl.searchProductsByImage(imageFile);
+        
+        // Navigate to results
+        Get.toNamed('/search-results', arguments: 'Image Search');
+      }
+    } catch (e) {
+      print('Error in image search: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to process image. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  /// Show dialog to select image source
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return await Get.dialog<ImageSource>(
+      AlertDialog(
+        title: const Text('Select Image Source'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text('Camera'),
+              onTap: () => Get.back(result: ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.green),
+              title: const Text('Gallery'),
+              onTap: () => Get.back(result: ImageSource.gallery),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,18 +110,35 @@ class _SearchScreenState extends State<SearchScreen> {
           decoration: InputDecoration(
             hintText: 'Search products...',
             border: InputBorder.none,
-            suffixIcon: Obx(
-              () =>
-                  _isSearching.value
-                      ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _searchCtrl.suggestions.clear();
-                          _isSearching.value = false;
-                        },
+            suffixIcon: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Image search button
+                Obx(() => _searchCtrl.isImageSearching.value
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
+                    : IconButton(
+                        icon: const Icon(Icons.camera_alt, color: Colors.blue),
+                        onPressed: _handleImageSearch,
+                        tooltip: 'Search by image',
+                      )),
+                // Clear/Search button
+                Obx(
+                  () => _isSearching.value
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _searchCtrl.suggestions.clear();
+                            _isSearching.value = false;
+                          },
+                        )
                       : const Icon(Icons.search),
+                ),
+              ],
             ),
           ),
           onChanged: (value) {

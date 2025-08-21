@@ -173,7 +173,7 @@ class _NotificationItem extends StatelessWidget {
                 type == NotificationType.order
                     ? 'Track Order'
                     : type == NotificationType.promo
-                    ? 'Be Smart Mall'
+                    ? 'Be Smart'
                     : null,
             onActionButtonPressed: () {
               // TODO: Handle action button press

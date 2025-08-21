@@ -65,6 +65,28 @@ class AppTheme {
   static const Color info = Color(0xFF0D9488); // Teal green for info
   static const Color transparent = Colors.transparent;
 
+  // Size Chart Specific Colors
+  static const Color sizeChartBackground = Color(0xFFFAFAFA); // grey50
+  static const Color sizeChartBorder = Color(0xFFE0E0E0); // grey300
+  static const Color sizeChartHeader = Color(0xFFEEEEEE); // grey200
+  static const Color sizeChartHeaderText = Color(0xFF424242); // grey800
+  static const Color sizeChartSecondaryText = Color(0xFF757575); // grey600
+  static const Color sizeChartBodyText = Color(0xFF616161); // grey700
+  static const Color sizeChartDisabled = Color(0xFFBDBDBD); // grey400
+  static const Color sizeChartAvailable = Color(0xFFFFFFFF); // white
+  static const Color sizeChartUnavailable = Color(0xFFFAFAFA); // grey50
+
+  // Info/Help Colors (Blue theme)
+  static const Color infoBackground = Color(0xFFEFF6FF); // blue50
+  static const Color infoBorder = Color(0xFFBFDBFE); // blue200
+  static const Color infoText = Color(0xFF1D4ED8); // blue700
+  static const Color infoTextSecondary = Color(0xFF2563EB); // blue600
+
+  // Warning/Note Colors (Orange theme)
+  static const Color warningBackground = Color(0xFFFFF7ED); // orange50
+  static const Color warningBorder = Color(0xFFFED7AA); // orange200
+  static const Color warningText = Color(0xFFC2410C); // orange700
+
   // Special Elements (Golden - use sparingly!)
   static const Color ratingStars = goldenAccent; // Golden for star ratings
   static const Color premiumBadge = goldenAccent; // Golden for premium features
@@ -106,6 +128,11 @@ class AppTheme {
       primary: primaryColor,
       secondary: primaryVariant,
       error: errorColor,
+      surface: surfaceLight,
+      background: backgroundLight,
+      onSurface: textPrimary,
+      onSurfaceVariant: textSecondary,
+      outline: grey300,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -138,6 +165,11 @@ class AppTheme {
       primary: primaryColor,
       secondary: primaryVariant,
       error: errorColor,
+      surface: surfaceDark,
+      background: backgroundDark,
+      onSurface: Colors.white,
+      onSurfaceVariant: Color(0xFFBDBDBD),
+      outline: Color(0xFF424242),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -179,4 +211,38 @@ class AppTheme {
   static Color get starRating => ratingStars;
   static Color get premiumFeature => premiumBadge;
   static Color get salePrice => saleTag;
+
+  // Theme-aware color helpers (NEW)
+  // Use these methods to get colors that automatically adapt to light/dark mode
+  static Color getTextPrimary(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurface;
+  }
+
+  static Color getTextSecondary(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurfaceVariant;
+  }
+
+  static Color getSurface(BuildContext context) {
+    return Theme.of(context).colorScheme.surface;
+  }
+
+  static Color getBackground(BuildContext context) {
+    return Theme.of(context).colorScheme.background;
+  }
+
+  static Color getBorder(BuildContext context) {
+    return Theme.of(context).colorScheme.outline;
+  }
+
+  static Color getDisabledText(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurface.withOpacity(0.38);
+  }
+
+  static Color getHintText(BuildContext context) {
+    return Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7);
+  }
+
+  static Color getOutline(BuildContext context) {
+    return Theme.of(context).colorScheme.outline;
+  }
 }

@@ -24,145 +24,319 @@ class VendorProfileScreen extends StatelessWidget {
     });
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
-          // App Bar with Vendor Cover
+          // Enhanced App Bar with Vendor Cover
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 220,
             pinned: true,
+            elevation: 0,
+            backgroundColor: AppTheme.primaryColor,
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                vendor.businessName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(1, 1),
-                      blurRadius: 3,
-                      color: Colors.black54,
-                    ),
-                  ],
-                ),
-              ),
-              background: Container(
+              title: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
-                    ],
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  vendor.businessName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
-                child:
-                    vendor.businessLogo != null
-                        ? CachedNetworkImage(
-                          imageUrl: vendor.businessLogo!,
-                          fit: BoxFit.cover,
-                          color: Colors.black.withOpacity(0.3),
-                          colorBlendMode: BlendMode.darken,
-                        )
-                        : Center(
+              ),
+              titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  vendor.businessLogo != null
+                      ? CachedNetworkImage(
+                        imageUrl: vendor.businessLogo!,
+                        fit: BoxFit.cover,
+                        placeholder:
+                            (context, url) => Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppTheme.primaryColor,
+                                    AppTheme.primaryColor.withOpacity(0.8),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        errorWidget:
+                            (context, url, error) => Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    AppTheme.primaryColor,
+                                    AppTheme.primaryColor.withOpacity(0.8),
+                                  ],
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.store,
+                                  size: 80,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ),
+                      )
+                      : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppTheme.primaryColor,
+                              AppTheme.primaryColor.withOpacity(0.8),
+                            ],
+                          ),
+                        ),
+                        child: const Center(
                           child: Icon(
                             Icons.store,
                             size: 80,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white70,
                           ),
                         ),
+                      ),
+                  // Gradient overlay for better text readability
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () {
-                  // TODO: Share vendor profile
-                },
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.share, color: Colors.white),
+                  onPressed: () {
+                    // TODO: Share vendor profile
+                  },
+                ),
               ),
             ],
           ),
 
-          // Vendor Information
+          // Enhanced Vendor Information
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Vendor Stats Row
-                  Row(
+            child: Column(
+              children: [
+                // Enhanced Stats Section
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatCard(
+                      _buildEnhancedStatCard(
                         'Rating',
                         vendor.averageRating.toStringAsFixed(1),
-                        Icons.star,
+                        Icons.star_rounded,
                         Colors.amber,
                       ),
-                      _buildStatCard(
+                      _buildStatDivider(),
+                      _buildEnhancedStatCard(
                         'Reviews',
                         vendor.totalReviews.toString(),
-                        Icons.reviews,
-                        AppTheme.primaryColor,
+                        Icons.rate_review_rounded,
+                        Colors.blue,
                       ),
+                      _buildStatDivider(),
                       Obx(
-                        () => _buildStatCard(
+                        () => _buildEnhancedStatCard(
                           'Products',
                           vendorController.vendorProducts.length.toString(),
-                          Icons.inventory,
+                          Icons.inventory_2_rounded,
                           Colors.green,
                         ),
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 24),
-
-                  // Vendor Description
-                  if (vendor.businessDescription != null) ...[
-                    const Text(
-                      'About',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                // Enhanced About Section
+                if (vendor.businessDescription != null) ...[
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      vendor.businessDescription!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        height: 1.5,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.info_outline_rounded,
+                                color: AppTheme.primaryColor,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'About Store',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Text(
+                            vendor.businessDescription!,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.black87,
+                              height: 1.6,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Contact Information
-                  const Text(
-                    'Contact Information',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                ],
 
-                  if (vendor.businessEmail.isNotEmpty)
-                    _buildContactRow(Icons.email, vendor.businessEmail),
+                // Enhanced Contact Information
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.contact_phone_rounded,
+                              color: Colors.blue,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Contact Information',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-                  if (vendor.businessPhone != null)
-                    _buildContactRow(Icons.phone, vendor.businessPhone!),
+                      if (vendor.businessEmail.isNotEmpty)
+                        _buildEnhancedContactRow(
+                          Icons.email_rounded,
+                          'Email',
+                          vendor.businessEmail,
+                          Colors.red,
+                        ),
 
-                  if (vendor.businessAddress != null)
-                    _buildContactRow(
-                      Icons.location_on,
-                      vendor.businessAddress!,
-                    ),
+                      if (vendor.businessPhone != null)
+                        _buildEnhancedContactRow(
+                          Icons.phone_rounded,
+                          'Phone',
+                          vendor.businessPhone!,
+                          Colors.green,
+                        ),
 
-                  const SizedBox(height: 24),
+                      if (vendor.businessAddress != null)
+                        _buildEnhancedContactRow(
+                          Icons.location_on_rounded,
+                          'Address',
+                          vendor.businessAddress!,
+                          Colors.orange,
+                        ),
+                    ],
+                  ),
+                ),
 
-                  // Action Buttons
-                  Row(
+                const SizedBox(height: 20),
+
+                // Enhanced Action Buttons
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
                     children: [
                       Expanded(
                         child: Obx(() {
@@ -172,97 +346,309 @@ class VendorProfileScreen extends StatelessWidget {
                           final followerCount = vendorController
                               .getFollowerCount(vendor.id);
 
-                          return ElevatedButton.icon(
-                            onPressed: () {
-                              vendorController.toggleFollowVendor(vendor.id);
-                            },
-                            icon: Icon(
-                              isFollowing
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
+                          return Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors:
+                                    isFollowing
+                                        ? [Colors.grey[400]!, Colors.grey[600]!]
+                                        : [
+                                          AppTheme.primaryColor,
+                                          AppTheme.primaryColor.withOpacity(
+                                            0.8,
+                                          ),
+                                        ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (isFollowing
+                                          ? Colors.grey[400]!
+                                          : AppTheme.primaryColor)
+                                      .withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            label: Text(
-                              isFollowing
-                                  ? 'Following ($followerCount)'
-                                  : 'Follow ($followerCount)',
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  isFollowing
-                                      ? Colors.grey[600]
-                                      : AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap:
+                                    () => vendorController.toggleFollowVendor(
+                                      vendor.id,
+                                    ),
+                                child: Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        isFollowing
+                                            ? Icons.favorite_rounded
+                                            : Icons.favorite_border_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        isFollowing
+                                            ? 'Following ($followerCount)'
+                                            : 'Follow ($followerCount)',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           );
                         }),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            // TODO: Contact vendor
-                          },
-                          icon: const Icon(Icons.message),
-                          label: const Text('Message'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () {
+                                // TODO: Contact vendor
+                              },
+                              child: Center(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.message_rounded,
+                                      color: AppTheme.primaryColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Message',
+                                      style: TextStyle(
+                                        color: AppTheme.primaryColor,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-                  // Products Section Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Products',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          // TODO: View all products
-                        },
-                        child: const Text('View All'),
+                // Enhanced Products Section Header
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.purple.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_rounded,
+                              color: Colors.purple,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Products',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            // TODO: View all products
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            'View All',
+                            style: TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+              ],
             ),
           ),
 
-          // Products Grid
+          // Enhanced Products Grid
           Obx(() {
             if (vendorController.isLoading.value) {
-              return const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+              return SliverFillRemaining(
+                child: Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
+                        strokeWidth: 3,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Loading Products...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               );
             }
 
             if (vendorController.vendorProducts.isEmpty) {
-              return const SliverFillRemaining(
-                child: Center(
-                  child: Text('No products available from this vendor'),
+              return SliverFillRemaining(
+                child: Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 60,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'No Products Available',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This vendor hasn\'t added any products yet.',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
 
             return SliverPadding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.75,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final product = vendorController.vendorProducts[index];
@@ -276,43 +662,103 @@ class VendorProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
+  Widget _buildEnhancedStatCard(
     String label,
     String value,
     IconData icon,
     Color color,
   ) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.2)),
+            ),
+            child: Icon(icon, color: color, size: 24),
           ),
-          child: Icon(icon, color: color, size: 24),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-      ],
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildContactRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+  Widget _buildStatDivider() {
+    return Container(
+      height: 50,
+      width: 1,
+      color: Colors.grey[300],
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+    );
+  }
+
+  Widget _buildEnhancedContactRow(
+    IconData icon,
+    String label,
+    String text,
+    Color color,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
