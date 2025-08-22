@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/cart_controller.dart';
+import '../../controllers/currency_controller.dart';
 import '../checkout/checkout_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -11,6 +12,8 @@ class CartTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final CartController cartController = Get.find<CartController>();
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -176,11 +179,17 @@ class CartTab extends StatelessWidget {
                                             ),
                                           ),
                                           const SizedBox(height: 4),
-                                          Text(
-                                            '₹${item.product.price}',
-                                            style: TextStyle(
-                                              color: AppTheme.primaryColor,
-                                              fontWeight: FontWeight.bold,
+                                          Obx(
+                                            () => Text(
+                                              currencyController
+                                                  .getFormattedProductPrice(
+                                                    item.product.price,
+                                                    item.product.currency,
+                                                  ),
+                                              style: TextStyle(
+                                                color: AppTheme.primaryColor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -248,14 +257,27 @@ class CartTab extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              Text(
-                                '₹${cartController.items.fold(0.0, (sum, item) => sum + item.product.price * item.quantity).toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
+                              Obx(() {
+                                final total = cartController.items.fold(0.0, (
+                                  sum,
+                                  item,
+                                ) {
+                                  final convertedPrice = currencyController
+                                      .convertPrice(
+                                        item.product.price,
+                                        item.product.currency,
+                                      );
+                                  return sum + convertedPrice * item.quantity;
+                                });
+                                return Text(
+                                  currencyController.formatPrice(total),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                );
+                              }),
                             ],
                           ),
                           const SizedBox(height: 16),

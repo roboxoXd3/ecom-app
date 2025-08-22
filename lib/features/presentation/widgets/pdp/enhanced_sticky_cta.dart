@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../data/models/product_model.dart';
 import '../../controllers/enhanced_product_controller.dart';
 import '../../controllers/cart_controller.dart';
+import '../../controllers/currency_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 
@@ -24,6 +25,7 @@ class EnhancedStickyCTA extends StatelessWidget {
 
     final enhancedController = Get.find<EnhancedProductController>();
     final cartController = Get.find<CartController>();
+    final currencyController = Get.find<CurrencyController>();
 
     return Container(
       decoration: BoxDecoration(
@@ -45,29 +47,37 @@ class EnhancedStickyCTA extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Compact Price Display
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '₹${product.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                if (product.mrp != null && product.mrp! > product.price)
+            // Compact Price Display (with currency conversion)
+            Obx(
+              () => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    '₹${product.mrp!.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      decoration: TextDecoration.lineThrough,
+                    currencyController.getFormattedProductPrice(
+                      product.price,
+                      product.currency,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
                     ),
                   ),
-              ],
+                  if (product.mrp != null && product.mrp! > product.price)
+                    Text(
+                      currencyController.getFormattedProductPrice(
+                        product.mrp!,
+                        product.currency,
+                      ),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                ],
+              ),
             ),
 
             const SizedBox(width: 12),

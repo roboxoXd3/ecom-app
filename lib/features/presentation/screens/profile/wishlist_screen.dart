@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/cart_controller.dart';
+import '../../controllers/currency_controller.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -17,6 +18,7 @@ class WishlistScreen extends StatefulWidget {
 class _WishlistScreenState extends State<WishlistScreen> {
   final ProductController productController = Get.find<ProductController>();
   final CartController cartController = Get.find<CartController>();
+  final CurrencyController currencyController = Get.find<CurrencyController>();
 
   final TextEditingController searchController = TextEditingController();
   final RxString searchQuery = ''.obs;
@@ -405,8 +407,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     max: 1000,
                     divisions: 20,
                     labels: RangeLabels(
-                      '₹${minPrice.value.round()}',
-                      '₹${maxPrice.value.round()}',
+                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${minPrice.value.round()}',
+                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${maxPrice.value.round()}',
                     ),
                     onChanged: (values) {
                       minPrice.value = values.start;
@@ -419,8 +421,12 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   () => Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Min: ₹${minPrice.value.round()}'),
-                      Text('Max: ₹${maxPrice.value.round()}'),
+                      Text(
+                        'Min: ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${minPrice.value.round()}',
+                      ),
+                      Text(
+                        'Max: ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${maxPrice.value.round()}',
+                      ),
                     ],
                   ),
                 ),
@@ -797,12 +803,17 @@ class _WishlistScreenState extends State<WishlistScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '₹${product.price.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                              Obx(
+                                () => Text(
+                                  currencyController.getFormattedProductPrice(
+                                    product.price,
+                                    product.currency,
+                                  ),
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                               GestureDetector(
@@ -984,13 +995,19 @@ class _QuickAddToCartSheetState extends State<_QuickAddToCartSheet> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      '₹${widget.product.price.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
+                    GetBuilder<CurrencyController>(
+                      builder:
+                          (currencyController) => Text(
+                            currencyController.getFormattedProductPrice(
+                              widget.product.price,
+                              widget.product.currency,
+                            ),
+                            style: TextStyle(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
                     ),
                   ],
                 ),
