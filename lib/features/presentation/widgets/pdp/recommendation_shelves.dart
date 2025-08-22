@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get.dart';
 import '../../../data/models/product_model.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../controllers/currency_controller.dart';
 
 class RecommendationShelves extends StatelessWidget {
   final ProductRecommendations? recommendations;
@@ -259,30 +261,39 @@ class RecommendationShelves extends StatelessWidget {
                     ),
                     const Spacer(),
 
-                    // Price
-                    Row(
-                      children: [
-                        Text(
-                          '₹${product['price']}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                    // Price (with currency conversion)
+                    GetBuilder<CurrencyController>(
+                      builder:
+                          (currencyController) => Row(
+                            children: [
+                              Text(
+                                currencyController.getFormattedProductPrice(
+                                  product['price'],
+                                  product['currency'] ?? 'USD',
+                                ),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                              if (product['mrp'] != null &&
+                                  product['mrp'] > product['price']) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  currencyController.getFormattedProductPrice(
+                                    product['mrp'],
+                                    product['currency'] ?? 'USD',
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ),
-                        if (product['mrp'] != null &&
-                            product['mrp'] > product['price']) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            '₹${product['mrp']}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ],
-                      ],
                     ),
 
                     const SizedBox(height: 4),

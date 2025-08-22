@@ -4,12 +4,14 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_model.dart';
 import '../../controllers/search_controller.dart';
 import '../../controllers/search_controller.dart' as app;
+import '../../controllers/currency_controller.dart';
 import '../../screens/search/filter_dialog.dart';
 
 class SearchResultsScreen extends StatelessWidget {
   final String query;
   final app.SearchController _searchController =
       Get.find<app.SearchController>();
+  final CurrencyController _currencyController = Get.find<CurrencyController>();
 
   SearchResultsScreen({super.key, required this.query});
 
@@ -178,11 +180,16 @@ class SearchResultsScreen extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '₹${product.price.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: Theme.of(Get.context!).primaryColor,
-                      fontWeight: FontWeight.bold,
+                  Obx(
+                    () => Text(
+                      _currencyController.getFormattedProductPrice(
+                        product.price,
+                        product.currency,
+                      ),
+                      style: TextStyle(
+                        color: Theme.of(Get.context!).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),

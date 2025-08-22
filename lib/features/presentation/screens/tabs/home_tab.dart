@@ -16,12 +16,15 @@ import '../../controllers/product_controller.dart';
 import '../../controllers/category_controller.dart';
 import '../../controllers/vendor_controller.dart';
 import '../../controllers/home_controller.dart';
+import '../../controllers/currency_controller.dart';
 import '../chat/chatbot_screen.dart';
 
 class HomeTab extends StatelessWidget {
   final ProductController productController = Get.find<ProductController>();
   final CategoryController categoryController = Get.find<CategoryController>();
   final VendorController vendorController = Get.find<VendorController>();
+  final NotificationController notificationController =
+      Get.find<NotificationController>();
 
   final List<Map<String, dynamic>> banners = [
     {
@@ -130,48 +133,395 @@ class HomeTab extends StatelessWidget {
           onPressed: () => Get.to(() => const SearchScreen()),
           tooltip: 'Search',
         ),
-        _buildNotificationButton(),
-        const SizedBox(width: 8),
+        _buildActionDropdown(),
+        const SizedBox(width: 12),
       ],
     );
   }
 
-  Widget _buildNotificationButton() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined),
-          iconSize: 24,
-          onPressed: () => Get.to(() => const NotificationsScreen()),
-          tooltip: 'Notifications',
-        ),
-        Positioned(
-          right: 8,
-          top: 8,
-          child: Obx(() {
-            final count = notificationController.unreadCount.value;
-            if (count == 0) return const SizedBox.shrink();
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-              child: Text(
-                count > 99 ? '99+' : count.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+  Widget _buildActionDropdown() {
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
+    return PopupMenuButton<String>(
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              size: 20,
+              color: AppTheme.primaryColor,
+            ),
+          ),
+          // Notification badge
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Obx(() {
+              final count = notificationController.unreadCount.value;
+              if (count == 0) return const SizedBox.shrink();
+              return Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white, width: 1.5),
                 ),
-                textAlign: TextAlign.center,
+                child: Center(
+                  child: Text(
+                    count > 9 ? '9+' : count.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+      offset: const Offset(0, 50),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
+      shadowColor: Colors.black.withOpacity(0.2),
+      itemBuilder:
+          (BuildContext context) => [
+            // Notifications Item
+            PopupMenuItem<String>(
+              value: 'notifications',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        size: 18,
+                        color: AppTheme.primaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Notifications',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.getTextPrimary(context),
+                            ),
+                          ),
+                          Obx(() {
+                            final count =
+                                notificationController.unreadCount.value;
+                            return Text(
+                              count > 0
+                                  ? '$count unread messages'
+                                  : 'No new notifications',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    Obx(() {
+                      final count = notificationController.unreadCount.value;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          count.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
-            );
-          }),
+            ),
+
+            // Divider
+            const PopupMenuDivider(),
+
+            // Currency Selector
+            PopupMenuItem<String>(
+              value: 'currency',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Obx(
+                  () => Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          currencyController.getCurrencySymbol(
+                            currencyController.selectedCurrency.value,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Change Currency',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.getTextPrimary(context),
+                              ),
+                            ),
+                            Text(
+                              '${currencyController.selectedCurrency.value} - ${currencyController.getCurrencyName(currencyController.selectedCurrency.value)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_right,
+                        size: 18,
+                        color: Colors.grey[400],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+      onSelected: (String value) {
+        switch (value) {
+          case 'notifications':
+            Get.to(() => const NotificationsScreen());
+            break;
+          case 'currency':
+            _showCurrencyBottomSheet();
+            break;
+        }
+      },
+    );
+  }
+
+  void _showCurrencyBottomSheet() {
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
+    Get.bottomSheet(
+      Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.currency_exchange_rounded,
+                      color: AppTheme.primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Select Currency',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.getTextPrimary(Get.context!),
+                          ),
+                        ),
+                        Text(
+                          'All prices will be converted automatically',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Currency List
+            Flexible(
+              child: Obx(() {
+                if (currencyController.isLoading.value) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: currencyController.supportedCurrencies.length,
+                  itemBuilder: (context, index) {
+                    final currency =
+                        currencyController.supportedCurrencies[index];
+                    final isSelected =
+                        currency['code'] ==
+                        currencyController.selectedCurrency.value;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? AppTheme.primaryColor.withOpacity(0.1)
+                                : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color:
+                              isSelected
+                                  ? AppTheme.primaryColor.withOpacity(0.3)
+                                  : Colors.grey[200]!,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        leading: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              currency['symbol'],
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isSelected
+                                        ? Colors.white
+                                        : Colors.grey[700],
+                              ),
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          currency['name'],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color:
+                                isSelected
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.getTextPrimary(context),
+                          ),
+                        ),
+                        subtitle: Text(
+                          currency['code'],
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        trailing:
+                            isSelected
+                                ? Icon(
+                                  Icons.check_circle,
+                                  color: AppTheme.primaryColor,
+                                  size: 24,
+                                )
+                                : null,
+                        onTap: () {
+                          currencyController.updateCurrency(currency['code']);
+                          Get.back();
+                        },
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
+
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
   }
 
@@ -542,6 +892,9 @@ class HomeTab extends StatelessWidget {
   }
 
   Widget _buildProductCard(Product product, BuildContext context) {
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -628,36 +981,46 @@ class HomeTab extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '₹${(product.isOnSale && product.salePrice != null ? product.salePrice! : product.price).toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (product.isOnSale &&
-                            product.salePrice != null &&
-                            product.salePrice! < product.price) ...[
-                          const SizedBox(width: 6),
+                    Obx(
+                      () => Row(
+                        children: [
                           Flexible(
                             child: Text(
-                              '₹${product.price.toStringAsFixed(0)}',
+                              currencyController.getFormattedProductPrice(
+                                product.isOnSale && product.salePrice != null
+                                    ? product.salePrice!
+                                    : product.price,
+                                product.currency,
+                              ),
                               style: TextStyle(
-                                fontSize: 12,
-                                decoration: TextDecoration.lineThrough,
-                                color: AppTheme.getTextSecondary(context),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryColor,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (product.isOnSale &&
+                              product.salePrice != null &&
+                              product.salePrice! < product.price) ...[
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                currencyController.getFormattedProductPrice(
+                                  product.price,
+                                  product.currency,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: AppTheme.getTextSecondary(context),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ],
                 ),

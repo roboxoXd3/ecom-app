@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_filter.dart' as filter;
 import '../../controllers/product_controller.dart';
+import '../../controllers/currency_controller.dart';
 
 import '../../../data/models/sort_option.dart' as sort;
 
 class ProductListScreen extends StatelessWidget {
   final String title;
   final ProductController productController = Get.find();
+  final CurrencyController currencyController = Get.find();
 
   ProductListScreen({super.key, required this.title});
 
@@ -113,11 +115,17 @@ class ProductListScreen extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '₹${product.price.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: AppTheme.primaryColor,
-                                      fontWeight: FontWeight.bold,
+                                  Obx(
+                                    () => Text(
+                                      currencyController
+                                          .getFormattedProductPrice(
+                                            product.price,
+                                            product.currency,
+                                          ),
+                                      style: TextStyle(
+                                        color: AppTheme.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -165,9 +173,11 @@ class ProductListScreen extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (filter.priceRange != null)
-                _buildFilterChip(
-                  'Price: ₹${filter.priceRange!.start.toStringAsFixed(0)} - ₹${filter.priceRange!.end.toStringAsFixed(0)}',
-                  () => productController.updatePriceRange(null),
+                Obx(
+                  () => _buildFilterChip(
+                    'Price: ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${filter.priceRange!.start.toStringAsFixed(0)} - ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${filter.priceRange!.end.toStringAsFixed(0)}',
+                    () => productController.updatePriceRange(null),
+                  ),
                 ),
               ...filter.categories.map(
                 (category) => _buildFilterChip(

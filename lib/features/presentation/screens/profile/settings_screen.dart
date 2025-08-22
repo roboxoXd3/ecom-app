@@ -7,18 +7,22 @@ import 'privacy_settings_screen.dart';
 import 'about_us_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'privacy_policy_screen.dart';
+import '../../controllers/currency_controller.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Get currency controller
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
     // Observable variables for settings
     final RxBool pushNotifications = true.obs;
     final RxBool emailNotifications = true.obs;
     final RxBool darkMode = false.obs;
     final RxString selectedLanguage = 'English'.obs;
-    final RxString selectedCurrency = 'USD'.obs;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -89,13 +93,71 @@ class SettingsScreen extends StatelessWidget {
               _showLanguageSelector(context, selectedLanguage);
             },
           ),
-          ListTile(
-            title: const Text('Currency'),
-            subtitle: Obx(() => Text(selectedCurrency.value)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              _showCurrencySelector(context, selectedCurrency);
-            },
+          Obx(
+            () => ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  currencyController.getCurrencySymbol(
+                    currencyController.selectedCurrency.value,
+                  ),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+              title: const Text('Currency'),
+              subtitle: Text(
+                '${currencyController.selectedCurrency.value} - ${currencyController.getCurrencyName(currencyController.selectedCurrency.value)}',
+              ),
+              trailing:
+                  currencyController.isLoading.value
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.primaryColor.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Text(
+                              'Quick Access',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+              onTap:
+                  currencyController.isLoading.value
+                      ? null
+                      : () {
+                        _showCurrencySelector(context, currencyController);
+                      },
+            ),
           ),
 
           const Divider(),
@@ -170,28 +232,104 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showCurrencySelector(BuildContext context, RxString selectedCurrency) {
-    final currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CNY'];
-
+  void _showCurrencySelector(
+    BuildContext context,
+    CurrencyController currencyController,
+  ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder:
-          (context) => ListView.builder(
-            shrinkWrap: true,
-            itemCount: currencies.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(currencies[index]),
-                trailing:
-                    currencies[index] == selectedCurrency.value
-                        ? const Icon(Icons.check, color: AppTheme.primaryColor)
-                        : null,
-                onTap: () {
-                  selectedCurrency.value = currencies[index];
-                  Navigator.pop(context);
-                },
-              );
-            },
+          (context) => Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Select Currency',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => currencyController.refreshCurrencyData(),
+                      icon: const Icon(Icons.refresh),
+                      tooltip: 'Refresh currencies',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Obx(() {
+                  if (currencyController.isLoading.value) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (currencyController.error.value.isNotEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          children: [
+                            Text(
+                              currencyController.error.value,
+                              style: const TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed:
+                                  () => currencyController.loadCurrencyData(),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: currencyController.supportedCurrencies.length,
+                    itemBuilder: (context, index) {
+                      final currency =
+                          currencyController.supportedCurrencies[index];
+                      final isSelected =
+                          currency['code'] ==
+                          currencyController.selectedCurrency.value;
+
+                      return ListTile(
+                        title: Text(
+                          '${currency['name']} (${currency['code']})',
+                        ),
+                        subtitle: Text(currency['symbol']),
+                        trailing:
+                            isSelected
+                                ? const Icon(
+                                  Icons.check,
+                                  color: AppTheme.primaryColor,
+                                )
+                                : null,
+                        onTap: () {
+                          currencyController.updateCurrency(currency['code']);
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  );
+                }),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
     );
   }

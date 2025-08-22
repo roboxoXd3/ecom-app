@@ -6,6 +6,7 @@ import '../../../../data/models/product_model.dart';
 
 import '../../../../../core/theme/app_theme.dart';
 import '../../vendor/vendor_profile_screen.dart';
+import '../../../controllers/currency_controller.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -15,6 +16,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -264,16 +268,21 @@ class ProductCard extends StatelessWidget {
                               ),
                             ],
                           ),
-                          // Price
+                          // Price (with currency conversion)
                           Flexible(
-                            child: Text(
-                              '₹${product.price.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w700,
+                            child: Obx(
+                              () => Text(
+                                currencyController.getFormattedProductPrice(
+                                  product.price,
+                                  product.currency,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../data/models/product_model.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../controllers/currency_controller.dart';
 
 class EnhancedPriceBlock extends StatelessWidget {
   final Product product;
@@ -14,6 +16,9 @@ class EnhancedPriceBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CurrencyController currencyController =
+        Get.find<CurrencyController>();
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -71,54 +76,69 @@ class EnhancedPriceBlock extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Price Section
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Current Price
-              Text(
-                '${product.currency} ${product.price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-              const SizedBox(width: 12),
+          Obx(() {
+            // Convert prices to user's preferred currency
+            final convertedPrice = currencyController.convertPrice(
+              product.price,
+              product.currency,
+            );
+            final convertedMrp =
+                product.mrp != null
+                    ? currencyController.convertPrice(
+                      product.mrp!,
+                      product.currency,
+                    )
+                    : null;
 
-              // MRP (Strike-through)
-              if (product.mrp != null && product.mrp! > product.price) ...[
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Current Price
                 Text(
-                  '${product.currency} ${product.mrp!.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                    decoration: TextDecoration.lineThrough,
+                  currencyController.formatPrice(convertedPrice),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
 
-                // Discount Percentage
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${_calculateDiscountPercentage()}% OFF',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                // MRP (Strike-through)
+                if (convertedMrp != null && convertedMrp > convertedPrice) ...[
+                  Text(
+                    currencyController.formatPrice(convertedMrp),
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[600],
+                      decoration: TextDecoration.lineThrough,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+
+                  // Discount Percentage
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '${((convertedMrp - convertedPrice) / convertedMrp * 100).round()}% OFF',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
+            );
+          }),
 
           // Tax Note
           const SizedBox(height: 8),
