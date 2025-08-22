@@ -7,6 +7,7 @@ import '../../features/presentation/screens/profile/add_address_screen.dart';
 import '../../features/presentation/screens/profile/my_orders_screen.dart';
 import '../../features/presentation/screens/profile/order_details_screen.dart';
 import '../../features/presentation/screens/profile/shipping_address_screen.dart';
+import '../../features/presentation/screens/order/order_confirmation_screen.dart';
 import '../../features/presentation/screens/splash/splash_screen.dart';
 import '../../features/presentation/screens/auth/login_screen.dart';
 import '../../features/presentation/screens/home/home_screen.dart';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const String addCard = '/add-card';
   static const String orders = '/orders';
   static const String orderDetails = '/order-details';
+  static const String orderConfirmation = '/order-confirmation';
   static const String vendorsList = '/vendors-list';
 
   static final routes = [
@@ -94,6 +96,13 @@ class AppRoutes {
     GetPage(
       name: orderDetails,
       page: () => OrderDetailsScreen(orderId: Get.arguments),
+      binding: BindingsBuilder(() {
+        Get.put(OrderController());
+      }),
+    ),
+    GetPage(
+      name: orderConfirmation,
+      page: () => const OrderConfirmationScreen(),
       binding: BindingsBuilder(() {
         Get.put(OrderController());
       }),

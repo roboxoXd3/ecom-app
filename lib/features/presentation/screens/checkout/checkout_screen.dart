@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../controllers/cart_controller.dart';
+import '../../controllers/checkout_controller.dart';
+import '../../controllers/order_controller.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../controllers/address_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class CheckoutScreen extends StatelessWidget {
   const CheckoutScreen({super.key});
@@ -12,42 +15,205 @@ class CheckoutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cartController = Get.find<CartController>();
     final addressController = Get.find<AddressController>();
-    final selectedAddressId = ''.obs;
+
+    // Initialize controllers
+    final checkoutController = Get.put(CheckoutController());
+    Get.put(OrderController()); // Ensure OrderController is available
 
     // Auto-select default address when addresses are loaded
     ever(addressController.addresses, (addresses) {
-      if (addresses.isNotEmpty && selectedAddressId.value.isEmpty) {
+      if (addresses.isNotEmpty &&
+          checkoutController.selectedAddressId.value.isEmpty) {
         // Find default address or select first one
         final defaultAddress = addresses.firstWhere(
           (addr) => addr.isDefault,
           orElse: () => addresses.first,
         );
-        selectedAddressId.value = defaultAddress.id;
+        checkoutController.setSelectedAddress(defaultAddress.id);
       }
     });
 
-    void proceedToPayment() {
-      // Placeholder payment logic - replace with your preferred payment gateway
+    void proceedToPayment() async {
+      if (!checkoutController.canProceedToPayment) {
+        SnackbarUtils.showError('Please select an address');
+        return;
+      }
+
+      // Show payment processing dialog
+      Get.dialog(
+        WillPopScope(
+          onWillPop: () async => false, // Prevent dismissing during processing
+          child: AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  checkoutController.getPaymentMethodIcon(
+                    checkoutController.selectedPaymentMethod.value,
+                  ),
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 8),
+                const Text('Processing Payment'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Obx(
+                  () =>
+                      checkoutController.isProcessingOrder.value
+                          ? Column(
+                            children: [
+                              const CircularProgressIndicator(),
+                              const SizedBox(height: 16),
+                              Text(
+                                checkoutController
+                                            .selectedPaymentMethod
+                                            .value ==
+                                        'cash_on_delivery'
+                                    ? 'Creating your order...'
+                                    : 'Processing payment...',
+                              ),
+                            ],
+                          )
+                          : Column(
+                            children: [
+                              Text(
+                                'Payment Method: ${checkoutController.getPaymentMethodName(checkoutController.selectedPaymentMethod.value)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Total: ₹${checkoutController.total.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              if (checkoutController
+                                      .selectedPaymentMethod
+                                      .value ==
+                                  'cash_on_delivery')
+                                const Text(
+                                  'Your order will be confirmed and you can pay when it\'s delivered.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey),
+                                )
+                              else
+                                const Text(
+                                  'This is a payment simulation. In a real app, this would integrate with your payment gateway.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                            ],
+                          ),
+                ),
+              ],
+            ),
+            actions: [
+              if (!checkoutController.isProcessingOrder.value) ...[
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Get.back();
+                    checkoutController.simulatePayment();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    checkoutController.selectedPaymentMethod.value ==
+                            'cash_on_delivery'
+                        ? 'Confirm Order'
+                        : 'Pay Now',
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        barrierDismissible: false,
+      );
+    }
+
+    void showPaymentMethodDialog() {
       Get.dialog(
         AlertDialog(
-          title: const Text('Payment'),
-          content: const Text(
-            'Payment functionality will be implemented with your preferred payment gateway.',
+          title: const Text(
+            'Select Payment Method',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children:
+                  checkoutController.paymentMethods.map((method) {
+                    return Obx(
+                      () => RadioListTile<String>(
+                        value: method['id'],
+                        groupValue:
+                            checkoutController.selectedPaymentMethod.value,
+                        onChanged: (value) {
+                          checkoutController.setSelectedPaymentMethod(value!);
+                        },
+                        title: Row(
+                          children: [
+                            Icon(method['icon'], size: 20),
+                            const SizedBox(width: 8),
+                            Text(method['name']),
+                          ],
+                        ),
+                        subtitle: Text(
+                          method['description'],
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        activeColor: AppTheme.primaryColor,
+                      ),
+                    );
+                  }).toList(),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Get.back(),
               child: const Text('Cancel'),
             ),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-                SnackbarUtils.showSuccess('Order placed successfully!');
-                // Clear cart and navigate to orders
-                cartController.clearCart();
-                Get.offAllNamed('/');
-              },
-              child: const Text('Simulate Payment'),
+            Obx(
+              () => ElevatedButton(
+                onPressed:
+                    checkoutController.isProcessingOrder.value
+                        ? null
+                        : () {
+                          Get.back();
+                          proceedToPayment();
+                        },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child:
+                    checkoutController.isProcessingOrder.value
+                        ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                          ),
+                        )
+                        : const Text('Proceed to Payment'),
+              ),
             ),
           ],
         ),
@@ -119,51 +285,67 @@ class CheckoutScreen extends StatelessWidget {
                               return Obx(
                                 () => Card(
                                   elevation:
-                                      selectedAddressId.value == address.id
+                                      checkoutController
+                                                  .selectedAddressId
+                                                  .value ==
+                                              address.id
                                           ? 4
                                           : 1,
                                   margin: const EdgeInsets.only(bottom: 8),
                                   color:
-                                      selectedAddressId.value == address.id
+                                      checkoutController
+                                                  .selectedAddressId
+                                                  .value ==
+                                              address.id
                                           ? Theme.of(
                                             context,
                                           ).colorScheme.primaryContainer
                                           : null,
-                                  child: RadioListTile<String>(
-                                    value: address.id,
-                                    groupValue: selectedAddressId.value,
-                                    onChanged:
-                                        (value) =>
-                                            selectedAddressId.value = value!,
-                                    title: Text(
-                                      '${address.name} - ${address.phone}',
-                                      style: TextStyle(
-                                        fontWeight:
-                                            selectedAddressId.value ==
-                                                    address.id
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
+                                  child: Obx(
+                                    () => RadioListTile<String>(
+                                      value: address.id,
+                                      groupValue:
+                                          checkoutController
+                                              .selectedAddressId
+                                              .value,
+                                      onChanged:
+                                          (value) => checkoutController
+                                              .setSelectedAddress(value!),
+                                      title: Text(
+                                        '${address.name} - ${address.phone}',
+                                        style: TextStyle(
+                                          fontWeight:
+                                              checkoutController
+                                                          .selectedAddressId
+                                                          .value ==
+                                                      address.id
+                                                  ? FontWeight.bold
+                                                  : FontWeight.normal,
+                                        ),
                                       ),
+                                      subtitle: Text(
+                                        '${address.addressLine1}, '
+                                        '${address.addressLine2 != null ? "${address.addressLine2}, " : ""}'
+                                        '${address.city}, ${address.state} ${address.zip}, '
+                                        '${address.country}',
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      secondary:
+                                          address.isDefault
+                                              ? const Chip(
+                                                label: Text('Default'),
+                                                labelStyle: TextStyle(
+                                                  fontSize: 12,
+                                                ),
+                                              )
+                                              : null,
+                                      selected:
+                                          checkoutController
+                                              .selectedAddressId
+                                              .value ==
+                                          address.id,
                                     ),
-                                    subtitle: Text(
-                                      '${address.addressLine1}, '
-                                      '${address.addressLine2 != null ? "${address.addressLine2}, " : ""}'
-                                      '${address.city}, ${address.state} ${address.zip}, '
-                                      '${address.country}',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    secondary:
-                                        address.isDefault
-                                            ? const Chip(
-                                              label: Text('Default'),
-                                              labelStyle: TextStyle(
-                                                fontSize: 12,
-                                              ),
-                                            )
-                                            : null,
-                                    selected:
-                                        selectedAddressId.value == address.id,
                                   ),
                                 ),
                               );
@@ -293,9 +475,9 @@ class CheckoutScreen extends StatelessWidget {
                 child: Obx(
                   () => ElevatedButton(
                     onPressed:
-                        selectedAddressId.value.isEmpty
+                        !checkoutController.canProceedToPayment
                             ? null
-                            : proceedToPayment,
+                            : showPaymentMethodDialog,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -305,7 +487,7 @@ class CheckoutScreen extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      selectedAddressId.value.isEmpty
+                      !checkoutController.canProceedToPayment
                           ? 'Select Address to Continue'
                           : 'Proceed to Payment',
                       style: const TextStyle(

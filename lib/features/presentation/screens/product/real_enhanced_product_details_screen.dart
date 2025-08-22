@@ -5,6 +5,8 @@ import '../../controllers/enhanced_product_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/home_controller.dart';
+import '../../controllers/reviews_controller.dart';
+import '../../controllers/qa_controller.dart';
 import '../../widgets/pdp/hero_gallery.dart';
 import '../../widgets/pdp/enhanced_price_block.dart';
 import '../../widgets/pdp/color_size_selection.dart';
@@ -46,6 +48,10 @@ class _RealEnhancedProductDetailsScreenState
   @override
   void initState() {
     super.initState();
+
+    // Initialize controllers
+    Get.put(ReviewsController());
+    Get.put(QAController());
 
     // Load enhanced product data
     enhancedController.loadEnhancedProduct(widget.productId);

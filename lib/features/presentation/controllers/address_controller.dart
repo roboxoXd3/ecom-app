@@ -64,14 +64,21 @@ class AddressController extends GetxController {
 
       await _addressRepository.addAddress(address);
       await fetchAddresses();
-      Get.back();
+
+      // Show success message first, then navigate back
       Get.snackbar(
         'Success',
         'Address added successfully',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.green,
         colorText: Colors.white,
+        duration: const Duration(seconds: 2),
       );
+
+      // Navigate back after a short delay to ensure snackbar is shown
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.back();
+      });
     } catch (e) {
       print('Error adding address: $e');
 
@@ -101,12 +108,21 @@ class AddressController extends GetxController {
       isLoading.value = true;
       await _addressRepository.updateAddress(address);
       await fetchAddresses();
-      Get.back();
+
+      // Show success message first, then navigate back
       Get.snackbar(
         'Success',
         'Address updated successfully',
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 2),
       );
+
+      // Navigate back after a short delay to ensure snackbar is shown
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.back();
+      });
     } catch (e) {
       print('Error updating address: $e');
       Get.snackbar(

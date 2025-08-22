@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../../data/models/order_model.dart';
+import '../../data/models/order_status.dart';
 import '../../data/repositories/order_repository.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
@@ -34,7 +35,9 @@ class OrderController extends GetxController {
     required List<OrderItem> items,
   }) async {
     try {
+      print('OrderController: Creating order with ${items.length} items');
       isLoading.value = true;
+
       await _repository.createOrder(
         addressId: addressId,
         paymentMethodId: paymentMethodId,
@@ -43,17 +46,20 @@ class OrderController extends GetxController {
         total: total,
         items: items,
       );
+
+      print('OrderController: Order created successfully');
       await fetchUserOrders();
       return true;
     } catch (e) {
-      SnackbarUtils.showError('Failed to create order');
+      print('OrderController: Error creating order: $e');
+      SnackbarUtils.showError('Failed to create order: ${e.toString()}');
       return false;
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> updateOrderStatus(String orderId, String status) async {
+  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
     try {
       isLoading.value = true;
       await _repository.updateOrderStatus(orderId, status);
