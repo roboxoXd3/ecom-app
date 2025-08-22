@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/models/product_model.dart';
+import '../../../data/models/review_model.dart';
+import '../../controllers/reviews_controller.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 
 class RatingsReviews extends StatefulWidget {
   final Product product;
@@ -12,54 +17,117 @@ class RatingsReviews extends StatefulWidget {
 }
 
 class _RatingsReviewsState extends State<RatingsReviews> {
-  String _selectedFilter = 'all';
-  final List<String> _filters = [
-    'all',
-    'with_media',
-    '5_star',
-    '4_star',
-    '3_star',
-    '2_star',
-    '1_star',
-  ];
+  final ReviewsController reviewsController = Get.put(ReviewsController());
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load reviews when widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      reviewsController.loadReviews(widget.product.id);
+    });
+
+    // Setup scroll listener for pagination
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      reviewsController.loadMoreReviews();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ratings & Reviews',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
+      child: Obx(() {
+        if (reviewsController.isLoading.value &&
+            reviewsController.reviews.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-          // Rating Summary
-          _buildRatingSummary(),
+        if (reviewsController.error.value.isNotEmpty &&
+            reviewsController.reviews.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Failed to load reviews',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed:
+                        () => reviewsController.loadReviews(
+                          widget.product.id,
+                          refresh: true,
+                        ),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
 
-          const SizedBox(height: 16),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ratings & Reviews',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
 
-          // Filter Chips
-          _buildFilterChips(),
+            // Rating Summary
+            _buildRatingSummary(),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Reviews List
-          _buildReviewsList(),
-        ],
-      ),
+            // Write Review Section
+            _buildWriteReviewSection(),
+
+            const SizedBox(height: 16),
+
+            // Filter Chips
+            _buildFilterChips(),
+
+            const SizedBox(height: 16),
+
+            // Reviews List
+            _buildReviewsList(),
+          ],
+        );
+      }),
     );
   }
 
   Widget _buildRatingSummary() {
-    final summary = widget.product.reviewsSummary;
+    final summary = reviewsController.reviewsSummary.value;
     if (summary == null) {
       return const SizedBox.shrink();
     }
 
-    final totalReviews = summary.histogram.fold(0, (sum, count) => sum + count);
+    final totalReviews = summary.totalReviews;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -76,7 +144,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
             child: Column(
               children: [
                 Text(
-                  widget.product.rating.toString(),
+                  summary.averageRating.toStringAsFixed(1),
                   style: const TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
@@ -86,7 +154,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {
                     return Icon(
-                      index < widget.product.rating.floor()
+                      index < summary.averageRating.floor()
                           ? Icons.star
                           : Icons.star_border,
                       color: AppTheme.ratingStars,
@@ -155,23 +223,31 @@ class _RatingsReviewsState extends State<RatingsReviews> {
   }
 
   Widget _buildFilterChips() {
+    final filters = [
+      'all',
+      'with_media',
+      '5_star',
+      '4_star',
+      '3_star',
+      '2_star',
+      '1_star',
+    ];
+
     return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _filters.length,
+        itemCount: filters.length,
         itemBuilder: (context, index) {
-          final filter = _filters[index];
-          final isSelected = _selectedFilter == filter;
+          final filter = filters[index];
+          final isSelected = reviewsController.selectedFilter.value == filter;
           return Container(
             margin: const EdgeInsets.only(right: 8),
             child: FilterChip(
               label: Text(_getFilterLabel(filter)),
               selected: isSelected,
               onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
+                reviewsController.applyFilter(filter);
               },
               selectedColor: AppTheme.primaryColor.withOpacity(0.2),
               checkmarkColor: AppTheme.primaryColor,
@@ -204,28 +280,53 @@ class _RatingsReviewsState extends State<RatingsReviews> {
   }
 
   Widget _buildReviewsList() {
-    // Mock reviews data - in real app, this would come from API
-    final mockReviews = _getMockReviews();
+    if (reviewsController.reviews.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Column(
+            children: [
+              Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                'No reviews yet',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Be the first to review this product!',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Column(
       children: [
-        ...mockReviews.map((review) => _buildReviewCard(review)).toList(),
+        ...reviewsController.reviews
+            .map((review) => _buildReviewCard(review))
+            .toList(),
 
         // Load More Button
-        const SizedBox(height: 16),
-        Center(
-          child: OutlinedButton(
-            onPressed: () {
-              // Load more reviews
-            },
-            child: const Text('Load More Reviews'),
+        if (reviewsController.hasMoreReviews.value) ...[
+          const SizedBox(height: 16),
+          Center(
+            child:
+                reviewsController.isLoadingMore.value
+                    ? const CircularProgressIndicator()
+                    : OutlinedButton(
+                      onPressed: reviewsController.loadMoreReviews,
+                      child: const Text('Load More Reviews'),
+                    ),
           ),
-        ),
+        ],
       ],
     );
   }
 
-  Widget _buildReviewCard(Map<String, dynamic> review) {
+  Widget _buildReviewCard(Review review) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -243,7 +344,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                 radius: 16,
                 backgroundColor: AppTheme.primaryColor,
                 child: Text(
-                  review['userName'][0].toUpperCase(),
+                  'U', // We don't have user name in the model, so use generic
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -256,7 +357,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      review['userName'],
+                      'User', // Generic user name since we don't store it
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
@@ -267,7 +368,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                         Row(
                           children: List.generate(5, (index) {
                             return Icon(
-                              index < review['rating']
+                              index < review.rating
                                   ? Icons.star
                                   : Icons.star_border,
                               color: AppTheme.ratingStars,
@@ -277,13 +378,13 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          review['date'],
+                          review.timeAgo,
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 12,
                           ),
                         ),
-                        if (review['verified'] == true) ...[
+                        if (review.verifiedPurchase) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -315,25 +416,25 @@ class _RatingsReviewsState extends State<RatingsReviews> {
           const SizedBox(height: 12),
 
           // Review Title
-          if (review['title'] != null) ...[
+          if (review.title.isNotEmpty) ...[
             Text(
-              review['title'],
+              review.title,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
             const SizedBox(height: 4),
           ],
 
           // Review Text
-          Text(review['text'], style: const TextStyle(fontSize: 14)),
+          Text(review.content, style: const TextStyle(fontSize: 14)),
 
           // Review Images (if any)
-          if (review['images'] != null && review['images'].isNotEmpty) ...[
+          if (review.images.isNotEmpty) ...[
             const SizedBox(height: 12),
             SizedBox(
               height: 80,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: review['images'].length,
+                itemCount: review.images.length,
                 itemBuilder: (context, index) {
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
@@ -346,7 +447,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        review['images'][index],
+                        review.images[index],
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(Icons.image, color: Colors.grey);
@@ -366,7 +467,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
             children: [
               InkWell(
                 onTap: () {
-                  // Mark as helpful
+                  reviewsController.markReviewHelpful(review.id);
                 },
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -374,7 +475,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                     const Icon(Icons.thumb_up_outlined, size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      'Helpful (${review['helpful']})',
+                      'Helpful (${review.helpfulCount})',
                       style: const TextStyle(fontSize: 12),
                     ),
                   ],
@@ -383,7 +484,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               const SizedBox(width: 16),
               InkWell(
                 onTap: () {
-                  // Report review
+                  _showReportDialog(review.id);
                 },
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -401,41 +502,280 @@ class _RatingsReviewsState extends State<RatingsReviews> {
     );
   }
 
-  List<Map<String, dynamic>> _getMockReviews() {
-    return [
-      {
-        'userName': 'Rajesh Kumar',
-        'rating': 5,
-        'date': '2 days ago',
-        'verified': true,
-        'title': 'Excellent product!',
-        'text':
-            'Really happy with this purchase. The quality is great and it works exactly as described. Highly recommended!',
-        'helpful': 12,
-        'images': [],
-      },
-      {
-        'userName': 'Priya Sharma',
-        'rating': 4,
-        'date': '1 week ago',
-        'verified': true,
-        'title': 'Good value for money',
-        'text':
-            'Nice product overall. The build quality is decent and it serves the purpose well. Delivery was quick too.',
-        'helpful': 8,
-        'images': [],
-      },
-      {
-        'userName': 'Amit Singh',
-        'rating': 5,
-        'date': '2 weeks ago',
-        'verified': false,
-        'title': 'Perfect!',
-        'text':
-            'Exactly what I was looking for. Great quality and fast delivery. Will definitely buy again.',
-        'helpful': 5,
-        'images': [],
-      },
-    ];
+  void _showReportDialog(String reviewId) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Report Review'),
+            content: const Text('Why are you reporting this review?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  reviewsController.reportReview(
+                    reviewId,
+                    'Inappropriate content',
+                  );
+                },
+                child: const Text('Report'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildWriteReviewSection() {
+    return Obx(() {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.rate_review, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                const Text(
+                  'Write a Review',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            if (currentUser == null) ...[
+              // Not logged in
+              Text(
+                'Please sign in to write a review',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => Get.toNamed('/login'),
+                child: const Text('Sign In'),
+              ),
+            ] else if (!reviewsController.canUserReview.value) ...[
+              // Cannot review (hasn't purchased)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        color: Colors.orange[600],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Verified Purchase Required',
+                        style: TextStyle(
+                          color: Colors.orange[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Only customers who have purchased and received this product can write reviews.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () {
+                      // Navigate to product purchase or show more info
+                      SnackbarUtils.showInfo(
+                        'Purchase this product to write a review',
+                      );
+                    },
+                    child: const Text('Purchase Product'),
+                  ),
+                ],
+              ),
+            ] else ...[
+              // Can review
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.verified, color: Colors.green[600], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Verified Purchase',
+                        style: TextStyle(
+                          color: Colors.green[600],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'You can write a review for this product.',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _showWriteReviewDialog(),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Write Review'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
+
+  void _showWriteReviewDialog() {
+    final titleController = TextEditingController();
+    final contentController = TextEditingController();
+    int selectedRating = 5;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: const Text('Write Your Review'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Rating Selection
+                        const Text(
+                          'Rating *',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: List.generate(5, (index) {
+                            return GestureDetector(
+                              onTap:
+                                  () => setState(
+                                    () => selectedRating = index + 1,
+                                  ),
+                              child: Icon(
+                                index < selectedRating
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: AppTheme.ratingStars,
+                                size: 32,
+                              ),
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Title
+                        TextField(
+                          controller: titleController,
+                          decoration: const InputDecoration(
+                            labelText: 'Review Title *',
+                            hintText: 'Summarize your experience',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLength: 100,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Content
+                        TextField(
+                          controller: contentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Your Review *',
+                            hintText:
+                                'Share your thoughts about this product...',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 4,
+                          maxLength: 1000,
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    Obx(
+                      () => ElevatedButton(
+                        onPressed:
+                            reviewsController.isLoading.value
+                                ? null
+                                : () async {
+                                  final title = titleController.text.trim();
+                                  final content = contentController.text.trim();
+
+                                  if (title.isEmpty) {
+                                    SnackbarUtils.showWarning(
+                                      'Please enter a review title',
+                                    );
+                                    return;
+                                  }
+
+                                  if (content.isEmpty) {
+                                    SnackbarUtils.showWarning(
+                                      'Please enter your review',
+                                    );
+                                    return;
+                                  }
+
+                                  if (content.length < 10) {
+                                    SnackbarUtils.showWarning(
+                                      'Review must be at least 10 characters long',
+                                    );
+                                    return;
+                                  }
+
+                                  final success = await reviewsController
+                                      .submitReview(
+                                        productId: widget.product.id,
+                                        rating: selectedRating,
+                                        title: title,
+                                        content: content,
+                                      );
+
+                                  if (success) {
+                                    Navigator.pop(context);
+                                    SnackbarUtils.showSuccess(
+                                      'Review submitted successfully!',
+                                    );
+                                  }
+                                },
+                        child:
+                            reviewsController.isLoading.value
+                                ? const SizedBox(
+                                  height: 16,
+                                  width: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text('Submit Review'),
+                      ),
+                    ),
+                  ],
+                ),
+          ),
+    );
   }
 }

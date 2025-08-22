@@ -14,6 +14,7 @@ class VendorRepository {
           .from('vendors')
           .select('*')
           .eq('status', 'approved')
+          .eq('is_active', true)
           .order('business_name');
 
       return (response as List)
@@ -32,6 +33,7 @@ class VendorRepository {
           .from('vendors')
           .select('*')
           .eq('status', 'approved')
+          .eq('is_active', true)
           .eq('is_featured', true)
           .order('business_name');
 
@@ -53,6 +55,7 @@ class VendorRepository {
               .select('*')
               .eq('id', vendorId)
               .eq('status', 'approved')
+              .eq('is_active', true)
               .maybeSingle();
 
       if (response != null) {
@@ -72,6 +75,7 @@ class VendorRepository {
           .from('vendors')
           .select('*')
           .eq('status', 'approved')
+          .eq('is_active', true)
           .ilike('business_name', '%$query%')
           .order('business_name');
 

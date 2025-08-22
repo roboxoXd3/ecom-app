@@ -1,12 +1,15 @@
+import 'order_status.dart';
+
 class Order {
   final String id;
   final String userId;
   final String addressId;
-  final String paymentMethodId;
+  final String? paymentMethodId;
+  final String? shippingMethod; // Used to store payment method type
   final double subtotal;
   final double shippingFee;
   final double total;
-  final String status;
+  final OrderStatus status;
   final DateTime createdAt;
   final List<OrderItem> items;
 
@@ -14,7 +17,8 @@ class Order {
     required this.id,
     required this.userId,
     required this.addressId,
-    required this.paymentMethodId,
+    this.paymentMethodId,
+    this.shippingMethod,
     required this.subtotal,
     required this.shippingFee,
     required this.total,
@@ -29,13 +33,32 @@ class Order {
       userId: json['user_id'],
       addressId: json['address_id'],
       paymentMethodId: json['payment_method_id'],
+      shippingMethod: json['shipping_method'],
       subtotal: json['subtotal'].toDouble(),
       shippingFee: json['shipping_fee'].toDouble(),
       total: json['total'].toDouble(),
-      status: json['status'],
+      status: OrderStatus.fromString(json['status']),
       createdAt: DateTime.parse(json['created_at']),
       items: items ?? [],
     );
+  }
+
+  // Helper method to get payment method display name
+  String get paymentMethodDisplayName {
+    switch (shippingMethod) {
+      case 'cash_on_delivery':
+        return 'Cash on Delivery';
+      case 'credit_card':
+        return 'Credit Card';
+      case 'debit_card':
+        return 'Debit Card';
+      case 'upi':
+        return 'UPI';
+      case 'net_banking':
+        return 'Net Banking';
+      default:
+        return shippingMethod ?? 'Unknown';
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -43,10 +66,11 @@ class Order {
       'user_id': userId,
       'address_id': addressId,
       'payment_method_id': paymentMethodId,
+      'shipping_method': shippingMethod,
       'subtotal': subtotal,
       'shipping_fee': shippingFee,
       'total': total,
-      'status': status,
+      'status': status.value,
     };
   }
 }

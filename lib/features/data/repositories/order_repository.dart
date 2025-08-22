@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/order_model.dart';
+import '../models/order_status.dart';
 
 class OrderRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -12,32 +13,58 @@ class OrderRepository {
     required double total,
     required List<OrderItem> items,
   }) async {
-    // Start a transaction by creating the order first
-    final orderResponse =
-        await _supabase
-            .from('orders')
-            .insert({
-              'user_id': _supabase.auth.currentUser!.id,
-              'address_id': addressId,
-              'payment_method_id': paymentMethodId,
-              'subtotal': subtotal,
-              'shipping_fee': shippingFee,
-              'total': total,
-              'status': 'pending',
-            })
-            .select()
-            .single();
+    try {
+      print(
+        'OrderRepository: Creating order with addressId: $addressId, paymentMethodId: $paymentMethodId',
+      );
 
-    final order = Order.fromJson(orderResponse);
+      // Check if user is authenticated
+      if (_supabase.auth.currentUser == null) {
+        throw Exception('User not authenticated');
+      }
 
-    // Then create all order items
-    final orderItems =
-        items.map((item) => {...item.toJson(), 'order_id': order.id}).toList();
+      // Start a transaction by creating the order first
+      final orderResponse =
+          await _supabase
+              .from('orders')
+              .insert({
+                'user_id': _supabase.auth.currentUser!.id,
+                'address_id': addressId,
+                // Set payment_method_id to null for string-based payment methods
+                'payment_method_id': null,
+                'subtotal': subtotal,
+                'shipping_fee': shippingFee,
+                'total': total,
+                'status': OrderStatus.pending.value,
+                // Store the payment method type in shipping_method field temporarily
+                // In a real app, you'd want a separate payment_method_type field
+                'shipping_method': paymentMethodId,
+              })
+              .select()
+              .single();
 
-    await _supabase.from('order_items').insert(orderItems);
+      print('OrderRepository: Order created with ID: ${orderResponse['id']}');
 
-    // Fetch the complete order with items
-    return getOrder(order.id);
+      final order = Order.fromJson(orderResponse);
+
+      // Then create all order items
+      final orderItems =
+          items
+              .map((item) => {...item.toJson(), 'order_id': order.id})
+              .toList();
+
+      print('OrderRepository: Creating ${orderItems.length} order items');
+
+      await _supabase.from('order_items').insert(orderItems);
+
+      print('OrderRepository: Order items created successfully');
+
+      // Fetch the complete order with items
+      return getOrder(order.id);
+    } catch (e) {
+      print('OrderRepository: Error creating order: $e');
+      rethrow;
+    }
   }
 
   Future<Order> getOrder(String orderId) async {
@@ -82,7 +109,10 @@ class OrderRepository {
     return orders;
   }
 
-  Future<void> updateOrderStatus(String orderId, String status) async {
-    await _supabase.from('orders').update({'status': status}).eq('id', orderId);
+  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
+    await _supabase
+        .from('orders')
+        .update({'status': status.value})
+        .eq('id', orderId);
   }
 }

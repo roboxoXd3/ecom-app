@@ -8,9 +8,11 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors(*)')
+          .select('*, categories(*), vendors!inner(*)')
           .eq('in_stock', true)
           .eq('approval_status', 'approved')
+          .eq('vendors.status', 'approved')
+          .eq('vendors.is_active', true)
           .order('created_at');
 
       return (response as List)
@@ -26,9 +28,11 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors(*)')
+          .select('*, categories(*), vendors!inner(*)')
           .eq('is_new_arrival', true)
           .eq('approval_status', 'approved')
+          .eq('vendors.status', 'approved')
+          .eq('vendors.is_active', true)
           .order('created_at', ascending: false);
 
       return (response as List).map((json) => Product.fromJson(json)).toList();
@@ -42,9 +46,11 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors(*)')
+          .select('*, categories(*), vendors!inner(*)')
           .eq('is_featured', true)
           .eq('approval_status', 'approved')
+          .eq('vendors.status', 'approved')
+          .eq('vendors.is_active', true)
           .limit(4);
 
       return (response as List)
