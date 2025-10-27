@@ -16,6 +16,30 @@ class Review {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // Helper method to parse string lists from various data structures
+  static List<String> _parseStringList(dynamic data) {
+    if (data == null) return [];
+
+    try {
+      if (data is List) {
+        return data.map((item) => item.toString()).toList();
+      } else if (data is Map<String, dynamic>) {
+        return data.keys.toList();
+      } else if (data is String) {
+        // Handle comma-separated string
+        return data
+            .split(',')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error parsing string list: $e');
+      return [];
+    }
+  }
+
   Review({
     required this.id,
     required this.productId,
@@ -44,7 +68,7 @@ class Review {
       rating: json['rating'],
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      images: List<String>.from(json['images'] ?? []),
+      images: _parseStringList(json['images']),
       verifiedPurchase: json['verified_purchase'] ?? false,
       helpfulCount: json['helpful_count'] ?? 0,
       reportedCount: json['reported_count'] ?? 0,

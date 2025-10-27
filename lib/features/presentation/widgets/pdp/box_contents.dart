@@ -17,21 +17,27 @@ class BoxContents extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'What\'s in the Box',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: AppTheme.getSurface(context),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: AppTheme.getBorder(context)),
             ),
             child: Column(
               children:
-                  contents.map((item) => _buildContentItem(item)).toList(),
+                  contents
+                      .map((item) => _buildContentItem(item, context))
+                      .toList(),
             ),
           ),
         ],
@@ -39,7 +45,7 @@ class BoxContents extends StatelessWidget {
     );
   }
 
-  Widget _buildContentItem(String item) {
+  Widget _buildContentItem(String item, BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -56,10 +62,18 @@ class BoxContents extends StatelessWidget {
           Expanded(
             child: Text(
               item,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.getTextPrimary(context),
+              ),
             ),
           ),
-          Icon(_getIconForItem(item), size: 20, color: Colors.grey[600]),
+          Icon(
+            _getIconForItem(item),
+            size: 20,
+            color: AppTheme.getTextSecondary(context),
+          ),
         ],
       ),
     );

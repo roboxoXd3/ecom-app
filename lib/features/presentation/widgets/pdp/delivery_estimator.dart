@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../data/models/product_model.dart';
+import '../../../../core/utils/currency_utils.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class DeliveryEstimator extends StatefulWidget {
   final DeliveryInfo? deliveryInfo;
@@ -31,9 +33,13 @@ class _DeliveryEstimatorState extends State<DeliveryEstimator> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Delivery & Services',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -119,7 +125,7 @@ class _DeliveryEstimatorState extends State<DeliveryEstimator> {
             info.freeDelivery
                 ? 'FREE'
                 : info.shippingFee != null
-                ? '₹${info.shippingFee!.toStringAsFixed(0)}'
+                ? CurrencyUtils.formatAmount(info.shippingFee!, decimalPlaces: 0)
                 : 'Calculated at checkout',
             info.freeDelivery ? Colors.green : Colors.orange,
           ),
@@ -153,7 +159,11 @@ class _DeliveryEstimatorState extends State<DeliveryEstimator> {
           const SizedBox(width: 8),
           Text(
             '$label: ',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.getTextPrimary(context),
+            ),
           ),
           Expanded(
             child: Text(

@@ -6,10 +6,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/product_search_service.dart';
 import '../../data/services/ujunwa_ai_service.dart';
 import '../../data/services/conversation_context_service.dart';
+import '../../data/services/size_guide_service.dart';
 
 import '../../data/models/product_model.dart';
 import '../../data/models/chat_models.dart';
 import '../../data/repositories/chat_repository.dart';
+import '../../data/models/order_model.dart';
+import '../../data/models/order_status.dart';
+import '../../data/repositories/order_repository.dart';
 
 class ChatMessage {
   final String id;
@@ -17,7 +21,8 @@ class ChatMessage {
   final bool isUser;
   final DateTime createdAt;
   final List<Product>? products; // Add products for rich responses
-  final String? messageType; // 'text', 'products', 'recommendations'
+  final List<Order>? orders; // Add orders for order tracking responses
+  final String? messageType; // 'text', 'products', 'orders', 'recommendations'
   // final UjunwaResponse? ujunwaResponse; // TODO: Add structured response data
 
   // NEW: Image support
@@ -31,6 +36,7 @@ class ChatMessage {
     required this.isUser,
     required this.createdAt,
     this.products,
+    this.orders,
     this.messageType = 'text',
     // this.ujunwaResponse, // TODO: Include structured response
     // NEW: Image parameters
@@ -87,12 +93,14 @@ class ChatbotController extends GetxController {
   final UjunwaAIService _ujunwaService = UjunwaAIService();
   final ConversationContextService _contextService =
       ConversationContextService();
+  final SizeGuideService _sizeGuideService = SizeGuideService();
 
   // NEW: Image picker instance
   final ImagePicker _imagePicker = ImagePicker();
 
   // Enhanced features
   final ChatRepository _chatRepository = ChatRepository();
+  final OrderRepository _orderRepository = OrderRepository();
 
   // Current conversation for persistence
   ChatConversation? currentConversation;
@@ -113,8 +121,8 @@ class ChatbotController extends GetxController {
       'For returns, please ensure the item is unused and in original packaging. Would you like me to guide you through the process?',
     ],
     'size guide': [
-      'Here\'s our size guide! For clothing, we recommend checking the size chart on each product page.',
-      'Size guides vary by brand. I can help you find the right size for specific items. What are you looking for?',
+      'I can help you with detailed size guides! Let me get you comprehensive sizing information.',
+      'Size guides are important for the perfect fit. I\'ll show you detailed measurement guides and tips.',
     ],
     'support': [
       'I\'m here to provide support! What specific issue can I help you with?',
@@ -216,6 +224,14 @@ class ChatbotController extends GetxController {
       if (currentUser == null) return;
 
       final userId = currentUser.id;
+      final lowerMessage = userMessage.toLowerCase();
+
+      // Check for size guide requests first
+      if (_isSizeGuideRequest(lowerMessage)) {
+        isTyping.value = false;
+        await showSizeGuide(query: userMessage);
+        return;
+      }
 
       // Get conversation context
       List<ConversationContext>? context;
@@ -303,6 +319,24 @@ class ChatbotController extends GetxController {
       messages.add(fallbackMessage);
       _scrollToBottom();
     }
+  }
+
+  /// Check if the message is a size guide request
+  bool _isSizeGuideRequest(String message) {
+    final sizeGuideKeywords = [
+      'size guide',
+      'size chart',
+      'sizing',
+      'measurements',
+      'how to measure',
+      'what size',
+      'size help',
+      'fit guide',
+      'size recommendation',
+      'measure for',
+    ];
+
+    return sizeGuideKeywords.any((keyword) => message.contains(keyword));
   }
 
   /// Show suggestions as quick action buttons
@@ -449,6 +483,76 @@ class ChatbotController extends GetxController {
     }
   }
 
+  /// Show user's undelivered orders for tracking
+  Future<void> showTrackOrders() async {
+    isTyping.value = true;
+
+    try {
+      // Get user's orders
+      final allOrders = await _orderRepository.getUserOrders();
+
+      // Filter for undelivered orders (pending, processing, shipped)
+      final undeliveredOrders =
+          allOrders.where((order) {
+            return order.status == OrderStatus.pending ||
+                order.status == OrderStatus.processing ||
+                order.status == OrderStatus.shipped;
+          }).toList();
+
+      String responseText;
+      if (undeliveredOrders.isEmpty) {
+        responseText =
+            'You don\'t have any orders currently being processed or shipped. 📦\n\n'
+            'All your orders have been delivered or completed! 🎉\n\n'
+            'Would you like to:\n'
+            '• Browse new products\n'
+            '• Check your order history\n'
+            '• Contact support for help';
+      } else {
+        final count = undeliveredOrders.length;
+        responseText =
+            'Here ${count == 1 ? 'is' : 'are'} your $count active order${count == 1 ? '' : 's'} to track: 📦\n\n'
+            'Tap on any order card below to see detailed tracking information and status updates.';
+      }
+
+      final botMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: responseText,
+        isUser: false,
+        createdAt: DateTime.now(),
+        orders: undeliveredOrders.isNotEmpty ? undeliveredOrders : null,
+        messageType: undeliveredOrders.isNotEmpty ? 'orders' : 'text',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+      isTyping.value = false;
+      messages.add(botMessage);
+      _scrollToBottom();
+    } catch (e) {
+      print('Error getting user orders: $e');
+
+      // Show error message
+      final errorMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            'I\'m having trouble accessing your order information right now. 😔\n\n'
+            'This could be because:\n'
+            '• You\'re not logged in\n'
+            '• There\'s a connection issue\n'
+            '• The service is temporarily unavailable\n\n'
+            'Please try again in a moment or contact support if the issue persists.',
+        isUser: false,
+        createdAt: DateTime.now(),
+        messageType: 'text',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1000));
+      isTyping.value = false;
+      messages.add(errorMessage);
+      _scrollToBottom();
+    }
+  }
+
   Future<void> showCategoryProducts(String categoryName) async {
     isTyping.value = true;
 
@@ -474,6 +578,84 @@ class ChatbotController extends GetxController {
       print('Error getting category products: $e');
       isTyping.value = false;
     }
+  }
+
+  /// Show comprehensive size guide information
+  Future<void> showSizeGuide({
+    String? categoryId,
+    String? productId,
+    String? query,
+  }) async {
+    isTyping.value = true;
+
+    try {
+      // Get comprehensive size guide information
+      final sizeGuideResponse = await _sizeGuideService.getSizeGuideInfo(
+        categoryId: categoryId,
+        productId: productId,
+        query: query,
+      );
+
+      final botMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: sizeGuideResponse.toFormattedString(),
+        isUser: false,
+        createdAt: DateTime.now(),
+        messageType: 'text',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1500));
+      isTyping.value = false;
+      messages.add(botMessage);
+      _scrollToBottom();
+
+      // If there's a specific size chart, offer to show it
+      if (sizeGuideResponse.hasSpecificChart &&
+          sizeGuideResponse.sizeChart != null) {
+        _showSizeChartOption(sizeGuideResponse.sizeChart!);
+      }
+    } catch (e) {
+      print('Error getting size guide: $e');
+
+      // Fallback message
+      final fallbackMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            'I\'m here to help with sizing! 📏\n\n'
+            'I can provide:\n'
+            '• Measurement guides for different categories\n'
+            '• Size recommendations\n'
+            '• Tips for finding the right fit\n\n'
+            'Try asking me about specific products like "size guide for shirts" '
+            'or "how to measure for dresses"!',
+        isUser: false,
+        createdAt: DateTime.now(),
+        messageType: 'text',
+      );
+
+      await Future.delayed(const Duration(milliseconds: 1000));
+      isTyping.value = false;
+      messages.add(fallbackMessage);
+      _scrollToBottom();
+    }
+  }
+
+  /// Show size chart option as a follow-up message
+  void _showSizeChartOption(dynamic sizeChart) {
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      final chartMessage = ChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text:
+            '📊 Would you like to see the detailed size chart? '
+            'I can show you the exact measurements for each size.',
+        isUser: false,
+        createdAt: DateTime.now(),
+        messageType: 'text',
+      );
+
+      messages.add(chartMessage);
+      _scrollToBottom();
+    });
   }
 
   void _debugProducts() async {

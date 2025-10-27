@@ -65,7 +65,7 @@ class EnhancedProductController extends GetxController {
   void _initializeProductState(Product product) {
     // Set default color and size
     if (product.colors.isNotEmpty) {
-      selectedColor.value = product.colors.first;
+      selectedColor.value = product.colors.first.name;
     }
     if (product.sizes.isNotEmpty) {
       selectedSize.value = product.sizes.first;

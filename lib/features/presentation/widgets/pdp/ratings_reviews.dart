@@ -68,11 +68,15 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               padding: const EdgeInsets.all(32.0),
               child: Column(
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.grey),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: AppTheme.getTextSecondary(context),
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Failed to load reviews',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(color: AppTheme.getTextSecondary(context)),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
@@ -92,9 +96,13 @@ class _RatingsReviewsState extends State<RatingsReviews> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Ratings & Reviews',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getTextPrimary(context),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -132,9 +140,9 @@ class _RatingsReviewsState extends State<RatingsReviews> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AppTheme.getSurface(context),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: AppTheme.getBorder(context)),
       ),
       child: Row(
         children: [
@@ -145,9 +153,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               children: [
                 Text(
                   summary.averageRating.toStringAsFixed(1),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.getTextPrimary(context),
                   ),
                 ),
                 Row(
@@ -165,7 +174,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                 const SizedBox(height: 4),
                 Text(
                   '$totalReviews Reviews',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -190,7 +202,13 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     children: [
-                      Text('$starCount', style: const TextStyle(fontSize: 12)),
+                      Text(
+                        '$starCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextPrimary(context),
+                        ),
+                      ),
                       const Icon(
                         Icons.star,
                         size: 12,
@@ -200,7 +218,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                       Expanded(
                         child: LinearProgressIndicator(
                           value: percentage,
-                          backgroundColor: Colors.grey[300],
+                          backgroundColor: AppTheme.getBorder(context),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             AppTheme.ratingStars,
                           ),
@@ -209,7 +227,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                       const SizedBox(width: 8),
                       Text(
                         count.toString(),
-                        style: const TextStyle(fontSize: 12),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextPrimary(context),
+                        ),
                       ),
                     ],
                   ),
@@ -281,21 +302,31 @@ class _RatingsReviewsState extends State<RatingsReviews> {
 
   Widget _buildReviewsList() {
     if (reviewsController.reviews.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(32.0),
           child: Column(
             children: [
-              Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey),
-              SizedBox(height: 16),
+              Icon(
+                Icons.rate_review_outlined,
+                size: 48,
+                color: AppTheme.getTextSecondary(context),
+              ),
+              const SizedBox(height: 16),
               Text(
                 'No reviews yet',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(
+                  color: AppTheme.getTextSecondary(context),
+                  fontSize: 16,
+                ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Be the first to review this product!',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.getTextSecondary(context),
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -305,9 +336,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
 
     return Column(
       children: [
-        ...reviewsController.reviews
-            .map((review) => _buildReviewCard(review))
-            .toList(),
+        ...reviewsController.reviews.map((review) => _buildReviewCard(review)),
 
         // Load More Button
         if (reviewsController.hasMoreReviews.value) ...[
@@ -358,9 +387,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   children: [
                     Text(
                       'User', // Generic user name since we don't store it
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
+                        color: AppTheme.getTextPrimary(context),
                       ),
                     ),
                     Row(
@@ -380,7 +410,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                         Text(
                           review.timeAgo,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AppTheme.getTextSecondary(context),
                             fontSize: 12,
                           ),
                         ),
@@ -419,13 +449,23 @@ class _RatingsReviewsState extends State<RatingsReviews> {
           if (review.title.isNotEmpty) ...[
             Text(
               review.title,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: AppTheme.getTextPrimary(context),
+              ),
             ),
             const SizedBox(height: 4),
           ],
 
           // Review Text
-          Text(review.content, style: const TextStyle(fontSize: 14)),
+          Text(
+            review.content,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.getTextPrimary(context),
+            ),
+          ),
 
           // Review Images (if any)
           if (review.images.isNotEmpty) ...[
@@ -472,11 +512,18 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.thumb_up_outlined, size: 16),
+                    Icon(
+                      Icons.thumb_up_outlined,
+                      size: 16,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Helpful (${review.helpfulCount})',
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
                     ),
                   ],
                 ),
@@ -486,12 +533,22 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                 onTap: () {
                   _showReportDialog(review.id);
                 },
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.flag_outlined, size: 16),
-                    SizedBox(width: 4),
-                    Text('Report', style: TextStyle(fontSize: 12)),
+                    Icon(
+                      Icons.flag_outlined,
+                      size: 16,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Report',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -536,7 +593,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppTheme.getBorder(context)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -546,9 +603,13 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               children: [
                 const Icon(Icons.rate_review, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'Write a Review',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.getTextPrimary(context),
+                  ),
                 ),
               ],
             ),
@@ -558,7 +619,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               // Not logged in
               Text(
                 'Please sign in to write a review',
-                style: TextStyle(color: Colors.grey[600]),
+                style: TextStyle(color: AppTheme.getTextSecondary(context)),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
@@ -590,7 +651,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   const SizedBox(height: 8),
                   Text(
                     'Only customers who have purchased and received this product can write reviews.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    style: TextStyle(
+                      color: AppTheme.getTextSecondary(context),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
@@ -625,7 +689,10 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                   const SizedBox(height: 8),
                   Text(
                     'You can write a review for this product.',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    style: TextStyle(
+                      color: AppTheme.getTextSecondary(context),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'inline_video_player.dart';
+import '../../../../core/theme/app_theme.dart';
 
 /// Hero Gallery Widget for Enhanced PDP
 /// Displays product images in a carousel with indicators
@@ -34,9 +35,13 @@ class _HeroGalleryState extends State<HeroGallery> {
     if (widget.images.isEmpty) {
       return Container(
         height: 400,
-        color: Colors.grey[100],
-        child: const Center(
-          child: Icon(Icons.image_not_supported, size: 64, color: Colors.grey),
+        color: AppTheme.getSurface(context),
+        child: Center(
+          child: Icon(
+            Icons.image_not_supported,
+            size: 64,
+            color: AppTheme.getTextSecondary(context),
+          ),
         ),
       );
     }
@@ -85,8 +90,8 @@ class _HeroGalleryState extends State<HeroGallery> {
                           builder: (BuildContext context) {
                             return Container(
                               width: MediaQuery.of(context).size.width,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
+                              decoration: BoxDecoration(
+                                color: AppTheme.getSurface(context),
                               ),
                               child: Stack(
                                 children: [
@@ -98,19 +103,21 @@ class _HeroGalleryState extends State<HeroGallery> {
                                     height: double.infinity,
                                     placeholder:
                                         (context, url) => Container(
-                                          color: Colors.grey[100],
+                                          color: AppTheme.getSurface(context),
                                           child: const Center(
                                             child: CircularProgressIndicator(),
                                           ),
                                         ),
                                     errorWidget:
                                         (context, url, error) => Container(
-                                          color: Colors.grey[100],
-                                          child: const Center(
+                                          color: AppTheme.getSurface(context),
+                                          child: Center(
                                             child: Icon(
                                               Icons.image_not_supported,
                                               size: 64,
-                                              color: Colors.grey,
+                                              color: AppTheme.getTextSecondary(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -205,8 +212,10 @@ class _HeroGalleryState extends State<HeroGallery> {
                         shape: BoxShape.circle,
                         color:
                             currentIndex == entry.key
-                                ? Colors.black
-                                : Colors.grey[300],
+                                ? AppTheme.getTextPrimary(context)
+                                : AppTheme.getTextSecondary(
+                                  context,
+                                ).withOpacity(0.5),
                       ),
                     ),
                   );

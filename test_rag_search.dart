@@ -9,6 +9,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(title: 'RAG Search Test', home: TestSearchScreen());
@@ -16,6 +18,8 @@ class MyApp extends StatelessWidget {
 }
 
 class TestSearchScreen extends StatefulWidget {
+  const TestSearchScreen({super.key});
+
   @override
   _TestSearchScreenState createState() => _TestSearchScreenState();
 }

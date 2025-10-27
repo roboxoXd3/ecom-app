@@ -5,107 +5,6 @@ import '../../../data/models/product_model.dart';
 import '../../controllers/enhanced_product_controller.dart';
 import '../size_chart_widget.dart';
 
-// Enhanced color helper function with descriptive color support
-Color getColorFromString(String colorName) {
-  final lowerName = colorName.toLowerCase();
-
-  // Handle descriptive color names first
-  if (lowerName.contains('black') || lowerName.contains('midnight')) {
-    return Colors.black;
-  }
-  if (lowerName.contains('white') ||
-      lowerName.contains('arctic') ||
-      lowerName.contains('snow')) {
-    return Colors.white;
-  }
-  if (lowerName.contains('blue') ||
-      lowerName.contains('ocean') ||
-      lowerName.contains('navy')) {
-    if (lowerName.contains('navy') || lowerName.contains('midnight')) {
-      return const Color(0xFF000080); // Navy blue
-    }
-    if (lowerName.contains('ocean') || lowerName.contains('sky')) {
-      return const Color(0xFF0077BE); // Ocean blue
-    }
-    return Colors.blue;
-  }
-  if (lowerName.contains('red') ||
-      lowerName.contains('sunset') ||
-      lowerName.contains('crimson')) {
-    if (lowerName.contains('sunset')) {
-      return const Color(0xFFFF4500); // Sunset red/orange
-    }
-    return Colors.red;
-  }
-  if (lowerName.contains('green') ||
-      lowerName.contains('forest') ||
-      lowerName.contains('emerald')) {
-    return Colors.green;
-  }
-  if (lowerName.contains('yellow') ||
-      lowerName.contains('gold') ||
-      lowerName.contains('sunshine')) {
-    return Colors.amber;
-  }
-  if (lowerName.contains('orange') || lowerName.contains('tangerine')) {
-    return Colors.orange;
-  }
-  if (lowerName.contains('purple') ||
-      lowerName.contains('violet') ||
-      lowerName.contains('lavender')) {
-    return Colors.purple;
-  }
-  if (lowerName.contains('pink') || lowerName.contains('rose')) {
-    return Colors.pink;
-  }
-  if (lowerName.contains('brown') ||
-      lowerName.contains('chocolate') ||
-      lowerName.contains('coffee')) {
-    return Colors.brown;
-  }
-  if (lowerName.contains('grey') ||
-      lowerName.contains('gray') ||
-      lowerName.contains('silver')) {
-    return Colors.grey;
-  }
-
-  // Fallback to basic color matching
-  switch (lowerName) {
-    case 'red':
-      return Colors.red;
-    case 'blue':
-      return Colors.blue;
-    case 'green':
-      return Colors.green;
-    case 'yellow':
-      return Colors.yellow;
-    case 'orange':
-      return Colors.orange;
-    case 'purple':
-      return Colors.purple;
-    case 'pink':
-      return Colors.pink;
-    case 'brown':
-      return Colors.brown;
-    case 'black':
-      return Colors.black;
-    case 'white':
-      return Colors.white;
-    case 'teal':
-      return Colors.teal;
-    case 'cyan':
-      return Colors.cyan;
-    case 'lime':
-      return Colors.lime;
-    case 'indigo':
-      return Colors.indigo;
-    case 'amber':
-      return Colors.amber;
-    default:
-      return Colors.grey[400]!; // Lighter grey as fallback
-  }
-}
-
 class ColorSizeSelection extends StatelessWidget {
   final Product product;
 
@@ -213,47 +112,146 @@ class ColorSizeSelection extends StatelessWidget {
         const SizedBox(height: 12),
         Obx(
           () => Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 12,
+            runSpacing: 12,
             children:
-                product.colors.map((colorName) {
+                product.colors.map((colorOption) {
                   final isSelected =
-                      enhancedController.selectedColor.value == colorName;
+                      enhancedController.selectedColor.value ==
+                      colorOption.name;
+                  final colorValue = _parseHexColor(colorOption.hex);
+                  final isLightColor = _isLightColor(colorValue);
+
                   return GestureDetector(
                     onTap: () {
-                      enhancedController.updateSelectedColor(colorName);
+                      enhancedController.updateSelectedColor(colorOption.name);
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.all(3),
                       decoration: BoxDecoration(
-                        color:
-                            isSelected ? AppTheme.primaryColor : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color:
                               isSelected
                                   ? AppTheme.primaryColor
                                   : Colors.grey[300]!,
-                          width: 1.5,
+                          width: isSelected ? 2.5 : 1.5,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        colorName,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w500,
-                          fontSize: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(7),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Color swatch
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: colorValue,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      isLightColor
+                                          ? Colors.grey[300]!
+                                          : Colors.transparent,
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.15),
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Color name
+                            Text(
+                              colorOption.name,
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontWeight:
+                                    isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                            ),
+                            // Show quantity badge - reactive to selected size
+                            const SizedBox(width: 6),
+                            Obx(() {
+                              final selectedSize =
+                                  enhancedController.selectedSize.value;
+
+                              // Calculate quantity to display
+                              int displayQuantity;
+                              if (selectedSize.isNotEmpty &&
+                                  colorOption.sizeQuantities != null) {
+                                // Show size-specific quantity when size is selected
+                                displayQuantity = colorOption
+                                    .getQuantityForSize(selectedSize);
+                              } else {
+                                // Show total quantity when no size selected
+                                displayQuantity = colorOption.quantity;
+                              }
+
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      displayQuantity == 0
+                                          ? Colors.red[50]
+                                          : displayQuantity < 5
+                                          ? Colors.orange[50]
+                                          : Colors.green[50],
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color:
+                                        displayQuantity == 0
+                                            ? Colors.red[200]!
+                                            : displayQuantity < 5
+                                            ? Colors.orange[200]!
+                                            : Colors.green[200]!,
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  displayQuantity == 0
+                                      ? 'Out'
+                                      : 'Qty: $displayQuantity',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        displayQuantity == 0
+                                            ? Colors.red[700]
+                                            : displayQuantity < 5
+                                            ? Colors.orange[700]
+                                            : Colors.green[700],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
                         ),
                       ),
                     ),
@@ -263,5 +261,26 @@ class ColorSizeSelection extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // Helper method to parse hex color string to Color
+  Color _parseHexColor(String hexColor) {
+    try {
+      String hex = hexColor.replaceAll('#', '');
+      if (hex.length == 6) {
+        hex = 'FF$hex'; // Add alpha if not present
+      }
+      return Color(int.parse(hex, radix: 16));
+    } catch (e) {
+      return Colors.grey; // Fallback color
+    }
+  }
+
+  // Helper method to determine if a color is light
+  bool _isLightColor(Color color) {
+    // Calculate relative luminance
+    final double luminance =
+        (0.299 * color.red + 0.587 * color.green + 0.114 * color.blue) / 255;
+    return luminance > 0.5;
   }
 }

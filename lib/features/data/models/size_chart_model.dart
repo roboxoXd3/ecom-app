@@ -11,6 +11,14 @@ class SizeChartModel {
   final bool isActive;
   final String? categoryId;
 
+  // New fields for enhanced functionality
+  final String? vendorId;
+  final String approvalStatus;
+  final String? rejectionReason;
+  final bool isVendorTemplate;
+  final DateTime? approvedAt;
+  final String? approvedBy;
+
   SizeChartModel({
     required this.id,
     required this.name,
@@ -23,6 +31,13 @@ class SizeChartModel {
     this.chartType = 'standard',
     this.isActive = true,
     this.categoryId,
+    // New fields
+    this.vendorId,
+    this.approvalStatus = 'approved',
+    this.rejectionReason,
+    this.isVendorTemplate = false,
+    this.approvedAt,
+    this.approvedBy,
   });
 
   // Factory constructor for database data
@@ -45,6 +60,37 @@ class SizeChartModel {
       categoryId: template['category_id'],
       entries:
           entries.map((entry) => SizeChartEntry.fromDatabase(entry)).toList(),
+    );
+  }
+
+  // Factory constructor for vendor templates
+  factory SizeChartModel.fromVendorTemplate(Map<String, dynamic> data) {
+    return SizeChartModel(
+      id: data['id'],
+      name: data['name'],
+      category: data['category'] ?? 'Custom',
+      subcategory: data['subcategory'] ?? '',
+      measurementTypes: List<String>.from(data['measurement_types'] ?? []),
+      measurementInstructions: data['measurement_instructions'] ?? '',
+      sizeRecommendations: Map<String, String>.from(
+        data['size_recommendations'] ?? {},
+      ),
+      chartType: data['chart_type'] ?? 'custom',
+      isActive: data['is_active'] ?? true,
+      categoryId: data['category_id'],
+      vendorId: data['vendor_id'],
+      approvalStatus: data['approval_status'] ?? 'pending',
+      rejectionReason: data['rejection_reason'],
+      isVendorTemplate: true,
+      approvedAt:
+          data['approved_at'] != null
+              ? DateTime.parse(data['approved_at'])
+              : null,
+      approvedBy: data['approved_by'],
+      entries:
+          (data['template_data']['entries'] as List<dynamic>? ?? [])
+              .map((entry) => SizeChartEntry.fromMap(entry))
+              .toList(),
     );
   }
 
@@ -105,9 +151,24 @@ class SizeChartModel {
       'chart_type': chartType,
       'is_active': isActive,
       'category_id': categoryId,
+      'vendor_id': vendorId,
+      'approval_status': approvalStatus,
+      'rejection_reason': rejectionReason,
+      'is_vendor_template': isVendorTemplate,
+      'approved_at': approvedAt?.toIso8601String(),
+      'approved_by': approvedBy,
       'entries': entries.map((e) => e.toJson()).toList(),
     };
   }
+
+  // Helper method to check if template is approved
+  bool get isApproved => approvalStatus == 'approved';
+
+  // Helper method to check if template is pending
+  bool get isPending => approvalStatus == 'pending';
+
+  // Helper method to check if template is rejected
+  bool get isRejected => approvalStatus == 'rejected';
 }
 
 class SizeChartEntry {

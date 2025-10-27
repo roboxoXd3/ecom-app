@@ -63,10 +63,6 @@ class SizeChartController extends GetxController {
     return 'mens_clothing'; // Default fallback
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }
 
 class SizeChartButton extends StatelessWidget {
@@ -81,6 +77,29 @@ class SizeChartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _shouldShowSizeChart(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !snapshot.data!) {
+          return const SizedBox.shrink(); // Don't show button if size chart not needed
+        }
+        return _buildSizeChartButton(context);
+      },
+    );
+  }
+
+  Future<bool> _shouldShowSizeChart() async {
+    try {
+      final repository = SizeChartRepository();
+      final sizeChart = await repository.getSizeChartForProduct(product);
+      return sizeChart != null;
+    } catch (e) {
+      print('Error checking if size chart should be shown: $e');
+      return false;
+    }
+  }
+
+  Widget _buildSizeChartButton(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       child: InkWell(

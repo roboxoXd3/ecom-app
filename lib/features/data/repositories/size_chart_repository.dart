@@ -11,6 +11,9 @@ class SizeChartRepository {
     ProductModule.Product product,
   ) async {
     try {
+      // Simple check: If product has size chart override set to 'hide', don't show
+      if (product.sizeChartOverride == 'hide') return null;
+
       // Priority 1: Check if product has custom size chart data
       if (product.sizeGuideType == 'custom' &&
           product.customSizeChartData != null) {
@@ -27,12 +30,8 @@ class SizeChartRepository {
       }
 
       // Priority 3: Try to get template by category
-      if (product.categoryId != null) {
-        final categoryTemplate = await getSizeChartByCategory(
-          product.categoryId!,
-        );
-        if (categoryTemplate != null) return categoryTemplate;
-      }
+      final categoryTemplate = await getSizeChartByCategory(product.categoryId);
+      if (categoryTemplate != null) return categoryTemplate;
 
       // Priority 4: Fallback to legacy charts
       final legacyChart = await getLegacyChartByCategory(product.categoryId);
@@ -51,10 +50,17 @@ class SizeChartRepository {
       final templateResponse =
           await _supabase
               .from('size_chart_templates')
-              .select('*, categories(name)')
+              .select(
+                '*, categories!size_chart_templates_category_id_fkey(name)',
+              )
               .eq('id', templateId)
               .eq('is_active', true)
-              .single();
+              .maybeSingle();
+
+      // Return null if no template found
+      if (templateResponse == null) {
+        return null;
+      }
 
       // Get template entries
       final entriesResponse = await _supabase
@@ -77,11 +83,18 @@ class SizeChartRepository {
       final templateResponse =
           await _supabase
               .from('size_chart_templates')
-              .select('*, categories(name)')
+              .select(
+                '*, categories!size_chart_templates_category_id_fkey(name)',
+              )
               .eq('category_id', categoryId)
               .eq('is_active', true)
               .limit(1)
-              .single();
+              .maybeSingle();
+
+      // Return null if no template found for this category
+      if (templateResponse == null) {
+        return null;
+      }
 
       // Get template entries
       final entriesResponse = await _supabase
@@ -102,7 +115,7 @@ class SizeChartRepository {
     try {
       final templatesResponse = await _supabase
           .from('size_chart_templates')
-          .select('*, categories(name)')
+          .select('*, categories!size_chart_templates_category_id_fkey(name)')
           .eq('is_active', true)
           .order('name');
 

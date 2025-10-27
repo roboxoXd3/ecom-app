@@ -8,7 +8,7 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors!inner(*)')
+          .select('*, categories(*), subcategories(*), vendors!inner(*)')
           .eq('in_stock', true)
           .eq('approval_status', 'approved')
           .eq('vendors.status', 'approved')
@@ -28,7 +28,7 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors!inner(*)')
+          .select('*, categories(*), subcategories(*), vendors!inner(*)')
           .eq('is_new_arrival', true)
           .eq('approval_status', 'approved')
           .eq('vendors.status', 'approved')
@@ -46,7 +46,7 @@ class ProductRepository {
     try {
       final response = await supabase
           .from('products')
-          .select('*, categories(*), vendors!inner(*)')
+          .select('*, categories(*), subcategories(*), vendors!inner(*)')
           .eq('is_featured', true)
           .eq('approval_status', 'approved')
           .eq('vendors.status', 'approved')

@@ -1,8 +1,6 @@
 import 'package:get/get.dart';
 import 'notification_type.dart';
 
-final notificationController = Get.put(NotificationController());
-
 class NotificationController extends GetxController {
   final RxList<NotificationItem> notifications = <NotificationItem>[].obs;
   final RxInt unreadCount = 0.obs;

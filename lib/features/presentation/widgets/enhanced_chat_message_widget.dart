@@ -13,13 +13,13 @@ class EnhancedChatMessageWidget extends StatelessWidget {
   final Function(String)? onSuggestionTap;
 
   const EnhancedChatMessageWidget({
-    Key? key,
+    super.key,
     required this.message,
     required this.screenWidth,
     this.ujunwaResponse,
     this.onProductTap,
     this.onSuggestionTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +273,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
+        SizedBox(
           height: 280,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,

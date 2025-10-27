@@ -23,6 +23,7 @@ class GooglePlacesAutocomplete extends StatefulWidget {
 class _GooglePlacesAutocompleteState extends State<GooglePlacesAutocomplete> {
   List<PlacePrediction> _predictions = [];
   bool _isLoading = false;
+  bool _isSelectingPlace = false; // Flag to prevent search during selection
   OverlayEntry? _overlayEntry;
   final LayerLink _layerLink = LayerLink();
   final FocusNode _focusNode = FocusNode();
@@ -44,6 +45,9 @@ class _GooglePlacesAutocompleteState extends State<GooglePlacesAutocomplete> {
   }
 
   void _onTextChanged() {
+    // Don't search if we're currently selecting a place
+    if (_isSelectingPlace) return;
+
     final text = widget.controller.text;
     if (text.length > 2) {
       _searchPlaces(text);
@@ -87,7 +91,8 @@ class _GooglePlacesAutocompleteState extends State<GooglePlacesAutocomplete> {
 
   void _showOverlay() {
     _removeOverlay();
-    if (_predictions.isEmpty) return;
+    // Don't show overlay if predictions are empty or field doesn't have focus
+    if (_predictions.isEmpty || !_focusNode.hasFocus) return;
 
     _overlayEntry = OverlayEntry(
       builder:
@@ -147,6 +152,12 @@ class _GooglePlacesAutocompleteState extends State<GooglePlacesAutocomplete> {
   }
 
   Future<void> _onPredictionSelected(PlacePrediction prediction) async {
+    // Set flag to prevent triggering search during selection
+    setState(() {
+      _isSelectingPlace = true;
+      _predictions = []; // Clear predictions immediately
+    });
+
     widget.controller.text = prediction.description;
     _removeOverlay();
     _focusNode.unfocus();
@@ -176,6 +187,14 @@ class _GooglePlacesAutocompleteState extends State<GooglePlacesAutocomplete> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading address details: $e')),
         );
+      }
+    } finally {
+      // Reset flag after a short delay to allow for manual editing later
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        setState(() {
+          _isSelectingPlace = false;
+        });
       }
     }
   }

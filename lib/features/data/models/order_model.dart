@@ -13,6 +13,13 @@ class Order {
   final DateTime createdAt;
   final List<OrderItem> items;
 
+  // Squad payment integration fields
+  final String? squadTransactionRef;
+  final String? squadGatewayRef;
+  final String? paymentStatus;
+  final String? escrowStatus;
+  final DateTime? escrowReleaseDate;
+
   Order({
     required this.id,
     required this.userId,
@@ -25,6 +32,11 @@ class Order {
     required this.status,
     required this.createdAt,
     required this.items,
+    this.squadTransactionRef,
+    this.squadGatewayRef,
+    this.paymentStatus,
+    this.escrowStatus,
+    this.escrowReleaseDate,
   });
 
   factory Order.fromJson(Map<String, dynamic> json, {List<OrderItem>? items}) {
@@ -40,6 +52,14 @@ class Order {
       status: OrderStatus.fromString(json['status']),
       createdAt: DateTime.parse(json['created_at']),
       items: items ?? [],
+      squadTransactionRef: json['squad_transaction_ref'],
+      squadGatewayRef: json['squad_gateway_ref'],
+      paymentStatus: json['payment_status'],
+      escrowStatus: json['escrow_status'],
+      escrowReleaseDate:
+          json['escrow_release_date'] != null
+              ? DateTime.parse(json['escrow_release_date'])
+              : null,
     );
   }
 
@@ -71,7 +91,33 @@ class Order {
       'shipping_fee': shippingFee,
       'total': total,
       'status': status.value,
+      'squad_transaction_ref': squadTransactionRef,
+      'squad_gateway_ref': squadGatewayRef,
+      'payment_status': paymentStatus,
+      'escrow_status': escrowStatus,
+      'escrow_release_date': escrowReleaseDate?.toIso8601String(),
     };
+  }
+
+  // Helper methods for payment status
+  bool get isPaymentPending => paymentStatus == 'pending';
+  bool get isPaymentCompleted => paymentStatus == 'completed';
+  bool get isPaymentFailed => paymentStatus == 'failed';
+
+  bool get isEscrowHeld => escrowStatus == 'held';
+  bool get isEscrowReleased => escrowStatus == 'released';
+
+  String get paymentStatusDisplayName {
+    switch (paymentStatus) {
+      case 'pending':
+        return 'Payment Pending';
+      case 'completed':
+        return 'Payment Completed';
+      case 'failed':
+        return 'Payment Failed';
+      default:
+        return 'Unknown Status';
+    }
   }
 }
 
@@ -85,6 +131,11 @@ class OrderItem {
   final String selectedColor;
   final DateTime createdAt;
 
+  // Product and vendor information
+  final String? productName;
+  final String? vendorId;
+  final String? vendorName;
+
   OrderItem({
     required this.id,
     required this.orderId,
@@ -94,9 +145,27 @@ class OrderItem {
     required this.selectedSize,
     required this.selectedColor,
     required this.createdAt,
+    this.productName,
+    this.vendorId,
+    this.vendorName,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    // Extract product and vendor information if available
+    String? productName;
+    String? vendorId;
+    String? vendorName;
+
+    if (json['products'] != null) {
+      final product = json['products'];
+      productName = product['name'];
+      vendorId = product['vendor_id'];
+
+      if (product['vendors'] != null) {
+        vendorName = product['vendors']['business_name'];
+      }
+    }
+
     return OrderItem(
       id: json['id'],
       orderId: json['order_id'],
@@ -106,6 +175,9 @@ class OrderItem {
       selectedSize: json['selected_size'],
       selectedColor: json['selected_color'],
       createdAt: DateTime.parse(json['created_at']),
+      productName: productName,
+      vendorId: vendorId,
+      vendorName: vendorName,
     );
   }
 

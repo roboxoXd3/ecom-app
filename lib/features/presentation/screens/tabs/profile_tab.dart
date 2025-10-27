@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/routes/app_routes.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../auth/login_screen.dart';
@@ -92,6 +93,11 @@ class ProfileTab extends StatelessWidget {
             icon: Icons.store,
             title: 'Followed Vendors',
             onTap: () => Get.to(() => const FollowedVendorsScreen()),
+          ),
+          _buildProfileOption(
+            icon: Icons.card_giftcard,
+            title: 'Loyalty & Rewards',
+            onTap: () => Get.toNamed(AppRoutes.loyaltyHome),
           ),
           _buildProfileOption(
             icon: Icons.help,

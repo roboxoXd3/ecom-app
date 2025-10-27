@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../data/models/product_model.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import 'currency_controller.dart';
 
 class CartController extends GetxController {
   final supabase = Supabase.instance.client;
@@ -44,12 +45,15 @@ class CartController extends GetxController {
         cartId = cart['id'];
       }
 
-      // Fetch cart items
+      // Fetch cart items with subcategory data
       final response = await supabase
           .from('cart_items')
           .select('''
             *,
-            products:product_id (*)
+            products:product_id (
+              *,
+              subcategories:subcategory_id (*)
+            )
           ''')
           .eq('cart_id', cartId);
 
@@ -145,7 +149,16 @@ class CartController extends GetxController {
 
       final userId = supabase.auth.currentUser!.id;
       final cart =
-          await supabase.from('carts').select().eq('user_id', userId).single();
+          await supabase
+              .from('carts')
+              .select()
+              .eq('user_id', userId)
+              .maybeSingle();
+
+      if (cart == null) {
+        SnackbarUtils.showError('Cart not found');
+        return;
+      }
 
       await supabase
           .from('cart_items')
@@ -173,7 +186,16 @@ class CartController extends GetxController {
 
       final userId = supabase.auth.currentUser!.id;
       final cart =
-          await supabase.from('carts').select().eq('user_id', userId).single();
+          await supabase
+              .from('carts')
+              .select()
+              .eq('user_id', userId)
+              .maybeSingle();
+
+      if (cart == null) {
+        SnackbarUtils.showError('Cart not found');
+        return;
+      }
 
       await supabase
           .from('cart_items')
@@ -212,6 +234,22 @@ class CartController extends GetxController {
     }
   }
 
-  double get total =>
-      items.fold(0.0, (sum, item) => sum + item.product.price * item.quantity);
+  double get total {
+    if (!Get.isRegistered<CurrencyController>()) {
+      // Fallback to raw price calculation if currency controller not available
+      return items.fold(
+        0.0,
+        (sum, item) => sum + item.product.price * item.quantity,
+      );
+    }
+
+    final currencyController = Get.find<CurrencyController>();
+    return items.fold(0.0, (sum, item) {
+      final convertedPrice = currencyController.convertPrice(
+        item.product.price,
+        item.product.currency,
+      );
+      return sum + convertedPrice * item.quantity;
+    });
+  }
 }

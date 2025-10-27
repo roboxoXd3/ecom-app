@@ -6,13 +6,13 @@ import 'notification_detail_screen.dart';
 import 'notification_controller.dart';
 import 'notification_type.dart';
 
-// final notificationController = Get.put(NotificationController());
-
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final notificationController = Get.find<NotificationController>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
@@ -38,6 +38,7 @@ class NotificationsScreen extends StatelessWidget {
                       message: n.message,
                       time: n.time,
                       isRead: n.isRead,
+                      notificationController: notificationController,
                     ),
                   )
                   .toList(),
@@ -54,6 +55,7 @@ class NotificationsScreen extends StatelessWidget {
                       message: n.message,
                       time: n.time,
                       isRead: n.isRead,
+                      notificationController: notificationController,
                     ),
                   )
                   .toList(),
@@ -70,6 +72,7 @@ class NotificationsScreen extends StatelessWidget {
                       message: n.message,
                       time: n.time,
                       isRead: n.isRead,
+                      notificationController: notificationController,
                     ),
                   )
                   .toList(),
@@ -127,6 +130,7 @@ class _NotificationItem extends StatelessWidget {
   final String message;
   final DateTime time;
   final bool isRead;
+  final NotificationController notificationController;
 
   const _NotificationItem({
     required this.id,
@@ -135,6 +139,7 @@ class _NotificationItem extends StatelessWidget {
     required this.message,
     required this.time,
     required this.isRead,
+    required this.notificationController,
   });
 
   IconData get _icon {

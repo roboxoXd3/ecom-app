@@ -22,9 +22,13 @@ class WarrantyReturns extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Warranty & Returns',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -44,12 +48,16 @@ class WarrantyReturns extends StatelessWidget {
                     'Warranty',
                     '${warranty!.duration} ${warranty!.type} warranty',
                     Colors.blue,
+                    context,
                   ),
                   if (warranty!.description != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       warranty!.description!,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.getTextSecondary(context),
+                      ),
                     ),
                   ],
                   if (hasReturnInfo) const SizedBox(height: 12),
@@ -62,6 +70,7 @@ class WarrantyReturns extends StatelessWidget {
                     'Returns',
                     '${deliveryInfo!.returnWindowDays} days return policy',
                     Colors.green,
+                    context,
                   ),
                   const SizedBox(height: 8),
                   _buildInfoRow(
@@ -69,6 +78,7 @@ class WarrantyReturns extends StatelessWidget {
                     'Return Conditions',
                     'Product must be unused and in original packaging',
                     Colors.orange,
+                    context,
                   ),
                   if (deliveryInfo!.codEligible) ...[
                     const SizedBox(height: 8),
@@ -77,6 +87,7 @@ class WarrantyReturns extends StatelessWidget {
                       'COD Returns',
                       'Cash on Delivery returns accepted',
                       Colors.green,
+                      context,
                     ),
                   ],
                 ],
@@ -136,7 +147,13 @@ class WarrantyReturns extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value, Color color) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+    BuildContext context,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -148,14 +165,18 @@ class WarrantyReturns extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: AppTheme.getTextPrimary(context),
                 ),
               ),
               Text(
                 value,
-                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.getTextSecondary(context),
+                ),
               ),
             ],
           ),
@@ -169,38 +190,64 @@ class WarrantyReturns extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Warranty & Return Policy'),
+          title: Text(
+            'Warranty & Return Policy',
+            style: TextStyle(color: AppTheme.getTextPrimary(context)),
+          ),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (warranty != null) ...[
-                  const Text(
+                  Text(
                     'Warranty Terms:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  Text('• ${warranty!.duration} ${warranty!.type} warranty'),
-                  const Text('• Covers manufacturing defects'),
-                  const Text('• Does not cover physical damage or misuse'),
+                  Text(
+                    '• ${warranty!.duration} ${warranty!.type} warranty',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                  ),
+                  Text(
+                    '• Covers manufacturing defects',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                  ),
+                  Text(
+                    '• Does not cover physical damage or misuse',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                  ),
                   const SizedBox(height: 16),
                 ],
                 if (deliveryInfo != null) ...[
-                  const Text(
+                  Text(
                     'Return Policy:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '• ${deliveryInfo!.returnWindowDays} days return window',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
                   ),
-                  const Text(
+                  Text(
                     '• Product must be unused and in original packaging',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
                   ),
-                  const Text('• Return shipping may be charged'),
+                  Text(
+                    '• Return shipping may be charged',
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                  ),
                   if (deliveryInfo!.codEligible)
-                    const Text('• COD returns accepted'),
+                    Text(
+                      '• COD returns accepted',
+                      style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                    ),
                 ],
               ],
             ),

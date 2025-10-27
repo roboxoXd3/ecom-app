@@ -197,6 +197,7 @@ class VendorRepository {
   /// Get all products from a specific vendor
   Future<List<Product>> getVendorProducts(String vendorId) async {
     try {
+      print('🔍 Fetching products for vendor: $vendorId');
       final response = await _supabase
           .from('products')
           .select('*, vendors(*), categories(*)')
@@ -205,11 +206,28 @@ class VendorRepository {
           .eq('approval_status', 'approved')
           .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((product) => Product.fromJson(product))
-          .toList();
+      print('📦 Raw response type: ${response.runtimeType}');
+      print('📦 Raw response length: ${response.length}');
+
+      final products = <Product>[];
+      for (int i = 0; i < response.length; i++) {
+        try {
+          final product = Product.fromJson(response[i]);
+          products.add(product);
+          print('✅ Successfully parsed product ${i + 1}: ${product.name}');
+        } catch (e) {
+          print('❌ Error parsing product ${i + 1}: $e');
+          print('Product data: ${response[i]}');
+        }
+      }
+
+      print(
+        '📦 Successfully parsed ${products.length} products for vendor $vendorId',
+      );
+      return products;
     } catch (e) {
-      print('Error fetching vendor products: $e');
+      print('❌ Error fetching vendor products: $e');
+      print('Vendor ID: $vendorId');
       return [];
     }
   }

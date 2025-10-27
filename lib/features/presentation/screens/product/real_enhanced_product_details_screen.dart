@@ -80,7 +80,7 @@ class _RealEnhancedProductDetailsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getBackground(context),
       body: Obx(() {
         // Loading state
         if (enhancedController.isLoading.value) {
@@ -97,20 +97,27 @@ class _RealEnhancedProductDetailsScreenState
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppTheme.getTextSecondary(context),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Failed to load product',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[600],
+                    color: AppTheme.getTextPrimary(context),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   enhancedController.error.value,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.getTextSecondary(context),
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -130,7 +137,12 @@ class _RealEnhancedProductDetailsScreenState
         // Product loaded successfully
         final product = enhancedController.product.value;
         if (product == null) {
-          return const Center(child: Text('Product not found'));
+          return Center(
+            child: Text(
+              'Product not found',
+              style: TextStyle(color: AppTheme.getTextPrimary(context)),
+            ),
+          );
         }
 
         // Product is already initialized in EnhancedProductController
@@ -143,17 +155,20 @@ class _RealEnhancedProductDetailsScreenState
               slivers: [
                 // App Bar
                 SliverAppBar(
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppTheme.getSurface(context),
                   elevation: 0,
                   pinned: true,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                     onPressed: () => Get.back(),
                   ),
                   title: Text(
                     product.name,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: AppTheme.getTextPrimary(context),
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -163,7 +178,10 @@ class _RealEnhancedProductDetailsScreenState
                   centerTitle: true,
                   actions: [
                     IconButton(
-                      icon: const Icon(Icons.share, color: Colors.black),
+                      icon: Icon(
+                        Icons.share,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
                       onPressed: () {
                         // TODO: Implement share functionality
                       },
@@ -181,7 +199,7 @@ class _RealEnhancedProductDetailsScreenState
                                     product.id,
                                   )
                                   ? Colors.red
-                                  : Colors.black,
+                                  : AppTheme.getTextPrimary(context),
                         ),
                         onPressed:
                             () => productController.toggleWishlist(product),
@@ -191,9 +209,9 @@ class _RealEnhancedProductDetailsScreenState
                       () => Stack(
                         children: [
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.shopping_cart_outlined,
-                              color: Colors.black,
+                              color: AppTheme.getTextPrimary(context),
                             ),
                             onPressed: () {
                               // Navigate to home screen and switch to cart tab

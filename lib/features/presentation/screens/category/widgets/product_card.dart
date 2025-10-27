@@ -60,73 +60,7 @@ class ProductCard extends StatelessWidget {
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(20),
                           ),
-                          child: CachedNetworkImage(
-                            imageUrl:
-                                product.primaryImage.isNotEmpty
-                                    ? product.primaryImage
-                                    : (product.imageList.isNotEmpty
-                                        ? product.imageList.first
-                                        : ''),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            placeholder:
-                                (context, url) => Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Colors.grey[200]!,
-                                        Colors.grey[100]!,
-                                      ],
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Icon(
-                                        Icons.image_outlined,
-                                        color: Colors.grey[500],
-                                        size: 24,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            errorWidget:
-                                (context, url, error) => Container(
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Colors.grey[200]!,
-                                        Colors.grey[100]!,
-                                      ],
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Container(
-                                      width: 50,
-                                      height: 50,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(25),
-                                      ),
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
-                                        color: Colors.grey[500],
-                                        size: 28,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                          ),
+                          child: _buildProductImage(),
                         ),
                         // Wishlist Button
                         Positioned(
@@ -295,6 +229,104 @@ class ProductCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildProductImage() {
+    String imageUrl = '';
+
+    // Get the best available image URL
+    if (product.primaryImage.isNotEmpty) {
+      imageUrl = product.primaryImage;
+    } else if (product.imageList.isNotEmpty) {
+      imageUrl = product.imageList.first;
+    }
+
+    // If no valid image URL, show placeholder
+    if (imageUrl.isEmpty) {
+      return Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.grey[200]!, Colors.grey[100]!],
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.image_outlined,
+              color: Colors.grey[500],
+              size: 24,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      placeholder:
+          (context, url) => Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.grey[200]!, Colors.grey[100]!],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Icon(
+                  Icons.image_outlined,
+                  color: Colors.grey[500],
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.grey[200]!, Colors.grey[100]!],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: Colors.grey[500],
+                  size: 28,
+                ),
+              ),
+            ),
+          ),
     );
   }
 }

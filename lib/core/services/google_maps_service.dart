@@ -19,8 +19,8 @@ class GoogleMapsService {
           '$_placesBaseUrl/autocomplete/json'
           '?input=${Uri.encodeComponent(input)}'
           '&key=$_googleMapsApiKey'
-          '&types=address'
-          '&components=country:us|country:ca|country:gb|country:au'; // Add more countries as needed
+          '&types=address';
+      // Removed country restriction to allow worldwide address search
 
       final response = await http.get(Uri.parse(url));
 

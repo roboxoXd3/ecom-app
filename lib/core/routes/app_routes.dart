@@ -19,8 +19,15 @@ import '../../features/presentation/controllers/product_controller.dart';
 import '../../features/presentation/screens/profile/payment_methods_screen.dart';
 import '../../features/presentation/screens/profile/add_card_screen.dart';
 import '../../features/presentation/screens/vendor/vendors_list_screen.dart';
+import '../../features/presentation/screens/checkout/checkout_screen.dart';
 
 import '../../features/presentation/controllers/order_controller.dart';
+import '../../features/presentation/controllers/loyalty_controller.dart';
+import '../../features/presentation/screens/loyalty/loyalty_home_screen.dart';
+import '../../features/presentation/screens/loyalty/rewards_catalog_screen.dart';
+import '../../features/presentation/screens/loyalty/my_vouchers_screen.dart';
+import '../../features/presentation/screens/loyalty/transaction_history_screen.dart';
+import '../../features/presentation/screens/loyalty/badges_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -39,6 +46,12 @@ class AppRoutes {
   static const String orderDetails = '/order-details';
   static const String orderConfirmation = '/order-confirmation';
   static const String vendorsList = '/vendors-list';
+  static const String checkout = '/checkout';
+  static const String loyaltyHome = '/loyalty-home';
+  static const String rewardsCatalog = '/rewards-catalog';
+  static const String myVouchers = '/my-vouchers';
+  static const String transactionHistory = '/transaction-history';
+  static const String badges = '/badges';
 
   static final routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -108,5 +121,47 @@ class AppRoutes {
       }),
     ),
     GetPage(name: vendorsList, page: () => const VendorsListScreen()),
+    GetPage(
+      name: checkout,
+      page: () => const CheckoutScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(OrderController());
+      }),
+    ),
+    GetPage(
+      name: loyaltyHome,
+      page: () => const LoyaltyHomeScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(LoyaltyController());
+      }),
+    ),
+    GetPage(
+      name: rewardsCatalog,
+      page: () => const RewardsCatalogScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(LoyaltyController());
+      }),
+    ),
+    GetPage(
+      name: myVouchers,
+      page: () => const MyVouchersScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(LoyaltyController());
+      }),
+    ),
+    GetPage(
+      name: transactionHistory,
+      page: () => const TransactionHistoryScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(LoyaltyController());
+      }),
+    ),
+    GetPage(
+      name: badges,
+      page: () => const BadgesScreen(),
+      binding: BindingsBuilder(() {
+        Get.put(LoyaltyController());
+      }),
+    ),
   ];
 }

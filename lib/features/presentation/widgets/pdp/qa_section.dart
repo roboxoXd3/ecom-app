@@ -47,7 +47,7 @@ class _QASectionState extends State<QASection> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Questions & Answers',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -246,7 +246,7 @@ class _QASectionState extends State<QASection> {
 
     return Column(
       children: [
-        ...qaController.questions.map((qa) => _buildQACard(qa)).toList(),
+        ...qaController.questions.map((qa) => _buildQACard(qa)),
 
         // Load More Button
         if (qaController.hasMoreQuestions.value) ...[

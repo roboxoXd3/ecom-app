@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/chatbot_controller.dart';
+import '../../../../core/utils/currency_utils.dart';
+import '../../../data/models/order_model.dart';
 
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -170,28 +172,8 @@ class ChatbotScreen extends StatelessWidget {
                 context,
               ),
               _buildQuickActionChip(
-                'Return Item',
-                Icons.assignment_return_outlined,
-                context,
-              ),
-              _buildQuickActionChip(
                 'Size Guide',
                 Icons.straighten_outlined,
-                context,
-              ),
-              _buildQuickActionChip(
-                'Support',
-                Icons.headset_mic_outlined,
-                context,
-              ),
-              _buildQuickActionChip(
-                'Sale Items',
-                Icons.local_offer_outlined,
-                context,
-              ),
-              _buildQuickActionChip(
-                'Trending',
-                Icons.trending_up_outlined,
                 context,
               ),
             ],
@@ -210,10 +192,10 @@ class ChatbotScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          if (label == 'Sale Items') {
-            chatController.showSaleProducts();
-          } else if (label == 'Trending') {
-            chatController.showTrendingProducts();
+          if (label == 'Track Order') {
+            chatController.showTrackOrders();
+          } else if (label == 'Size Guide') {
+            chatController.showSizeGuide();
           } else {
             chatController.sendMessage(label);
           }
@@ -261,7 +243,7 @@ class ChatbotScreen extends StatelessWidget {
         return _buildWelcomeMessage(screenWidth, context);
       }
 
-      return Container(
+      return SizedBox(
         width: double.infinity,
         child: ListView.builder(
           controller: chatController.scrollController,
@@ -369,10 +351,7 @@ class ChatbotScreen extends StatelessWidget {
                 children: [
                   _buildSuggestionButton('Find products'),
                   _buildSuggestionButton('Check order status'),
-                  _buildSuggestionButton('Return policy'),
                   _buildSuggestionButton('Size guide'),
-                  _buildSuggestionButton('Sale items'),
-                  _buildSuggestionButton('Trending products'),
                 ],
               ),
             ),
@@ -388,10 +367,8 @@ class ChatbotScreen extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          if (text == 'Sale items') {
-            chatController.showSaleProducts();
-          } else if (text == 'Trending products') {
-            chatController.showTrendingProducts();
+          if (text == 'Size guide') {
+            chatController.showSizeGuide();
           } else {
             chatController.sendMessage(text);
           }
@@ -576,8 +553,86 @@ class ChatbotScreen extends StatelessWidget {
               ),
             ),
           ],
+
+          // Order cards for tracking
+          if (message.orders != null && message.orders!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              margin: EdgeInsets.only(left: isUser ? 0 : 48),
+              child: Column(
+                children:
+                    message.orders!.map((order) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: _buildOrderCard(order, screenWidth, context),
+                      );
+                    }).toList(),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  Widget _buildProductImageForChat(product) {
+    String imageUrl = '';
+
+    // Get the best available image URL
+    if (product.primaryImage != null && product.primaryImage.isNotEmpty) {
+      imageUrl = product.primaryImage;
+    } else if (product.imageList != null && product.imageList.isNotEmpty) {
+      imageUrl = product.imageList.first;
+    }
+
+    // If no valid image URL, show placeholder
+    if (imageUrl.isEmpty) {
+      return Container(
+        color: Colors.grey[100],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
+            const SizedBox(height: 4),
+            Text(
+              'No Image',
+              style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder:
+          (context, url) => Container(
+            color: Colors.grey[100],
+            child: Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            color: Colors.grey[100],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.image_outlined, size: 32, color: Colors.grey[400]),
+                const SizedBox(height: 4),
+                Text(
+                  'No Image',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
@@ -604,54 +659,14 @@ class ChatbotScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Product Image - Fixed height to prevent overflow
-                Container(
+                SizedBox(
                   height: 120,
                   width: double.infinity,
                   child: ClipRRect(
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(16),
                     ),
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          product.imageList.isNotEmpty
-                              ? product.imageList.first
-                              : '',
-                      fit: BoxFit.cover,
-                      placeholder:
-                          (context, url) => Container(
-                            color: Colors.grey[100],
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                      errorWidget:
-                          (context, url, error) => Container(
-                            color: Colors.grey[100],
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_outlined,
-                                  size: 32,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'No Image',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey[400],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                    ),
+                    child: _buildProductImageForChat(product),
                   ),
                 ),
 
@@ -685,12 +700,17 @@ class ChatbotScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: Text(
-                              '₹${product.price.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
+                            child: Obx(
+                              () => Text(
+                                CurrencyUtils.formatAmount(
+                                  product.price,
+                                  decimalPlaces: 0,
+                                ),
+                                style: TextStyle(
+                                  color: AppTheme.primaryColor,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ),
@@ -734,6 +754,228 @@ class ChatbotScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildOrderCard(
+    Order order,
+    double screenWidth,
+    BuildContext context,
+  ) {
+    return Material(
+      color: AppTheme.getSurface(context),
+      borderRadius: BorderRadius.circular(16),
+      elevation: 0,
+      shadowColor: Colors.black.withOpacity(0.1),
+      child: InkWell(
+        onTap: () => Get.toNamed('/order-details', arguments: order.id),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.getOutline(context), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Order header with ID and status
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Order #${order.id.substring(0, 8).toUpperCase()}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: AppTheme.getTextPrimary(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Placed on ${_formatDate(order.createdAt)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color(
+                        int.parse('0xFF${order.status.colorHex.substring(1)}'),
+                      ).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Color(
+                          int.parse(
+                            '0xFF${order.status.colorHex.substring(1)}',
+                          ),
+                        ).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Color(
+                              int.parse(
+                                '0xFF${order.status.colorHex.substring(1)}',
+                              ),
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          order.status.displayName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(
+                              int.parse(
+                                '0xFF${order.status.colorHex.substring(1)}',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Order details
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${order.items.length} item${order.items.length == 1 ? '' : 's'}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.getTextPrimary(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.status.description,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Total',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Obx(
+                        () => Text(
+                          CurrencyUtils.formatAmount(
+                            order.total,
+                            decimalPlaces: 0,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Action button
+              Container(
+                width: double.infinity,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap:
+                        () =>
+                            Get.toNamed('/order-details', arguments: order.id),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Center(
+                      child: Text(
+                        'View Details & Track',
+                        style: TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Widget _buildTypingIndicatorSection(BuildContext context) {

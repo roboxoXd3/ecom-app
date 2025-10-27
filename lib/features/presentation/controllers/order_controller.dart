@@ -33,6 +33,7 @@ class OrderController extends GetxController {
     required double shippingFee,
     required double total,
     required List<OrderItem> items,
+    String? loyaltyVoucherCode,
   }) async {
     try {
       print('OrderController: Creating order with ${items.length} items');
@@ -45,6 +46,7 @@ class OrderController extends GetxController {
         shippingFee: shippingFee,
         total: total,
         items: items,
+        loyaltyVoucherCode: loyaltyVoucherCode,
       );
 
       print('OrderController: Order created successfully');
@@ -56,6 +58,76 @@ class OrderController extends GetxController {
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<bool> createOrderWithPayment({
+    required String addressId,
+    required String paymentMethodId,
+    required double subtotal,
+    required double shippingFee,
+    required double total,
+    required List<OrderItem> items,
+    String? squadTransactionRef,
+    String? squadGatewayRef,
+    String? paymentStatus,
+    String? escrowStatus,
+    String? loyaltyVoucherCode,
+  }) async {
+    try {
+      print('OrderController: Creating order with payment details');
+      print('Squad Transaction Ref: $squadTransactionRef');
+      print('Payment Status: $paymentStatus');
+
+      isLoading.value = true;
+
+      await _repository.createOrderWithPayment(
+        addressId: addressId,
+        paymentMethodId: paymentMethodId,
+        subtotal: subtotal,
+        shippingFee: shippingFee,
+        total: total,
+        items: items,
+        squadTransactionRef: squadTransactionRef,
+        squadGatewayRef: squadGatewayRef,
+        paymentStatus: paymentStatus,
+        escrowStatus: escrowStatus ?? 'held', // Default to held for marketplace
+        loyaltyVoucherCode: loyaltyVoucherCode,
+      );
+
+      print('OrderController: Order with payment created successfully');
+      await fetchUserOrders(); // Refresh orders list
+      return true;
+    } catch (e) {
+      print('OrderController: Error creating order with payment - $e');
+      SnackbarUtils.showError('Failed to create order with payment details');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updatePaymentStatus({
+    required String orderId,
+    required String paymentStatus,
+    String? squadGatewayRef,
+    String? escrowStatus,
+  }) async {
+    try {
+      await _repository.updatePaymentStatus(
+        orderId: orderId,
+        paymentStatus: paymentStatus,
+        squadGatewayRef: squadGatewayRef,
+        escrowStatus: escrowStatus,
+      );
+
+      // Refresh orders to show updated status
+      await fetchUserOrders();
+
+      print('Payment status updated for order: $orderId');
+    } catch (e) {
+      print('Error updating payment status: $e');
+      SnackbarUtils.showError('Failed to update payment status');
     }
   }
 

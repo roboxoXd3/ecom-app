@@ -63,10 +63,6 @@ class SizeChartController extends GetxController {
     return 'mens_clothing'; // Default fallback
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }
 
 class SizeChartButton extends StatelessWidget {

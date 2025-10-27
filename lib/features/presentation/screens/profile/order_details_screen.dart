@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/address_controller.dart';
 import '../../../data/models/order_status.dart';
+import '../../../data/models/order_model.dart';
+import '../../../../core/utils/currency_utils.dart';
 
 class OrderDetailsScreen extends StatelessWidget {
   final String orderId;
@@ -140,6 +142,7 @@ class OrderDetailsScreen extends StatelessWidget {
                           ? '${address.addressLine1}, ${address.city}, ${address.state} ${address.zip}'
                           : 'Address not found',
                     ),
+                    ..._buildVendorRows(order.items),
                   ],
                 ),
               ),
@@ -165,10 +168,12 @@ class OrderDetailsScreen extends StatelessWidget {
                       (item) => Column(
                         children: [
                           _buildOrderItem(
-                            'Product ${item.productId}', // TODO: Get actual product name
+                            item.productName ?? 'Product ${item.productId}',
                             'Size: ${item.selectedSize}, Color: ${item.selectedColor}',
                             item.quantity,
                             item.price,
+                            productId: item.productId,
+                            vendorName: item.vendorName,
                           ),
                           if (item != order.items.last) const Divider(),
                         ],
@@ -257,6 +262,24 @@ class OrderDetailsScreen extends StatelessWidget {
     }
   }
 
+  List<Widget> _buildVendorRows(List<OrderItem> items) {
+    // Get unique vendors from all order items
+    final uniqueVendors = <String>{};
+    for (final item in items) {
+      if (item.vendorName != null) {
+        uniqueVendors.add(item.vendorName!);
+      }
+    }
+
+    if (uniqueVendors.isEmpty) return [];
+
+    if (uniqueVendors.length == 1) {
+      return [_buildDetailRow('Vendor', uniqueVendors.first)];
+    } else {
+      return [_buildDetailRow('Vendors', uniqueVendors.join(', '))];
+    }
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -285,44 +308,97 @@ class OrderDetailsScreen extends StatelessWidget {
     String name,
     String variant,
     int quantity,
-    double price,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.image, color: Colors.grey),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-              const SizedBox(height: 4),
-              Text(
-                variant,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+    double price, {
+    required String productId,
+    String? vendorName,
+  }) {
+    return InkWell(
+      onTap: () {
+        // Navigate to product detail page
+        Get.toNamed('/product-details', arguments: productId);
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Quantity: $quantity',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+              child: const Icon(Icons.image, color: Colors.grey),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    variant,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  if (vendorName != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.store, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            'Sold by: $vendorName',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Quantity: $quantity',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Obx(
+                  () => Text(
+                    CurrencyUtils.formatAmount(price * quantity),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 12,
+                  color: Colors.grey[400],
+                ),
+              ],
+            ),
+          ],
         ),
-        Text(
-          '₹${(price * quantity).toStringAsFixed(2)}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ],
+      ),
     );
   }
 
@@ -338,10 +414,12 @@ class OrderDetailsScreen extends StatelessWidget {
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
-          Text(
-            '₹${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+          Obx(
+            () => Text(
+              CurrencyUtils.formatAmount(amount),
+              style: TextStyle(
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
         ],

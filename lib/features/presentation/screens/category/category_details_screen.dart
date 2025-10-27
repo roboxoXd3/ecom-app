@@ -4,16 +4,19 @@ import 'package:get/get.dart';
 import '../../../data/models/category_model.dart';
 import '../../../data/models/product_model.dart';
 import '../../controllers/product_controller.dart';
+import '../../controllers/subcategory_controller.dart';
 
 // Import the extracted widgets
 import 'widgets/category_header.dart';
 import 'widgets/search_dialog.dart';
 import 'widgets/filter_bottom_sheet.dart';
 import 'widgets/category_products_grid.dart';
+import 'widgets/subcategory_chips.dart';
 
 class CategoryDetailsScreen extends StatelessWidget {
   final Category category;
   final productController = Get.find<ProductController>();
+  final subcategoryController = Get.put(SubcategoryController());
 
   // Add search and filter state
   final RxString searchQuery = ''.obs;
@@ -26,7 +29,19 @@ class CategoryDetailsScreen extends StatelessWidget {
   final RxBool showInStockOnly = false.obs;
   final RxString sortBy = 'newest'.obs;
 
-  CategoryDetailsScreen({super.key, required this.category});
+  // NEW: Subcategory filtering state
+  final RxList<String> selectedSubcategoryIds = <String>[].obs;
+
+  CategoryDetailsScreen({super.key, required this.category}) {
+    // Initialize subcategory selection - select all by default
+    ever(subcategoryController.subcategories, (subcategories) {
+      final categorySubcategories = subcategoryController
+          .getSubcategoriesForCategory(category.id);
+      if (categorySubcategories.isNotEmpty && selectedSubcategoryIds.isEmpty) {
+        selectedSubcategoryIds.addAll(categorySubcategories.map((s) => s.id));
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +63,17 @@ class CategoryDetailsScreen extends StatelessWidget {
             productController: productController,
           ),
 
+          // NEW: Subcategory Chips Section
+          SliverToBoxAdapter(
+            child: SubcategoryChips(
+              categoryId: category.id,
+              selectedSubcategoryIds: selectedSubcategoryIds,
+              onSelectionChanged: (selectedIds) {
+                selectedSubcategoryIds.assignAll(selectedIds);
+              },
+            ),
+          ),
+
           // Products Section Header
           ProductsHeader(onFilterTap: () => _showFilterBottomSheet(context)),
 
@@ -61,6 +87,12 @@ class CategoryDetailsScreen extends StatelessWidget {
             onClearFilters: () {
               searchQuery.value = '';
               _resetFilters();
+              // Reset subcategory selection to all selected
+              final categorySubcategories = subcategoryController
+                  .getSubcategoriesForCategory(category.id);
+              selectedSubcategoryIds.assignAll(
+                categorySubcategories.map((s) => s.id),
+              );
             },
           ),
         ],
@@ -92,6 +124,13 @@ class CategoryDetailsScreen extends StatelessWidget {
 
   List<Product> _applyFilters(List<Product> products) {
     return products.where((product) {
+      // NEW: Subcategory filter
+      if (selectedSubcategoryIds.isNotEmpty &&
+          product.subcategoryId != null &&
+          !selectedSubcategoryIds.contains(product.subcategoryId!)) {
+        return false;
+      }
+
       // Price filter
       if (product.price < minPrice.value || product.price > maxPrice.value) {
         return false;
@@ -152,6 +191,11 @@ class CategoryDetailsScreen extends StatelessWidget {
     showOnSaleOnly.value = false;
     showInStockOnly.value = false;
     sortBy.value = 'newest';
+
+    // Reset subcategory selection to all selected
+    final categorySubcategories = subcategoryController
+        .getSubcategoriesForCategory(category.id);
+    selectedSubcategoryIds.assignAll(categorySubcategories.map((s) => s.id));
 
     // Reset price range to full range
     final categoryProducts =

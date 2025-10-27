@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/vendor_controller.dart';
-import '../../controllers/product_controller.dart';
 import '../../../data/models/vendor_model.dart';
 import '../category/widgets/product_card.dart';
 
@@ -15,7 +14,6 @@ class VendorProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final VendorController vendorController = Get.find<VendorController>();
-    final ProductController productController = Get.find<ProductController>();
 
     // Fetch vendor's products and follow data when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,7 +51,7 @@ class VendorProfileScreen extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  vendor.businessLogo != null
+                  vendor.businessLogo != null && vendor.businessLogo!.isNotEmpty
                       ? CachedNetworkImage(
                         imageUrl: vendor.businessLogo!,
                         fit: BoxFit.cover,
@@ -259,210 +257,81 @@ class VendorProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
-                // Enhanced Contact Information
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.contact_phone_rounded,
-                              color: Colors.blue,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Contact Information',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      if (vendor.businessEmail.isNotEmpty)
-                        _buildEnhancedContactRow(
-                          Icons.email_rounded,
-                          'Email',
-                          vendor.businessEmail,
-                          Colors.red,
-                        ),
-
-                      if (vendor.businessPhone != null)
-                        _buildEnhancedContactRow(
-                          Icons.phone_rounded,
-                          'Phone',
-                          vendor.businessPhone!,
-                          Colors.green,
-                        ),
-
-                      if (vendor.businessAddress != null)
-                        _buildEnhancedContactRow(
-                          Icons.location_on_rounded,
-                          'Address',
-                          vendor.businessAddress!,
-                          Colors.orange,
-                        ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: 20),
 
                 // Enhanced Action Buttons
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Obx(() {
-                          final isFollowing = vendorController.isVendorFollowed(
-                            vendor.id,
-                          );
-                          final followerCount = vendorController
-                              .getFollowerCount(vendor.id);
+                  child: Obx(() {
+                    final isFollowing = vendorController.isVendorFollowed(
+                      vendor.id,
+                    );
+                    final followerCount = vendorController.getFollowerCount(
+                      vendor.id,
+                    );
 
-                          return Container(
-                            height: 50,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors:
-                                    isFollowing
-                                        ? [Colors.grey[400]!, Colors.grey[600]!]
-                                        : [
-                                          AppTheme.primaryColor,
-                                          AppTheme.primaryColor.withOpacity(
-                                            0.8,
-                                          ),
-                                        ],
+                    return Container(
+                      height: 50,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors:
+                              isFollowing
+                                  ? [Colors.grey[400]!, Colors.grey[600]!]
+                                  : [
+                                    AppTheme.primaryColor,
+                                    AppTheme.primaryColor.withOpacity(0.8),
+                                  ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isFollowing
+                                    ? Colors.grey[400]!
+                                    : AppTheme.primaryColor)
+                                .withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap:
+                              () => vendorController.toggleFollowVendor(
+                                vendor.id,
                               ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (isFollowing
-                                          ? Colors.grey[400]!
-                                          : AppTheme.primaryColor)
-                                      .withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isFollowing
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                  color: Colors.white,
+                                  size: 20,
                                 ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap:
-                                    () => vendorController.toggleFollowVendor(
-                                      vendor.id,
-                                    ),
-                                child: Center(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        isFollowing
-                                            ? Icons.favorite_rounded
-                                            : Icons.favorite_border_rounded,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        isFollowing
-                                            ? 'Following ($followerCount)'
-                                            : 'Follow ($followerCount)',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 15,
-                                        ),
-                                      ),
-                                    ],
+                                const SizedBox(width: 8),
+                                Text(
+                                  isFollowing
+                                      ? 'Following ($followerCount)'
+                                      : 'Follow ($followerCount)',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
                                   ),
                                 ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: AppTheme.primaryColor,
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () {
-                                // TODO: Contact vendor
-                              },
-                              child: Center(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.message_rounded,
-                                      color: AppTheme.primaryColor,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Message',
-                                      style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                              ],
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  }),
                 ),
 
                 const SizedBox(height: 24),
@@ -709,60 +578,6 @@ class VendorProfileScreen extends StatelessWidget {
       width: 1,
       color: Colors.grey[300],
       margin: const EdgeInsets.symmetric(horizontal: 8),
-    );
-  }
-
-  Widget _buildEnhancedContactRow(
-    IconData icon,
-    String label,
-    String text,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -327,6 +327,8 @@ class AuthController extends GetxController {
   void updateUserData() {
     final user = supabase.auth.currentUser;
     if (user != null) {
+      // Set the currentUser observable
+      currentUser.value = user;
       userEmail.value = user.email ?? '';
 
       print('User metadata: ${user.userMetadata}');
@@ -339,6 +341,12 @@ class AuthController extends GetxController {
           'User';
 
       print('Final userName value: ${userName.value}');
+      print('Current user email set to: ${userEmail.value}');
+    } else {
+      // Clear user data if no user is logged in
+      currentUser.value = null;
+      userEmail.value = '';
+      userName.value = '';
     }
   }
 

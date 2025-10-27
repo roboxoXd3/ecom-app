@@ -33,7 +33,7 @@ class AddressController extends GetxController {
     }
   }
 
-  Future<void> addAddress({
+  Future<String?> addAddress({
     required String name,
     required String phone,
     required String addressLine1,
@@ -44,8 +44,11 @@ class AddressController extends GetxController {
     required String country,
     required bool isDefault,
   }) async {
+    String? newAddressId;
     try {
       isLoading.value = true;
+      print('AddressController: Starting address save...');
+
       final address = Address(
         id: '',
         userId:
@@ -62,10 +65,15 @@ class AddressController extends GetxController {
         createdAt: DateTime.now(),
       );
 
-      await _addressRepository.addAddress(address);
+      print('AddressController: Calling repository.addAddress...');
+      newAddressId = await _addressRepository.addAddress(address);
+      print(
+        'AddressController: Address saved successfully with ID: $newAddressId, fetching addresses...',
+      );
       await fetchAddresses();
+      print('AddressController: Addresses fetched, count: ${addresses.length}');
 
-      // Show success message first, then navigate back
+      // Show success message
       Get.snackbar(
         'Success',
         'Address added successfully',
@@ -75,18 +83,13 @@ class AddressController extends GetxController {
         duration: const Duration(seconds: 2),
       );
 
-      // Navigate back after a short delay to ensure snackbar is shown
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Get.back();
-      });
+      return newAddressId;
     } catch (e) {
-      print('Error adding address: $e');
+      print('AddressController: Error adding address: $e');
 
       String errorMessage = 'Failed to add address';
       if (e.toString().contains('not authenticated')) {
         errorMessage = 'Please log in to save your address';
-        // Optionally redirect to login screen
-        // Get.toNamed('/login');
       } else if (e.toString().contains('network')) {
         errorMessage = 'Network error. Please check your connection';
       }
@@ -98,6 +101,8 @@ class AddressController extends GetxController {
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
+
+      return null;
     } finally {
       isLoading.value = false;
     }

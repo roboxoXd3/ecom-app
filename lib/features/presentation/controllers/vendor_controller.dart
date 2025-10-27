@@ -214,11 +214,21 @@ class VendorController extends GetxController {
   Future<void> fetchVendorProducts(String vendorId) async {
     try {
       isLoading.value = true;
+      print('🔄 VendorController: Fetching products for vendor $vendorId');
       final products = await _vendorRepository.getVendorProducts(vendorId);
       vendorProducts.value = products;
+      print(
+        '✅ VendorController: Successfully loaded ${products.length} products for vendor $vendorId',
+      );
     } catch (e) {
-      print('Error fetching vendor products: $e');
+      print('❌ VendorController: Error fetching vendor products: $e');
       vendorProducts.clear();
+      Get.snackbar(
+        'Error',
+        'Failed to load vendor products',
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 2),
+      );
     } finally {
       isLoading.value = false;
     }

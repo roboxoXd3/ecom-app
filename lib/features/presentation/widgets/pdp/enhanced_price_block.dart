@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../../../data/models/product_model.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/currency_controller.dart';
+import '../../../../core/utils/snackbar_utils.dart';
+import '../../screens/vendor/vendor_profile_screen.dart';
 
 class EnhancedPriceBlock extends StatelessWidget {
   final Product product;
@@ -27,7 +29,11 @@ class EnhancedPriceBlock extends StatelessWidget {
           // Product Title and Subtitle
           Text(
             product.name,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -35,9 +41,82 @@ class EnhancedPriceBlock extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               product.subtitle!,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.getTextSecondary(context),
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
+            ),
+          ],
+
+          // Vendor Information
+          if (product.vendor != null || product.vendorId.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                if (product.vendor != null) {
+                  // Navigate to vendor profile screen
+                  Get.to(() => VendorProfileScreen(vendor: product.vendor!));
+                } else {
+                  // Show message if vendor data is not available
+                  SnackbarUtils.showInfo('Vendor information not available');
+                }
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.store_outlined,
+                      size: 16,
+                      color: AppTheme.getTextSecondary(context),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Sold by ',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.getTextSecondary(context),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        product.vendor?.businessName ??
+                            'Vendor ${product.vendorId}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (product.vendor != null &&
+                        product.vendor!.averageRating > 0) ...[
+                      const SizedBox(width: 8),
+                      Icon(Icons.star, size: 14, color: Colors.amber[600]),
+                      const SizedBox(width: 2),
+                      Text(
+                        product.vendor!.averageRating.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                      color: AppTheme.getTextSecondary(context),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -49,26 +128,33 @@ class EnhancedPriceBlock extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 product.rating.toString(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
+                  color: AppTheme.getTextPrimary(context),
                 ),
               ),
               Text(
                 ' (${product.reviews} Reviews)',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.getTextSecondary(context),
+                  fontSize: 14,
+                ),
               ),
               if (product.ordersCount != null) ...[
                 const SizedBox(width: 16),
                 Icon(
                   Icons.shopping_bag_outlined,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: AppTheme.getTextSecondary(context),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${_formatNumber(product.ordersCount!)} orders',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ],
@@ -90,50 +176,87 @@ class EnhancedPriceBlock extends StatelessWidget {
                     )
                     : null;
 
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Current Price
-                Text(
-                  currencyController.formatPrice(convertedPrice),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // MRP (Strike-through)
-                if (convertedMrp != null && convertedMrp > convertedPrice) ...[
-                  Text(
-                    currencyController.formatPrice(convertedMrp),
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Discount Percentage
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '${((convertedMrp - convertedPrice) / convertedMrp * 100).round()}% OFF',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                // Main Price Row - Flexible layout
+                Row(
+                  children: [
+                    // Current Price - Takes available space
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          currencyController.formatPrice(convertedPrice),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
                       ),
                     ),
+
+                    // Discount Badge - Fixed position, top-right
+                    if (convertedMrp != null &&
+                        convertedMrp > convertedPrice) ...[
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${((convertedMrp - convertedPrice) / convertedMrp * 100).round()}% OFF',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
+                // MRP Row - Separate line for better readability
+                if (convertedMrp != null && convertedMrp > convertedPrice) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        'M.R.P: ',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getTextSecondary(context),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        currencyController.formatPrice(convertedMrp),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.getTextSecondary(context),
+                          decoration: TextDecoration.lineThrough,
+                          decorationThickness: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'You save ${currencyController.formatPrice(convertedMrp - convertedPrice)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.successColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -144,7 +267,10 @@ class EnhancedPriceBlock extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Inclusive of all taxes',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.getTextSecondary(context),
+            ),
           ),
 
           // Coupon Apply Section
@@ -196,11 +322,6 @@ class EnhancedPriceBlock extends StatelessWidget {
 
   bool _hasCoupons() {
     return product.offers.any((offer) => offer.type == 'coupon');
-  }
-
-  int _calculateDiscountPercentage() {
-    if (product.mrp == null || product.mrp! <= product.price) return 0;
-    return (((product.mrp! - product.price) / product.mrp!) * 100).round();
   }
 
   String _formatNumber(int number) {

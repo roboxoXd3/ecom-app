@@ -720,103 +720,122 @@ class HomeTab extends StatelessWidget {
           final displayCategories =
               categoryController.categories.take(5).toList();
 
+          if (displayCategories.isEmpty) {
+            return const SizedBox(height: 120);
+          }
+
           return SizedBox(
             height: 120,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: displayCategories.length,
-              itemBuilder: (context, index) {
-                final category = displayCategories[index];
+            child: CarouselSlider(
+              options: CarouselOptions(
+                height: 120,
+                autoPlay: true,
+                enlargeCenterPage: false,
+                autoPlayCurve: Curves.easeInOutCubic,
+                enableInfiniteScroll: displayCategories.length > 1,
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                viewportFraction: 0.25, // Show ~4 items at once
+                autoPlayInterval: const Duration(seconds: 3),
+                padEnds: false,
+              ),
+              items:
+                  displayCategories.map((category) {
+                    // Map category names to local icons for better UI
+                    final iconMap = {
+                      'men': 'assets/images/category/men.jpeg',
+                      'women': 'assets/images/category/women.jpeg',
+                      'kids': 'assets/images/category/kids.jpeg',
+                      'accessories': 'assets/images/category/accessories.jpeg',
+                      'shoes': 'assets/images/category/shoes.jpeg',
+                      'electronics': 'assets/images/category/electronics.jpeg',
+                      'beauty': 'assets/images/category/beauty.jpeg',
+                      'sports': 'assets/images/category/sports.jpeg',
+                    };
 
-                // Map category names to local icons for better UI
-                final iconMap = {
-                  'men': 'assets/images/category/men.jpeg',
-                  'women': 'assets/images/category/women.jpeg',
-                  'kids': 'assets/images/category/kids.jpeg',
-                  'accessories': 'assets/images/category/accessories.jpeg',
-                  'shoes': 'assets/images/category/shoes.jpeg',
-                  'electronics': 'assets/images/category/electronics.jpeg',
-                  'beauty': 'assets/images/category/beauty.jpeg',
-                  'sports': 'assets/images/category/sports.jpeg',
-                };
+                    final iconPath =
+                        iconMap[category.name.toLowerCase()] ??
+                        'assets/images/category/accessories.jpeg';
 
-                final iconPath =
-                    iconMap[category.name.toLowerCase()] ??
-                    'assets/images/category/accessories.jpeg';
-
-                return Container(
-                  width: 90,
-                  margin: EdgeInsets.only(
-                    right: index == displayCategories.length - 1 ? 0 : 16,
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to category details screen with real category
-                        Get.to(() => CategoryDetailsScreen(category: category));
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getSurface(context),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              spreadRadius: 0,
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                color: AppTheme.grey100,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  iconPath,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.category_outlined,
-                                      size: 28,
-                                      color: AppTheme.primaryColor,
-                                    );
-                                  },
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return Container(
+                          width: 90,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                // Navigate to category details screen with real category
+                                Get.to(
+                                  () =>
+                                      CategoryDetailsScreen(category: category),
+                                );
+                              },
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.getSurface(context),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.06),
+                                      spreadRadius: 0,
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(12),
+                                        color: AppTheme.grey100,
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.asset(
+                                          iconPath,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Icon(
+                                              Icons.category_outlined,
+                                              size: 28,
+                                              color: AppTheme.primaryColor,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      category.name,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.getTextPrimary(context),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              category.name,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.getTextPrimary(context),
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+                          ),
+                        );
+                      },
+                    );
+                  }).toList(),
             ),
           );
         }),
@@ -891,6 +910,55 @@ class HomeTab extends StatelessWidget {
     );
   }
 
+  Widget _buildProductImage(Product product) {
+    String imageUrl = '';
+
+    // Get the best available image URL
+    if (product.primaryImage.isNotEmpty) {
+      imageUrl = product.primaryImage;
+    } else if (product.imageList.isNotEmpty) {
+      imageUrl = product.imageList.first;
+    }
+
+    // If no valid image URL, show placeholder
+    if (imageUrl.isEmpty) {
+      return Container(
+        color: AppTheme.grey100,
+        child: Icon(
+          Icons.image_not_supported_outlined,
+          size: 40,
+          color: AppTheme.grey400,
+        ),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder:
+          (context, url) => Container(
+            color: AppTheme.grey100,
+            child: const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            color: AppTheme.grey100,
+            child: Icon(
+              Icons.image_not_supported_outlined,
+              size: 40,
+              color: AppTheme.grey400,
+            ),
+          ),
+    );
+  }
+
   Widget _buildProductCard(Product product, BuildContext context) {
     final CurrencyController currencyController =
         Get.find<CurrencyController>();
@@ -929,36 +997,7 @@ class HomeTab extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(16),
                     ),
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          product.primaryImage.isNotEmpty
-                              ? product.primaryImage
-                              : (product.imageList.isNotEmpty
-                                  ? product.imageList.first
-                                  : ''),
-                      fit: BoxFit.cover,
-                      placeholder:
-                          (context, url) => Container(
-                            color: AppTheme.grey100,
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                      errorWidget:
-                          (context, url, error) => Container(
-                            color: AppTheme.grey100,
-                            child: Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 40,
-                              color: AppTheme.grey400,
-                            ),
-                          ),
-                    ),
+                    child: _buildProductImage(product),
                   ),
                 ),
               ),
@@ -1109,7 +1148,7 @@ class HomeTab extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      Container(
+                      SizedBox(
                         height: 44,
                         child: ElevatedButton(
                           onPressed:
@@ -1269,21 +1308,30 @@ class HomeTab extends StatelessWidget {
 
           return SizedBox(
             height: 120,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: displayVendors.length,
-              itemBuilder: (context, index) {
-                final vendor = displayVendors[index];
-                return Container(
-                  width: screenWidth * 0.7, // Responsive width
-                  margin: EdgeInsets.only(
-                    right: index == displayVendors.length - 1 ? 0 : 16,
-                  ),
-                  child: _buildVendorCard(vendor, context),
-                );
-              },
+            child: CarouselSlider(
+              options: CarouselOptions(
+                height: 120,
+                autoPlay: true,
+                enlargeCenterPage: false,
+                autoPlayCurve: Curves.easeInOutCubic,
+                enableInfiniteScroll: displayVendors.length > 1,
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                viewportFraction: 0.8, // Show ~1.25 vendors at once
+                autoPlayInterval: const Duration(seconds: 4),
+                padEnds: false,
+              ),
+              items:
+                  displayVendors.map((vendor) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return Container(
+                          width: screenWidth * 0.7, // Responsive width
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          child: _buildVendorCard(vendor, context),
+                        );
+                      },
+                    );
+                  }).toList(),
             ),
           );
         }),

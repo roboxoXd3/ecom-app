@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_filter.dart' as filter;
+import '../../../data/models/product_model.dart';
 import '../../controllers/product_controller.dart';
 import '../../controllers/currency_controller.dart';
+import '../../../../core/utils/currency_utils.dart';
 
 import '../../../data/models/sort_option.dart' as sort;
 
@@ -13,6 +16,43 @@ class ProductListScreen extends StatelessWidget {
   final CurrencyController currencyController = Get.find();
 
   ProductListScreen({super.key, required this.title});
+
+  Widget _buildProductImage(Product product) {
+    String imageUrl = '';
+
+    // Get the best available image URL
+    if (product.primaryImage.isNotEmpty) {
+      imageUrl = product.primaryImage;
+    } else if (product.imageList.isNotEmpty) {
+      imageUrl = product.imageList.first;
+    }
+
+    // If no valid image URL, show placeholder
+    if (imageUrl.isEmpty) {
+      return Container(
+        color: Colors.grey[200],
+        child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      placeholder:
+          (context, url) => Container(
+            color: Colors.grey[200],
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            color: Colors.grey[200],
+            child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,25 +120,7 @@ class ProductListScreen extends StatelessWidget {
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(4),
                                 ),
-                                child: Image.network(
-                                  product.primaryImage.isNotEmpty
-                                      ? product.primaryImage
-                                      : (product.imageList.isNotEmpty
-                                          ? product.imageList.first
-                                          : ''),
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[200],
-                                      child: Icon(
-                                        Icons.image,
-                                        size: 40,
-                                        color: Colors.grey[400],
-                                      ),
-                                    );
-                                  },
-                                ),
+                                child: _buildProductImage(product),
                               ),
                             ),
                             Padding(
@@ -175,7 +197,7 @@ class ProductListScreen extends StatelessWidget {
               if (filter.priceRange != null)
                 Obx(
                   () => _buildFilterChip(
-                    'Price: ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${filter.priceRange!.start.toStringAsFixed(0)} - ${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${filter.priceRange!.end.toStringAsFixed(0)}',
+                    'Price: ${CurrencyUtils.formatPriceRange(filter.priceRange!.start, filter.priceRange!.end)}',
                     () => productController.updatePriceRange(null),
                   ),
                 ),

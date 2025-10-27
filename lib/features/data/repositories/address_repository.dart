@@ -17,7 +17,7 @@ class AddressRepository {
     return (response as List).map((json) => Address.fromJson(json)).toList();
   }
 
-  Future<void> addAddress(Address address) async {
+  Future<String> addAddress(Address address) async {
     final userId = AuthService.getCurrentUserId();
 
     // If this is the first address, make it default
@@ -33,19 +33,27 @@ class AddressRepository {
           .eq('user_id', userId);
     }
 
-    // Insert the new address
-    await _supabase.from('shipping_addresses').insert({
-      'user_id': userId,
-      'name': address.name,
-      'phone': address.phone,
-      'address_line1': address.addressLine1,
-      'address_line2': address.addressLine2,
-      'city': address.city,
-      'state': address.state,
-      'zip': address.zip,
-      'country': address.country,
-      'is_default': shouldBeDefault,
-    });
+    // Insert the new address and return the created record
+    final response =
+        await _supabase
+            .from('shipping_addresses')
+            .insert({
+              'user_id': userId,
+              'name': address.name,
+              'phone': address.phone,
+              'address_line1': address.addressLine1,
+              'address_line2': address.addressLine2,
+              'city': address.city,
+              'state': address.state,
+              'zip': address.zip,
+              'country': address.country,
+              'is_default': shouldBeDefault,
+            })
+            .select()
+            .single();
+
+    // Return the ID of the newly created address
+    return response['id'].toString();
   }
 
   Future<void> updateAddress(Address address) async {

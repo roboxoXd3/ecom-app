@@ -1,5 +1,71 @@
 import 'dart:convert';
 import 'vendor_model.dart';
+import 'subcategory_model.dart';
+
+// Color option model with hex code support
+class ColorOption {
+  final String name;
+  final String hex;
+  final int quantity;
+  final Map<String, int>? sizeQuantities; // Store size-specific quantities
+
+  ColorOption({
+    required this.name,
+    required this.hex,
+    this.quantity = 0,
+    this.sizeQuantities,
+  });
+
+  factory ColorOption.fromJson(String name, Map<String, dynamic> json) {
+    Map<String, int>? sizeQty;
+    int totalQuantity = 0;
+
+    // Calculate total quantity from nested sizes object
+    if (json['sizes'] != null && json['sizes'] is Map) {
+      final sizesMap = json['sizes'] as Map<String, dynamic>;
+      sizeQty = {};
+
+      for (var entry in sizesMap.entries) {
+        int qty = 0;
+        if (entry.value is int) {
+          qty = entry.value;
+        } else if (entry.value is String) {
+          qty = int.tryParse(entry.value) ?? 0;
+        } else if (entry.value is num) {
+          qty = entry.value.toInt();
+        }
+        sizeQty[entry.key] = qty;
+        totalQuantity += qty;
+      }
+    }
+
+    return ColorOption(
+      name: name,
+      hex: json['hex']?.toString() ?? '#000000',
+      quantity: totalQuantity,
+      sizeQuantities: sizeQty,
+    );
+  }
+
+  // Helper method to get quantity for a specific size
+  int getQuantityForSize(String size) {
+    return sizeQuantities?[size] ?? 0;
+  }
+
+  // Helper method to check if a specific size is available
+  bool isSizeAvailable(String size) {
+    return getQuantityForSize(size) > 0;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'hex': hex,
+      'quantity': quantity,
+      if (sizeQuantities != null) 'sizeQuantities': sizeQuantities,
+    };
+  }
+}
 
 // New model classes for PDP features
 class ProductOffer {
@@ -172,11 +238,35 @@ class ProductRecommendations {
     required this.youMightAlsoLike,
   });
 
+  // Helper method to parse string lists from various data structures
+  static List<String> _parseStringList(dynamic data) {
+    if (data == null) return [];
+
+    try {
+      if (data is List) {
+        return data.map((item) => item.toString()).toList();
+      } else if (data is Map<String, dynamic>) {
+        return data.keys.toList();
+      } else if (data is String) {
+        // Handle comma-separated string
+        return data
+            .split(',')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error parsing string list: $e');
+      return [];
+    }
+  }
+
   factory ProductRecommendations.fromJson(Map<String, dynamic> json) {
     return ProductRecommendations(
-      similar: List<String>.from(json['similar'] ?? []),
-      fromSeller: List<String>.from(json['from_seller'] ?? []),
-      youMightAlsoLike: List<String>.from(json['you_might_also_like'] ?? []),
+      similar: _parseStringList(json['similar']),
+      fromSeller: _parseStringList(json['from_seller']),
+      youMightAlsoLike: _parseStringList(json['you_might_also_like']),
     );
   }
 }
@@ -188,12 +278,15 @@ class Product {
   final double price;
   final String images;
   final List<String> sizes;
-  final List<String> colors;
+  final List<ColorOption>
+  colors; // NEW: Changed to ColorOption list with hex codes
   final Map<String, List<String>>? colorImages; // NEW: Color-specific images
   final double rating;
   final int reviews;
   final bool inStock;
   final String categoryId;
+  final String? subcategoryId; // NEW: Subcategory ID
+  final Subcategory? subcategory; // NEW: Subcategory object
   final String brand;
   final double? discountPercentage;
   final bool isOnSale;
@@ -214,6 +307,11 @@ class Product {
   final String? sizeChartTemplateId;
   final Map<String, dynamic>? customSizeChartData;
   final String sizeGuideType; // 'template', 'custom', 'none'
+
+  // NEW: Enhanced size chart fields from database
+  final String? productType;
+  final bool sizingRequired;
+  final String sizeChartOverride; // 'show', 'hide', 'auto'
 
   // NEW PDP FIELDS
   final String? subtitle;
@@ -247,6 +345,8 @@ class Product {
     required this.reviews,
     required this.inStock,
     required this.categoryId,
+    this.subcategoryId, // NEW: Subcategory ID parameter
+    this.subcategory, // NEW: Subcategory object parameter
     required this.brand,
     this.discountPercentage,
     required this.isOnSale,
@@ -267,6 +367,11 @@ class Product {
     this.sizeChartTemplateId,
     this.customSizeChartData,
     this.sizeGuideType = 'template',
+
+    // NEW: Enhanced size chart parameters
+    this.productType,
+    this.sizingRequired = false,
+    this.sizeChartOverride = 'auto',
 
     // NEW PDP PARAMETERS
     this.subtitle,
@@ -296,8 +401,10 @@ class Product {
       price:
           json['price'] != null ? double.parse(json['price'].toString()) : 0.0,
       images: json['images'] ?? '',
-      sizes: List<String>.from(json['sizes'] ?? []),
-      colors: List<String>.from(json['colors'] ?? []),
+      sizes: _parseStringList(json['sizes']),
+      colors: _parseColorOptions(
+        json['colors'],
+      ), // NEW: Parse color options with hex
       colorImages: _parseColorImages(
         json['color_images'],
       ), // NEW: Parse color images
@@ -308,6 +415,14 @@ class Product {
       reviews: json['reviews'] ?? 0,
       inStock: json['in_stock'] ?? true,
       categoryId: json['category_id'] ?? '',
+      subcategoryId: json['subcategory_id'], // NEW: Parse subcategory ID
+      subcategory:
+          json['subcategories'] !=
+                  null // NEW: Parse subcategory object
+              ? Subcategory.fromJson(
+                json['subcategories'] as Map<String, dynamic>,
+              )
+              : null,
       brand: json['brand'] ?? '',
       discountPercentage:
           json['discount_percentage'] != null
@@ -347,6 +462,11 @@ class Product {
       customSizeChartData: json['custom_size_chart_data'],
       sizeGuideType: json['size_guide_type'] ?? 'template',
 
+      // NEW: Enhanced size chart fields
+      productType: json['product_type'],
+      sizingRequired: json['sizing_required'] ?? false,
+      sizeChartOverride: json['size_chart_override'] ?? 'auto',
+
       // NEW PDP FIELDS FROM DATABASE
       subtitle: json['subtitle'],
       mrp: json['mrp']?.toDouble(),
@@ -373,10 +493,10 @@ class Product {
       ),
 
       // Direct array fields from products table
-      boxContents: List<String>.from(json['box_contents'] ?? []),
-      usageInstructions: List<String>.from(json['usage_instructions'] ?? []),
-      careInstructions: List<String>.from(json['care_instructions'] ?? []),
-      safetyNotes: List<String>.from(json['safety_notes'] ?? []),
+      boxContents: _parseStringList(json['box_contents']),
+      usageInstructions: _parseStringList(json['usage_instructions']),
+      careInstructions: _parseStringList(json['care_instructions']),
+      safetyNotes: _parseStringList(json['safety_notes']),
 
       // Related table data (1:1 relationships)
       deliveryInfo:
@@ -461,9 +581,103 @@ class Product {
             .toList();
       }
 
+      // Handle case where specificationsData is a Map instead of List
+      if (specificationsData is Map<String, dynamic>) {
+        // If it's a single specification group
+        if (specificationsData.containsKey('group') &&
+            specificationsData.containsKey('rows')) {
+          return [ProductSpec.fromJson(specificationsData)];
+        }
+        // If it's a map of groups, convert to list format
+        final Map<String, List<SpecRow>> groupedSpecs = {};
+
+        for (final entry in specificationsData.entries) {
+          final groupName = entry.key;
+          final groupData = entry.value;
+
+          if (groupData is List) {
+            final rows =
+                groupData
+                    .whereType<Map<String, dynamic>>()
+                    .map(
+                      (item) => SpecRow(
+                        name: item['name']?.toString() ?? '',
+                        value: item['value']?.toString() ?? '',
+                      ),
+                    )
+                    .toList();
+            groupedSpecs[groupName] = rows;
+          }
+        }
+
+        return groupedSpecs.entries
+            .map((entry) => ProductSpec(group: entry.key, rows: entry.value))
+            .toList();
+      }
+
       return [];
     } catch (e) {
       print('Error parsing specifications: $e');
+      print('Specifications data type: ${specificationsData.runtimeType}');
+      print('Specifications data: $specificationsData');
+      return [];
+    }
+  }
+
+  // NEW: Parse color options with hex codes from JSON
+  static List<ColorOption> _parseColorOptions(dynamic data) {
+    if (data == null) return [];
+
+    try {
+      // Handle JSONB format from database: {"Black": {"hex": "#000000", "quantity": 10}}
+      if (data is Map<String, dynamic>) {
+        return data.entries.map((entry) {
+          if (entry.value is Map<String, dynamic>) {
+            return ColorOption.fromJson(entry.key, entry.value);
+          }
+          // Fallback: if value is not a map, create a default ColorOption
+          return ColorOption(name: entry.key, hex: '#000000', quantity: 0);
+        }).toList();
+      }
+
+      // Fallback: if it's a list of strings (old format), convert to ColorOption
+      if (data is List) {
+        return data.map((item) {
+          return ColorOption(
+            name: item.toString(),
+            hex: '#000000', // Default black color
+            quantity: 0,
+          );
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('Error parsing color options: $e');
+      return [];
+    }
+  }
+
+  // Helper method to parse string lists from various data structures
+  static List<String> _parseStringList(dynamic data) {
+    if (data == null) return [];
+
+    try {
+      if (data is List) {
+        return data.map((item) => item.toString()).toList();
+      } else if (data is Map<String, dynamic>) {
+        return data.keys.toList();
+      } else if (data is String) {
+        // Handle comma-separated string
+        return data
+            .split(',')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error parsing string list: $e');
       return [];
     }
   }
@@ -552,5 +766,32 @@ class Product {
       // If JSON parsing fails, fallback to comma-separated
       return images.split(',').map((e) => e.trim()).toList();
     }
+  }
+
+  // NEW: Subcategory helper methods
+  /// Returns the subcategory name if available, otherwise null
+  String? get subcategoryName => subcategory?.name;
+
+  /// Returns true if the product has a subcategory assigned
+  bool get hasSubcategory => subcategoryId != null && subcategoryId!.isNotEmpty;
+
+  /// Returns the full category path (Category > Subcategory)
+  String getCategoryPath({String? categoryName}) {
+    if (categoryName != null && hasSubcategory) {
+      return '$categoryName > ${subcategory?.name ?? 'Unknown'}';
+    }
+    return categoryName ?? 'Unknown Category';
+  }
+
+  /// Returns breadcrumb navigation items
+  List<String> getBreadcrumbs({String? categoryName}) {
+    final breadcrumbs = <String>[];
+    if (categoryName != null) {
+      breadcrumbs.add(categoryName);
+    }
+    if (hasSubcategory && subcategory?.name != null) {
+      breadcrumbs.add(subcategory!.name);
+    }
+    return breadcrumbs;
   }
 }

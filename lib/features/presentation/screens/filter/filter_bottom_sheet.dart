@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/filter_controller.dart';
 import '../../../data/models/sort_option.dart' as sort;
+import '../../../../core/utils/currency_utils.dart';
 
 class FilterBottomSheet extends StatelessWidget {
   final FilterController controller = Get.find();
@@ -85,8 +86,14 @@ class FilterBottomSheet extends StatelessWidget {
               controller.updatePriceRange(values);
             },
             labels: RangeLabels(
-              '₹${controller.currentFilter.value.priceRange?.start.toStringAsFixed(0)}',
-              '₹${controller.currentFilter.value.priceRange?.end.toStringAsFixed(0)}',
+              CurrencyUtils.formatAmount(
+                controller.currentFilter.value.priceRange?.start ?? 0,
+                decimalPlaces: 0,
+              ),
+              CurrencyUtils.formatAmount(
+                controller.currentFilter.value.priceRange?.end ?? 0,
+                decimalPlaces: 0,
+              ),
             ),
           ),
         ],

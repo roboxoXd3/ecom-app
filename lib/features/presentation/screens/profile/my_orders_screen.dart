@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/order_controller.dart';
 import '../../../data/models/order_status.dart'; // ignore: unused_import
+import '../../../../core/utils/currency_utils.dart';
 
 class MyOrdersScreen extends StatelessWidget {
   final orderController = Get.find<OrderController>();
@@ -102,9 +103,11 @@ class MyOrdersScreen extends StatelessWidget {
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Total: \$${order.total.toStringAsFixed(2)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      Obx(
+                        () => Text(
+                          'Total: ${CurrencyUtils.formatAmount(order.total)}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(

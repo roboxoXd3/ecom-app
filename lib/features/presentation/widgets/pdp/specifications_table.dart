@@ -35,15 +35,19 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Specifications',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
           ),
           const SizedBox(height: 12),
 
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: AppTheme.getBorder(context)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -56,12 +60,17 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
 
                   return Container(
                     decoration: BoxDecoration(
-                      color: index.isEven ? Colors.grey[50] : Colors.white,
+                      color:
+                          index.isEven
+                              ? AppTheme.getSurface(context)
+                              : AppTheme.getBackground(context),
                       border:
                           isLast
                               ? null
                               : Border(
-                                bottom: BorderSide(color: Colors.grey[200]!),
+                                bottom: BorderSide(
+                                  color: AppTheme.getBorder(context),
+                                ),
                               ),
                     ),
                     child: Padding(
@@ -73,9 +82,10 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
                             flex: 2,
                             child: Text(
                               row.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
+                                color: AppTheme.getTextPrimary(context),
                               ),
                             ),
                           ),
@@ -86,7 +96,7 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
                               row.value,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[700],
+                                color: AppTheme.getTextSecondary(context),
                               ),
                             ),
                           ),
@@ -94,7 +104,7 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),
@@ -135,9 +145,7 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
           // Grouped specifications (if we want to show them grouped)
           if (_isExpanded && widget.specifications.length > 1) ...[
             const SizedBox(height: 16),
-            ...widget.specifications
-                .map((spec) => _buildSpecGroup(spec))
-                .toList(),
+            ...widget.specifications.map((spec) => _buildSpecGroup(spec)),
           ],
         ],
       ),
@@ -150,7 +158,11 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
       children: [
         Text(
           spec.group,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.getTextPrimary(context),
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -167,12 +179,17 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
 
                   return Container(
                     decoration: BoxDecoration(
-                      color: index.isEven ? Colors.grey[50] : Colors.white,
+                      color:
+                          index.isEven
+                              ? AppTheme.getSurface(context)
+                              : AppTheme.getBackground(context),
                       border:
                           isLast
                               ? null
                               : Border(
-                                bottom: BorderSide(color: Colors.grey[200]!),
+                                bottom: BorderSide(
+                                  color: AppTheme.getBorder(context),
+                                ),
                               ),
                     ),
                     child: Padding(
@@ -184,9 +201,10 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
                             flex: 2,
                             child: Text(
                               row.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
+                                color: AppTheme.getTextPrimary(context),
                               ),
                             ),
                           ),
@@ -197,7 +215,7 @@ class _SpecificationsTableState extends State<SpecificationsTable> {
                               row.value,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[700],
+                                color: AppTheme.getTextSecondary(context),
                               ),
                             ),
                           ),

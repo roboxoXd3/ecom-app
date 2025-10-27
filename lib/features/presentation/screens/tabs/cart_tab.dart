@@ -42,10 +42,13 @@ class CartTab extends StatelessWidget {
       body: Obx(
         () =>
             cartController.items.isEmpty
-                ? const Center(
+                ? Center(
                   child: Text(
                     'Your cart is empty',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.getTextSecondary(context),
+                    ),
                   ),
                 )
                 : Column(
@@ -136,7 +139,9 @@ class CartTab extends StatelessWidget {
                                           fit: BoxFit.cover,
                                           placeholder:
                                               (context, url) => Container(
-                                                color: Colors.grey[200],
+                                                color: AppTheme.getSurface(
+                                                  context,
+                                                ),
                                                 child: const Center(
                                                   child:
                                                       CircularProgressIndicator(),
@@ -148,10 +153,15 @@ class CartTab extends StatelessWidget {
                                             stackTrace,
                                           ) {
                                             return Container(
-                                              color: Colors.grey[200],
+                                              color: AppTheme.getSurface(
+                                                context,
+                                              ),
                                               child: Icon(
                                                 Icons.image,
-                                                color: Colors.grey[400],
+                                                color:
+                                                    AppTheme.getTextSecondary(
+                                                      context,
+                                                    ),
                                               ),
                                             );
                                           },
@@ -166,16 +176,21 @@ class CartTab extends StatelessWidget {
                                         children: [
                                           Text(
                                             item.product.name,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
+                                              color: AppTheme.getTextPrimary(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             'Size: ${item.selectedSize} • Color: ${item.selectedColor}',
                                             style: TextStyle(
-                                              color: Colors.grey[600],
+                                              color: AppTheme.getTextSecondary(
+                                                context,
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -208,9 +223,12 @@ class CartTab extends StatelessWidget {
                                         ),
                                         Text(
                                           '${item.quantity}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
+                                            color: AppTheme.getTextPrimary(
+                                              context,
+                                            ),
                                           ),
                                         ),
                                         IconButton(
@@ -235,10 +253,10 @@ class CartTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppTheme.getSurface(context),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
+                            color: AppTheme.getBorder(context).withOpacity(0.2),
                             spreadRadius: 1,
                             blurRadius: 5,
                             offset: const Offset(0, -2),
@@ -250,11 +268,12 @@ class CartTab extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 'Total:',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
+                                  color: AppTheme.getTextPrimary(context),
                                 ),
                               ),
                               Obx(() {

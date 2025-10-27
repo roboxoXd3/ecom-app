@@ -2,13 +2,15 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../data/services/currency_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/utils/currency_utils.dart';
 
 class CurrencyController extends GetxController {
   final CurrencyService _currencyService = CurrencyService();
   final GetStorage _storage = GetStorage();
 
   // Observable variables
-  final RxString selectedCurrency = 'NGN'.obs; // Default to NGN
+  final RxString selectedCurrency =
+      'NGN'.obs; // Default to NGN (primary business currency)
   final RxList<Map<String, dynamic>> supportedCurrencies =
       <Map<String, dynamic>>[].obs;
   final RxMap<String, dynamic> exchangeRates = <String, dynamic>{}.obs;
@@ -16,9 +18,13 @@ class CurrencyController extends GetxController {
   final RxString error = ''.obs;
   final RxString lastUpdated = ''.obs;
 
-  // Default currencies as fallback
+  // Default currencies as fallback (NGN first as primary business currency)
   final List<Map<String, dynamic>> _defaultCurrencies = [
-    {'code': 'NGN', 'symbol': '₦', 'name': 'Nigerian Naira'}, // Default to NGN
+    {
+      'code': 'NGN',
+      'symbol': '₦',
+      'name': 'Nigerian Naira',
+    }, // Primary business currency
     {'code': 'USD', 'symbol': '\$', 'name': 'US Dollar'},
     {'code': 'EUR', 'symbol': '€', 'name': 'Euro'},
     {'code': 'GBP', 'symbol': '£', 'name': 'British Pound'},
@@ -261,23 +267,27 @@ class CurrencyController extends GetxController {
     return currency?['name'] ?? currencyCode;
   }
 
-  // Format price with currency symbol
+  // Format price with currency symbol and proper comma denomination
   String formatPrice(
     double price, {
     String? currencyCode,
     bool showSymbol = true,
   }) {
     final currency = currencyCode ?? selectedCurrency.value;
-    final symbol = getCurrencySymbol(currency);
 
     if (showSymbol) {
-      return '$symbol${price.toStringAsFixed(2)}';
+      return CurrencyUtils.formatAmountWithCommas(
+        price,
+        currencyCode: currency,
+      );
     } else {
-      return price.toStringAsFixed(2);
+      final usesDecimals = CurrencyUtils.currencyUsesDecimals(currency);
+      final decimalPlaces = usesDecimals ? 2 : 0;
+      return CurrencyUtils.formatNumberWithCommas(price, decimalPlaces);
     }
   }
 
-  // Format price with currency conversion
+  // Format price with currency conversion and proper comma denomination
   String formatConvertedPrice(
     double price,
     String fromCurrency, {
@@ -287,7 +297,7 @@ class CurrencyController extends GetxController {
     return formatPrice(convertedPrice, showSymbol: showSymbol);
   }
 
-  // Format product price for listings (always in global currency)
+  // Format product price for listings with proper comma denomination
   Map<String, String> formatProductPrices(Map<String, dynamic> product) {
     final productCurrency = product['currency'] ?? 'USD';
     final price = (product['price'] as num?)?.toDouble() ?? 0.0;
@@ -304,7 +314,7 @@ class CurrencyController extends GetxController {
     };
   }
 
-  // Get formatted price for a single product field
+  // Get formatted price for a single product field with proper comma denomination
   String getFormattedProductPrice(dynamic price, String? productCurrency) {
     if (price == null) return '';
     final priceValue = (price as num).toDouble();

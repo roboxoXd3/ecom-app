@@ -405,7 +405,7 @@ Examples:
           String text;
           if (count == 1) {
             text =
-                "Perfect! I found exactly what you're looking for. Check out our **${firstProduct.name}** priced at ₹${firstProduct.price}.\n\n${firstProduct.description.length > 100 ? firstProduct.description.substring(0, 100) + '...' : firstProduct.description}\n\n⭐ **Rating:** ${firstProduct.rating}/5 (${firstProduct.reviews} reviews)";
+                "Perfect! I found exactly what you're looking for. Check out our **${firstProduct.name}** priced at ₹${firstProduct.price}.\n\n${firstProduct.description.length > 100 ? '${firstProduct.description.substring(0, 100)}...' : firstProduct.description}\n\n⭐ **Rating:** ${firstProduct.rating}/5 (${firstProduct.reviews} reviews)";
           } else {
             text =
                 "Great! I found **$count products** matching your search. Here are some top picks:\n\n• **${firstProduct.name}** - ₹${firstProduct.price} (${firstProduct.rating}⭐)\n${count > 1 ? '• **${contextData.products[1].name}** - ₹${contextData.products[1].price} (${contextData.products[1].rating}⭐)' : ''}\n\nSwipe through the product cards below to explore all options! 👆";
@@ -576,7 +576,7 @@ Examples:
       }
     } catch (e) {
       print('❌ Error calling OpenAI API: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -635,7 +635,7 @@ Guidelines:
         );
         if (product.description.isNotEmpty) {
           prompt.writeln(
-            '   Description: ${product.description.length > 100 ? product.description.substring(0, 100) + '...' : product.description}',
+            '   Description: ${product.description.length > 100 ? '${product.description.substring(0, 100)}...' : product.description}',
           );
         }
       }
@@ -1048,6 +1048,30 @@ class ConversationContext {
   final List<String> productsMentioned;
   final DateTime createdAt;
 
+  // Helper method to parse string lists from various data structures
+  static List<String> _parseStringList(dynamic data) {
+    if (data == null) return [];
+
+    try {
+      if (data is List) {
+        return data.map((item) => item.toString()).toList();
+      } else if (data is Map<String, dynamic>) {
+        return data.keys.toList();
+      } else if (data is String) {
+        // Handle comma-separated string
+        return data
+            .split(',')
+            .map((item) => item.trim())
+            .where((item) => item.isNotEmpty)
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error parsing string list: $e');
+      return [];
+    }
+  }
+
   ConversationContext({
     required this.id,
     required this.conversationId,
@@ -1071,7 +1095,7 @@ class ConversationContext {
       intentConfidence: json['intent_confidence']?.toDouble() ?? 0.0,
       aiResponse: json['ai_response'],
       extractedInfo: json['extracted_info'] ?? '',
-      productsMentioned: List<String>.from(json['products_mentioned'] ?? []),
+      productsMentioned: _parseStringList(json['products_mentioned']),
       createdAt: DateTime.parse(json['created_at']),
     );
   }

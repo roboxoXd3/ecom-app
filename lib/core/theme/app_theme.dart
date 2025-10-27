@@ -129,7 +129,6 @@ class AppTheme {
       secondary: primaryVariant,
       error: errorColor,
       surface: surfaceLight,
-      background: backgroundLight,
       onSurface: textPrimary,
       onSurfaceVariant: textSecondary,
       outline: grey300,
@@ -166,7 +165,6 @@ class AppTheme {
       secondary: primaryVariant,
       error: errorColor,
       surface: surfaceDark,
-      background: backgroundDark,
       onSurface: Colors.white,
       onSurfaceVariant: Color(0xFFBDBDBD),
       outline: Color(0xFF424242),
@@ -227,7 +225,7 @@ class AppTheme {
   }
 
   static Color getBackground(BuildContext context) {
-    return Theme.of(context).colorScheme.background;
+    return Theme.of(context).colorScheme.surface;
   }
 
   static Color getBorder(BuildContext context) {

@@ -13,6 +13,7 @@ import '../../core/services/analytics_service.dart';
 import '../../features/presentation/controllers/order_controller.dart';
 import '../../features/presentation/controllers/vendor_controller.dart';
 import '../../features/presentation/controllers/currency_controller.dart';
+import '../../features/presentation/screens/notifications/notification_controller.dart';
 // import '../../features/presentation/controllers/category_controller.dart';
 
 class InitialBindings extends Bindings {
@@ -31,6 +32,7 @@ class InitialBindings extends Bindings {
     Get.put(CategoryController());
     Get.put(OrderController());
     Get.put(VendorController());
+    Get.put(NotificationController()); // Initialize NotificationController
     Get.put(
       CurrencyController(),
       permanent: true,

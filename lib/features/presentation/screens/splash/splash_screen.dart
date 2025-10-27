@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/utils/storage_utils.dart';
 import '../auth/login_screen.dart';
 import '../onboarding/onboarding_screen.dart';

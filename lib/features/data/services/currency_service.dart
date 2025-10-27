@@ -87,7 +87,7 @@ class CurrencyService {
       };
     } catch (e) {
       print('Error getting currency data from Supabase: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -106,7 +106,7 @@ class CurrencyService {
       }
     } catch (e) {
       print('Error getting currency data from API: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -205,7 +205,7 @@ class CurrencyService {
       };
     } catch (e) {
       print('Error in direct conversion: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -343,7 +343,7 @@ class CurrencyService {
       return convertedPrices;
     } catch (e) {
       print('Error converting product prices: $e');
-      throw e;
+      rethrow;
     }
   }
 }
