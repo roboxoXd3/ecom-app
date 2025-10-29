@@ -13,13 +13,16 @@ class ForgotPasswordScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldLightColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.scaffoldLightColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Reset Password',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.getTextPrimary(context),
+          ),
         ),
         centerTitle: true,
       ),
@@ -59,9 +62,13 @@ class ForgotPasswordScreen extends StatelessWidget {
                 FadeInDown(
                   delay: const Duration(milliseconds: 200),
                   duration: const Duration(milliseconds: 500),
-                  child: const Text(
+                  child: Text(
                     'Forgot Password?',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -76,7 +83,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                     'No worries! Enter your email address and we\'ll send you a reset link.',
                     style: TextStyle(
                       fontSize: 16,
-                      color: AppTheme.grey600,
+                      color: AppTheme.getTextSecondary(context),
                       height: 1.5,
                     ),
                     textAlign: TextAlign.center,
@@ -91,11 +98,13 @@ class ForgotPasswordScreen extends StatelessWidget {
                   duration: const Duration(milliseconds: 500),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppTheme.getSurface(context),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey300.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -105,9 +114,16 @@ class ForgotPasswordScreen extends StatelessWidget {
                     child: TextField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(color: AppTheme.getTextPrimary(context)),
                       decoration: InputDecoration(
                         labelText: 'Email Address',
+                        labelStyle: TextStyle(
+                          color: AppTheme.getTextSecondary(context),
+                        ),
                         hintText: 'Enter your email address',
+                        hintStyle: TextStyle(
+                          color: AppTheme.getHintText(context),
+                        ),
                         prefixIcon: Icon(
                           Icons.email_outlined,
                           color: AppTheme.primaryColor,
@@ -117,7 +133,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: AppTheme.getSurface(context),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
@@ -202,7 +218,9 @@ class ForgotPasswordScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Remember your password? ',
-                        style: TextStyle(color: AppTheme.grey600),
+                        style: TextStyle(
+                          color: AppTheme.getTextSecondary(context),
+                        ),
                       ),
                       TextButton(
                         onPressed: () => Get.back(),

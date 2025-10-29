@@ -32,9 +32,13 @@ class LoginScreen extends StatelessWidget {
                 // Welcome Text
                 FadeInDown(
                   duration: const Duration(milliseconds: 500),
-                  child: const Text(
+                  child: Text(
                     'Welcome Back!',
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -43,7 +47,10 @@ class LoginScreen extends StatelessWidget {
                   duration: const Duration(milliseconds: 500),
                   child: Text(
                     'Sign in to continue',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.getTextSecondary(context),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -55,12 +62,37 @@ class LoginScreen extends StatelessWidget {
                   child: TextField(
                     onChanged: (value) => controller.email.value = value,
                     keyboardType: TextInputType.emailAddress,
+                    style: TextStyle(color: AppTheme.getTextPrimary(context)),
                     decoration: InputDecoration(
                       labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      labelStyle: TextStyle(
+                        color: AppTheme.getTextSecondary(context),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        color: AppTheme.primaryColor,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppTheme.getBorder(context),
+                        ),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppTheme.getBorder(context),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: AppTheme.primaryColor,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: AppTheme.getSurface(context),
                     ),
                   ),
                 ),
@@ -74,20 +106,46 @@ class LoginScreen extends StatelessWidget {
                     () => TextField(
                       onChanged: (value) => controller.password.value = value,
                       obscureText: !controller.isPasswordVisible.value,
+                      style: TextStyle(color: AppTheme.getTextPrimary(context)),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        labelStyle: TextStyle(
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: AppTheme.primaryColor,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             controller.isPasswordVisible.value
                                 ? Icons.visibility
                                 : Icons.visibility_off,
+                            color: AppTheme.getTextSecondary(context),
                           ),
                           onPressed: controller.togglePasswordVisibility,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
                         ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: AppTheme.primaryColor,
+                            width: 2,
+                          ),
+                        ),
+                        filled: true,
+                        fillColor: AppTheme.getSurface(context),
                       ),
                     ),
                   ),
@@ -156,7 +214,9 @@ class LoginScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Don\'t have an account? ',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AppTheme.getTextSecondary(context),
+                        ),
                       ),
                       TextButton(
                         onPressed: () => Get.to(() => const RegisterScreen()),

@@ -7,7 +7,7 @@
 -keep class io.flutter.plugins.**  { *; }
 
 # GetX specific rules
--keep class com.example.ecom_app.** { *; }
+-keep class com.besmart.ecom.** { *; }
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
@@ -37,4 +37,4 @@
 -keep class * implements com.google.gson.JsonDeserializer
 
 # Keep model classes (adjust package name as needed)
--keep class com.example.ecom_app.features.data.models.** { *; } 
+-keep class com.besmart.ecom.features.data.models.** { *; } 

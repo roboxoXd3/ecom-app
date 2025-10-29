@@ -21,7 +21,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -43,7 +43,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
+                            color: AppTheme.getBorder(
+                              context,
+                            ).withValues(alpha: 0.2),
                             spreadRadius: 2,
                             blurRadius: 8,
                             offset: const Offset(0, 2),
@@ -194,7 +196,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Text(
                           'Skip to Login',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AppTheme.getTextSecondary(context),
                             fontSize: 16,
                           ),
                         ),
@@ -255,9 +257,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               duration: const Duration(milliseconds: 500),
               child: Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.getTextPrimary(context),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -270,7 +273,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 description,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: AppTheme.getTextSecondary(context),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,

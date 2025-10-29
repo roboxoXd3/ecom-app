@@ -16,7 +16,7 @@ class CategoriesTab extends StatelessWidget {
     final categoryController = Get.find<CategoryController>();
 
     return Scaffold(
-      backgroundColor: AppTheme.grey50,
+      backgroundColor: AppTheme.getSurface(context),
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -26,8 +26,8 @@ class CategoriesTab extends StatelessWidget {
             floating: true,
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
+            backgroundColor: AppTheme.getSurface(context),
+            foregroundColor: AppTheme.getTextPrimary(context),
             flexibleSpace: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 // Calculate if the app bar is collapsed
@@ -42,7 +42,10 @@ class CategoriesTab extends StatelessWidget {
                     child: Text(
                       'Explore Categories',
                       style: TextStyle(
-                        color: isCollapsed ? Colors.black : Colors.white,
+                        color:
+                            isCollapsed
+                                ? AppTheme.getTextPrimary(context)
+                                : Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 22,
                         letterSpacing: 0.5,
@@ -53,7 +56,7 @@ class CategoriesTab extends StatelessWidget {
                                   Shadow(
                                     offset: const Offset(0, 1),
                                     blurRadius: 3,
-                                    color: Colors.black.withOpacity(0.3),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                   ),
                                 ],
                       ),
@@ -66,8 +69,8 @@ class CategoriesTab extends StatelessWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           AppTheme.primaryColor,
-                          AppTheme.primaryColor.withOpacity(0.8),
-                          Colors.deepPurple.withOpacity(0.6),
+                          AppTheme.primaryColor.withValues(alpha: 0.8),
+                          AppTheme.primaryVariant.withValues(alpha: 0.6),
                         ],
                         stops: const [0.0, 0.7, 1.0],
                       ),
@@ -84,7 +87,7 @@ class CategoriesTab extends StatelessWidget {
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    Colors.white.withOpacity(0.1),
+                                    Colors.white.withValues(alpha: 0.1),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -103,9 +106,9 @@ class CategoriesTab extends StatelessWidget {
                               height: 60,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                   width: 1,
                                 ),
                               ),
@@ -122,7 +125,7 @@ class CategoriesTab extends StatelessWidget {
                               height: 40,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.08),
+                                color: Colors.white.withValues(alpha: 0.08),
                               ),
                             ),
                           ),
@@ -143,11 +146,13 @@ class CategoriesTab extends StatelessWidget {
                 margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.getSurface(context),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: AppTheme.getBorder(
+                          context,
+                        ).withValues(alpha: 0.15),
                         blurRadius: 20,
                         offset: const Offset(0, 4),
                         spreadRadius: 0,
@@ -155,8 +160,8 @@ class CategoriesTab extends StatelessWidget {
                     ],
                   ),
                   child: TextField(
-                    style: const TextStyle(
-                      color: Colors.black87,
+                    style: TextStyle(
+                      color: AppTheme.getTextPrimary(context),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -251,7 +256,7 @@ class CategoriesTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: AppTheme.getBorder(context).withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 0,
@@ -334,9 +339,9 @@ class CategoriesTab extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.1),
-                            Colors.black.withOpacity(0.3),
-                            Colors.black.withOpacity(0.7),
+                            Colors.black.withValues(alpha: 0.1),
+                            Colors.black.withValues(alpha: 0.3),
+                            Colors.black.withValues(alpha: 0.7),
                           ],
                           stops: const [0.0, 0.5, 1.0],
                         ),
@@ -388,10 +393,10 @@ class CategoriesTab extends StatelessWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
+                              color: Colors.white.withValues(alpha: 0.3),
                               width: 1,
                             ),
                           ),

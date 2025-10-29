@@ -58,7 +58,10 @@ class ProfileTab extends StatelessWidget {
                   ? authController.userEmail.value
                   : 'No email',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.getTextSecondary(context),
+              ),
             ),
           ),
           const SizedBox(height: 32),

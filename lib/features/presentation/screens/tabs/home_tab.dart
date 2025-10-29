@@ -172,7 +172,7 @@ class HomeTab extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.errorColor,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white, width: 1.5),
+                  border: Border.all(color: AppTheme.white, width: 1.5),
                 ),
                 child: Center(
                   child: Text(
@@ -192,7 +192,7 @@ class HomeTab extends StatelessWidget {
       offset: const Offset(0, 50),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
-      shadowColor: Colors.black.withOpacity(0.2),
+      shadowColor: AppTheme.grey300,
       itemBuilder:
           (BuildContext context) => [
             // Notifications Item
@@ -236,7 +236,7 @@ class HomeTab extends StatelessWidget {
                                   : 'No new notifications',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppTheme.getTextSecondary(context),
                               ),
                             );
                           }),
@@ -315,7 +315,7 @@ class HomeTab extends StatelessWidget {
                               '${currencyController.selectedCurrency.value} - ${currencyController.getCurrencyName(currencyController.selectedCurrency.value)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppTheme.getTextSecondary(context),
                               ),
                             ),
                           ],
@@ -324,7 +324,7 @@ class HomeTab extends StatelessWidget {
                       Icon(
                         Icons.keyboard_arrow_right,
                         size: 18,
-                        color: Colors.grey[400],
+                        color: AppTheme.getTextSecondary(context),
                       ),
                     ],
                   ),
@@ -351,9 +351,9 @@ class HomeTab extends StatelessWidget {
 
     Get.bottomSheet(
       Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: AppTheme.getSurface(Get.context!),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -364,7 +364,7 @@ class HomeTab extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppTheme.getBorder(Get.context!),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -403,7 +403,7 @@ class HomeTab extends StatelessWidget {
                           'All prices will be converted automatically',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.getTextSecondary(Get.context!),
                           ),
                         ),
                       ],
@@ -446,7 +446,9 @@ class HomeTab extends StatelessWidget {
                           color:
                               isSelected
                                   ? AppTheme.primaryColor.withOpacity(0.3)
-                                  : Colors.grey[200]!,
+                                  : AppTheme.getBorder(
+                                    context,
+                                  ).withValues(alpha: 0.5),
                           width: 1.5,
                         ),
                       ),
@@ -462,7 +464,9 @@ class HomeTab extends StatelessWidget {
                             color:
                                 isSelected
                                     ? AppTheme.primaryColor
-                                    : Colors.grey[100],
+                                    : AppTheme.getBorder(
+                                      context,
+                                    ).withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(
@@ -474,7 +478,7 @@ class HomeTab extends StatelessWidget {
                                 color:
                                     isSelected
                                         ? Colors.white
-                                        : Colors.grey[700],
+                                        : AppTheme.getTextPrimary(context),
                               ),
                             ),
                           ),
@@ -494,7 +498,7 @@ class HomeTab extends StatelessWidget {
                           currency['code'],
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.getTextSecondary(context),
                           ),
                         ),
                         trailing:
@@ -551,7 +555,9 @@ class HomeTab extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.15),
                           spreadRadius: 0,
                           blurRadius: 10,
                           offset: const Offset(0, 4),
@@ -587,7 +593,7 @@ class HomeTab extends StatelessWidget {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
-                                  Colors.black.withOpacity(0.3),
+                                  Colors.black.withValues(alpha: 0.3),
                                 ],
                               ),
                             ),
@@ -779,7 +785,9 @@ class HomeTab extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.06),
+                                      color: AppTheme.getBorder(
+                                        context,
+                                      ).withValues(alpha: 0.1),
                                       spreadRadius: 0,
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
@@ -851,60 +859,62 @@ class HomeTab extends StatelessWidget {
           Get.to(() => ProductListScreen(title: 'New Arrivals'));
         }, context),
         const SizedBox(height: 16),
-        FutureBuilder<List<Product>>(
-          future: productController.getNewArrivals(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 280,
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppTheme.primaryColor,
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            if (snapshot.hasError ||
-                !snapshot.hasData ||
-                snapshot.data!.isEmpty) {
-              return SizedBox(
-                height: 280,
-                child: Center(
-                  child: Text(
-                    'No new arrivals found',
-                    style: TextStyle(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            return SizedBox(
+        Obx(() {
+          // Show loading indicator only when initially loading all products
+          if (productController.isLoading.value &&
+              productController.newArrivals.isEmpty) {
+            return const SizedBox(
               height: 280,
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final product = snapshot.data![index];
-                  return Container(
-                    width: screenWidth * 0.45, // Responsive width
-                    margin: EdgeInsets.only(
-                      right: index == snapshot.data!.length - 1 ? 0 : 16,
-                    ),
-                    child: _buildProductCard(product, context),
-                  );
-                },
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppTheme.primaryColor,
+                  ),
+                ),
               ),
             );
-          },
-        ),
+          }
+
+          // Check if no new arrivals available
+          if (productController.newArrivals.isEmpty) {
+            return SizedBox(
+              height: 280,
+              child: Center(
+                child: Text(
+                  'No new arrivals found',
+                  style: TextStyle(
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Display new arrivals
+          return SizedBox(
+            height: 280,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: productController.newArrivals.length,
+              itemBuilder: (context, index) {
+                final product = productController.newArrivals[index];
+                return Container(
+                  width: screenWidth * 0.45, // Responsive width
+                  margin: EdgeInsets.only(
+                    right:
+                        index == productController.newArrivals.length - 1
+                            ? 0
+                            : 16,
+                  ),
+                  child: _buildProductCard(product, context),
+                );
+              },
+            ),
+          );
+        }),
         const SizedBox(height: 32),
       ],
     );
@@ -974,7 +984,7 @@ class HomeTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: AppTheme.getBorder(context).withValues(alpha: 0.1),
                 spreadRadius: 0,
                 blurRadius: 10,
                 offset: const Offset(0, 2),
@@ -1280,7 +1290,7 @@ class HomeTab extends StatelessWidget {
               height: 120,
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: AppTheme.getBorder(context).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -1290,12 +1300,15 @@ class HomeTab extends StatelessWidget {
                     Icon(
                       Icons.store_outlined,
                       size: 40,
-                      color: Colors.grey[400],
+                      color: AppTheme.getTextSecondary(context),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'No vendors available',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(
+                        color: AppTheme.getTextSecondary(context),
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -1413,7 +1426,9 @@ class HomeTab extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: AppTheme.goldenAccent.withValues(
+                                alpha: 0.1,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -1422,14 +1437,14 @@ class HomeTab extends StatelessWidget {
                                 Icon(
                                   Icons.star,
                                   size: 10,
-                                  color: Colors.orange,
+                                  color: AppTheme.goldenAccent,
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
                                   'Featured',
                                   style: TextStyle(
                                     fontSize: 8,
-                                    color: Colors.orange,
+                                    color: AppTheme.goldenAccent,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1455,7 +1470,7 @@ class HomeTab extends StatelessWidget {
                           '(${vendor.totalReviews})',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[500],
+                            color: AppTheme.getTextSecondary(context),
                           ),
                         ),
                       ],

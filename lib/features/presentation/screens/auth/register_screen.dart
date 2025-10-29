@@ -16,7 +16,7 @@ class RegisterScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldLightColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -30,11 +30,13 @@ class RegisterScreen extends StatelessWidget {
                   duration: const Duration(milliseconds: 500),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.white,
+                      color: AppTheme.getSurface(context),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey300.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.3),
                           spreadRadius: 1,
                           blurRadius: 6,
                           offset: const Offset(0, 2),
@@ -42,7 +44,10 @@ class RegisterScreen extends StatelessWidget {
                       ],
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.arrow_back, color: AppTheme.iconColor),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
                       onPressed: () => Get.back(),
                     ),
                   ),
@@ -84,7 +89,9 @@ class RegisterScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey200.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -105,11 +112,15 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.grey300),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.grey300),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -119,7 +130,7 @@ class RegisterScreen extends StatelessWidget {
                           ),
                         ),
                         filled: true,
-                        fillColor: AppTheme.white,
+                        fillColor: AppTheme.getSurface(context),
                       ),
                     ),
                   ),
@@ -134,7 +145,9 @@ class RegisterScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey200.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -156,11 +169,15 @@ class RegisterScreen extends StatelessWidget {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.grey300),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.grey300),
+                          borderSide: BorderSide(
+                            color: AppTheme.getBorder(context),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -170,7 +187,7 @@ class RegisterScreen extends StatelessWidget {
                           ),
                         ),
                         filled: true,
-                        fillColor: AppTheme.white,
+                        fillColor: AppTheme.getSurface(context),
                       ),
                     ),
                   ),
@@ -185,7 +202,9 @@ class RegisterScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey200.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -219,11 +238,15 @@ class RegisterScreen extends StatelessWidget {
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppTheme.grey300),
+                            borderSide: BorderSide(
+                              color: AppTheme.getBorder(context),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppTheme.grey300),
+                            borderSide: BorderSide(
+                              color: AppTheme.getBorder(context),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -233,7 +256,7 @@ class RegisterScreen extends StatelessWidget {
                             ),
                           ),
                           filled: true,
-                          fillColor: AppTheme.white,
+                          fillColor: AppTheme.getSurface(context),
                         ),
                       ),
                     ),
@@ -249,7 +272,9 @@ class RegisterScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.grey200.withValues(alpha: 0.3),
+                          color: AppTheme.getBorder(
+                            context,
+                          ).withValues(alpha: 0.2),
                           spreadRadius: 1,
                           blurRadius: 4,
                           offset: const Offset(0, 2),
@@ -275,11 +300,15 @@ class RegisterScreen extends StatelessWidget {
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppTheme.grey300),
+                            borderSide: BorderSide(
+                              color: AppTheme.getBorder(context),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppTheme.grey300),
+                            borderSide: BorderSide(
+                              color: AppTheme.getBorder(context),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -289,7 +318,7 @@ class RegisterScreen extends StatelessWidget {
                             ),
                           ),
                           filled: true,
-                          fillColor: AppTheme.white,
+                          fillColor: AppTheme.getSurface(context),
                         ),
                       ),
                     ),

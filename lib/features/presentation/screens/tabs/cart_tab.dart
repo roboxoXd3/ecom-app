@@ -256,7 +256,9 @@ class CartTab extends StatelessWidget {
                         color: AppTheme.getSurface(context),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.getBorder(context).withOpacity(0.2),
+                            color: AppTheme.getBorder(
+                              context,
+                            ).withValues(alpha: 0.2),
                             spreadRadius: 1,
                             blurRadius: 5,
                             offset: const Offset(0, -2),
