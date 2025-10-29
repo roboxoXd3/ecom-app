@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:get/get.dart';
+import 'delete_account_screen.dart';
 
 class PrivacySettingsScreen extends StatelessWidget {
   const PrivacySettingsScreen({super.key});
@@ -142,6 +143,60 @@ class PrivacySettingsScreen extends StatelessWidget {
               // TODO: Implement data download
             },
           ),
+
+          const Divider(),
+
+          // Danger Zone
+          _buildSectionHeader('Danger Zone'),
+          Card(
+            color: Colors.red.shade50,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.red.shade700,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          'Deleting your account is permanent and cannot be undone. '
+                          'All your personal data will be removed.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.red.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.delete_forever,
+                    color: Colors.red.shade700,
+                  ),
+                  title: Text(
+                    'Delete Account',
+                    style: TextStyle(
+                      color: Colors.red.shade900,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: Colors.red.shade700,
+                  ),
+                  onTap: () => Get.to(() => const DeleteAccountScreen()),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
