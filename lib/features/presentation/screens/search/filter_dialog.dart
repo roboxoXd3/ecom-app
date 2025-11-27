@@ -26,7 +26,15 @@ class _FilterDialogState extends State<FilterDialog> {
   @override
   void initState() {
     super.initState();
-    _priceRange = _searchController.currentFilter.value.priceRange;
+    // Handle infinity case - if max price is infinity, use a high default for the slider
+    final currentPriceRange = _searchController.currentFilter.value.priceRange;
+    _priceRange =
+        currentPriceRange.end == double.infinity
+            ? const RangeValues(
+              0,
+              1000000,
+            ) // Use high default when no limit is set
+            : currentPriceRange;
     _selectedCategories = List.from(
       _searchController.currentFilter.value.categories,
     );
@@ -56,7 +64,11 @@ class _FilterDialogState extends State<FilterDialog> {
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _priceRange = const RangeValues(0, 1000);
+                    // Reset to no filter state (infinity = no upper limit)
+                    _priceRange = const RangeValues(
+                      0,
+                      1000000,
+                    ); // High value for slider, but will be converted to infinity when applied
                     _selectedCategories = [];
                     _selectedVendors = [];
                     _minRating = null;
@@ -76,11 +88,13 @@ class _FilterDialogState extends State<FilterDialog> {
           RangeSlider(
             values: _priceRange,
             min: 0,
-            max: 1000,
-            divisions: 20,
+            max: 1000000, // Increased to support expensive products (up to ₦1M)
+            divisions: 100, // More divisions for better granularity
             labels: RangeLabels(
-              '₹${_priceRange.start.round()}',
-              '₹${_priceRange.end.round()}',
+              '₦${_priceRange.start.round()}',
+              _priceRange.end >= 1000000
+                  ? '₦${(_priceRange.end / 1000).toStringAsFixed(0)}K+'
+                  : '₦${_priceRange.end.round()}',
             ),
             onChanged: (RangeValues values) {
               setState(() {
@@ -183,9 +197,19 @@ class _FilterDialogState extends State<FilterDialog> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
+                // If max price is at slider max (1000000) and no other filters are set,
+                // treat it as "no filter" by using infinity
+                final priceRangeToApply =
+                    (_priceRange.end >= 1000000 &&
+                            _selectedCategories.isEmpty &&
+                            _selectedVendors.isEmpty &&
+                            _minRating == null)
+                        ? const RangeValues(0, double.infinity) // No filter
+                        : _priceRange; // Use selected range
+
                 _searchController.applyFilters(
                   ProductFilter(
-                    priceRange: _priceRange,
+                    priceRange: priceRangeToApply,
                     categories: _selectedCategories,
                     vendors: _selectedVendors,
                     minRating: _minRating,

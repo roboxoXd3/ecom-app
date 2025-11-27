@@ -19,18 +19,28 @@ class ProductSearchService {
 
       var queryBuilder = _supabase
           .from('products')
-          .select('*, vendors(*)')
+          .select('*, vendors(*), subcategories(*)')
           .eq('in_stock', true)
           .eq('approval_status', 'approved');
 
-      // Full-text search on name, description, and brand
+      // Full-text search using PostgreSQL search_vector (GIN indexed)
       if (query.isNotEmpty) {
-        // Use ilike for text search if textSearch is not available
-        queryBuilder = queryBuilder.or(
-          'name.ilike.%$query%,'
-          'description.ilike.%$query%,'
-          'brand.ilike.%$query%',
-        );
+        try {
+          // Use PostgreSQL full-text search for better performance
+          queryBuilder = queryBuilder.textSearch(
+            'search_vector',
+            query,
+            type: TextSearchType.plain,
+          );
+        } catch (e) {
+          // Fallback to ILIKE if textSearch fails
+          print('⚠️ Full-text search failed, falling back to ILIKE: $e');
+          queryBuilder = queryBuilder.or(
+            'name.ilike.%$query%,'
+            'description.ilike.%$query%,'
+            'brand.ilike.%$query%',
+          );
+        }
       }
 
       // Apply filters
@@ -61,7 +71,7 @@ class ProductSearchService {
   Future<List<Product>> semanticSearch({
     required String query,
     int limit = 10,
-    double threshold = 0.1, // Very low threshold for testing
+    double threshold = 0.3, // Increased threshold for better relevance
   }) async {
     try {
       print('🧠 Starting semantic search for: "$query"');
@@ -132,12 +142,44 @@ class ProductSearchService {
           productMap['added_date'] =
               productMap['added_date'] ?? DateTime.now().toIso8601String();
 
+          // Handle vendor_data from RPC response
+          if (productMap['vendor_data'] != null &&
+              productMap['vendor_data'] is Map<String, dynamic>) {
+            final vendorData =
+                productMap['vendor_data'] as Map<String, dynamic>;
+            if (vendorData.isNotEmpty) {
+              productMap['vendors'] = vendorData;
+            }
+          }
+
           final product = Product.fromJson(productMap);
           products.add(product);
         } catch (e) {
           print('❌ Error parsing product: $e');
           print('Product data: $productData');
         }
+      }
+
+      // Apply relevance filtering to semantic search results (less aggressive)
+      final queryTerms = _extractKeyTerms(query);
+      if (queryTerms.isNotEmpty) {
+        final filteredProducts = <Product>[];
+        for (final product in products) {
+          final relevanceScore = _calculateRelevanceScore(product, queryTerms);
+          // Only filter out products with significantly negative scores
+          // Keep products with score >= 0 for semantic matches
+          if (relevanceScore >= -1.0) {
+            filteredProducts.add(product);
+          } else {
+            print(
+              '🚫 Filtered out irrelevant product from semantic search: ${product.name} (score: ${relevanceScore.toStringAsFixed(1)})',
+            );
+          }
+        }
+        print(
+          '🧠 Semantic search filtered to ${filteredProducts.length} relevant products (from ${products.length})',
+        );
+        return filteredProducts;
       }
 
       return products;
@@ -161,10 +203,19 @@ class ProductSearchService {
     try {
       print('🔄 Starting hybrid search for: "$query"');
 
+      // Extract key terms from query for relevance filtering
+      final queryTerms = _extractKeyTerms(query);
+      print('🔍 Key search terms: $queryTerms');
+
       // Run both searches in parallel
+      // Use higher threshold for semantic search to get more relevant results
       final futures = await Future.wait([
-        semanticSearch(query: query, limit: limit ~/ 2, threshold: 0.1),
-        searchProducts(query: query, limit: limit ~/ 2, filters: filters),
+        semanticSearch(
+          query: query,
+          limit: limit,
+          threshold: 0.3,
+        ), // Increased from 0.1 to 0.3
+        searchProducts(query: query, limit: limit, filters: filters),
       ]);
 
       final semanticResults = futures[0];
@@ -173,25 +224,38 @@ class ProductSearchService {
       print('🔄 Semantic results: ${semanticResults.length}');
       print('🔄 Keyword results: ${keywordResults.length}');
 
-      // Score and rank products for image search
+      // Score and rank products with relevance filtering
       final productScores = <String, double>{};
       final allProducts = <String, Product>{};
 
-      // Score semantic results higher (they're more relevant for image descriptions)
-      for (int i = 0; i < semanticResults.length; i++) {
-        final product = semanticResults[i];
-        allProducts[product.id] = product;
-        productScores[product.id] =
-            (productScores[product.id] ?? 0) +
-            (10.0 - i); // Higher score for earlier results
-      }
-
-      // Score keyword results lower
+      // Prioritize keyword results (exact matches) - they're more relevant
       for (int i = 0; i < keywordResults.length; i++) {
         final product = keywordResults[i];
         allProducts[product.id] = product;
-        productScores[product.id] =
-            (productScores[product.id] ?? 0) + (5.0 - i * 0.5); // Lower scoring
+        // Higher base score for keyword matches
+        double score = 20.0 - (i * 0.5);
+        // Bonus for exact term matches
+        score += _calculateRelevanceScore(product, queryTerms);
+        productScores[product.id] = score;
+      }
+
+      // Score semantic results (but filter out irrelevant ones)
+      for (int i = 0; i < semanticResults.length; i++) {
+        final product = semanticResults[i];
+        // Skip if already added from keyword search
+        if (allProducts.containsKey(product.id)) continue;
+
+        // Calculate relevance score
+        final relevanceScore = _calculateRelevanceScore(product, queryTerms);
+
+        // Only include if it has some relevance (at least one term matches)
+        if (relevanceScore > 0) {
+          allProducts[product.id] = product;
+          // Lower base score for semantic matches, but add relevance bonus
+          productScores[product.id] = (10.0 - i) + relevanceScore;
+        } else {
+          print('🚫 Filtered out irrelevant product: ${product.name}');
+        }
       }
 
       // Sort by score and return top results
@@ -201,8 +265,10 @@ class ProductSearchService {
                 (productScores[b.id] ?? 0).compareTo(productScores[a.id] ?? 0),
           );
 
-      print('🔄 Hybrid search found ${sortedProducts.length} unique products');
-      for (final product in sortedProducts.take(3)) {
+      print(
+        '🔄 Hybrid search found ${sortedProducts.length} relevant products',
+      );
+      for (final product in sortedProducts.take(5)) {
         print(
           '🔄 Top result: ${product.name} (score: ${productScores[product.id]?.toStringAsFixed(1)})',
         );
@@ -214,6 +280,114 @@ class ProductSearchService {
       // Fallback to keyword search only
       return searchProducts(query: query, limit: limit, filters: filters);
     }
+  }
+
+  /// Extract key terms from query for relevance matching
+  List<String> _extractKeyTerms(String query) {
+    // Remove common stop words
+    final stopWords = {
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'as',
+      'is',
+      'was',
+      'are',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'should',
+      'could',
+      'may',
+      'might',
+      'must',
+      'can',
+      'this',
+      'that',
+      'these',
+      'those',
+      'i',
+      'you',
+      'he',
+      'she',
+      'it',
+      'we',
+      'they',
+      'me',
+      'him',
+      'her',
+      'us',
+      'them',
+      'my',
+      'your',
+      'his',
+      'its',
+      'our',
+      'their',
+      'show',
+      'if',
+      'got',
+      'any',
+      'some',
+    };
+
+    final terms =
+        query
+            .toLowerCase()
+            .split(RegExp(r'[\s,\.!?]+'))
+            .where((term) => term.isNotEmpty && !stopWords.contains(term))
+            .toList();
+
+    return terms;
+  }
+
+  /// Calculate relevance score for a product based on query terms
+  double _calculateRelevanceScore(Product product, List<String> queryTerms) {
+    if (queryTerms.isEmpty) return 0.0;
+
+    double score = 0.0;
+
+    for (final term in queryTerms) {
+      // Exact match in name gets highest score
+      if (product.name.toLowerCase().contains(term)) {
+        score += 5.0;
+      }
+      // Match in description gets medium score
+      if (product.description.toLowerCase().contains(term)) {
+        score += 2.0;
+      }
+      // Match in brand gets lower score
+      if (product.brand.toLowerCase().contains(term)) {
+        score += 1.0;
+      }
+      // Match in subcategory gets lower score
+      if (product.subcategory?.name.toLowerCase().contains(term) ?? false) {
+        score += 1.0;
+      }
+    }
+
+    return score;
   }
 
   /// Get product recommendations based on category, price range, or similar products
@@ -362,8 +536,38 @@ class ProductSearchService {
 
   /// Apply filters to query builder
   dynamic _applyFilters(dynamic queryBuilder, Map<String, dynamic> filters) {
+    // Handle category_id (single value) or categories (array)
     if (filters['category_id'] != null) {
       queryBuilder = queryBuilder.eq('category_id', filters['category_id']);
+    } else if (filters['categories'] != null && filters['categories'] is List) {
+      final categories = filters['categories'] as List;
+      if (categories.isNotEmpty) {
+        queryBuilder = queryBuilder.inFilter('category_id', categories);
+      }
+    }
+
+    // Handle subcategory_id (single value) or subcategories (array)
+    if (filters['subcategory_id'] != null) {
+      queryBuilder = queryBuilder.eq(
+        'subcategory_id',
+        filters['subcategory_id'],
+      );
+    } else if (filters['subcategories'] != null &&
+        filters['subcategories'] is List) {
+      final subcategories = filters['subcategories'] as List;
+      if (subcategories.isNotEmpty) {
+        queryBuilder = queryBuilder.inFilter('subcategory_id', subcategories);
+      }
+    }
+
+    // Handle vendor_id (single value) or vendors (array)
+    if (filters['vendor_id'] != null) {
+      queryBuilder = queryBuilder.eq('vendor_id', filters['vendor_id']);
+    } else if (filters['vendors'] != null && filters['vendors'] is List) {
+      final vendors = filters['vendors'] as List;
+      if (vendors.isNotEmpty) {
+        queryBuilder = queryBuilder.inFilter('vendor_id', vendors);
+      }
     }
 
     if (filters['min_price'] != null) {
@@ -508,24 +712,49 @@ class ProductSearchService {
   }
 
   /// Get search suggestions for autocomplete
-  Future<List<String>> getSearchSuggestions(String query) async {
+  /// Returns structured data with product IDs for direct navigation
+  /// Structure: {type: 'product'|'brand', id: 'product-id' (for products), name: 'name', display: 'display-text'}
+  Future<List<Map<String, dynamic>>> getSearchSuggestions(String query) async {
     try {
       if (query.isEmpty) return [];
 
       final response = await _supabase
           .from('products')
-          .select('name, brand')
+          .select('id, name, brand')
           .or('name.ilike.%$query%,brand.ilike.%$query%')
+          .eq('in_stock', true)
+          .eq('approval_status', 'approved')
           .limit(5);
 
-      final suggestions = <String>[];
+      final suggestions = <Map<String, dynamic>>[];
+      final addedBrands = <String>{};
+
       for (final item in response) {
-        if (item['name'].toLowerCase().contains(query.toLowerCase())) {
-          suggestions.add(item['name']);
+        // Add product name suggestions with product ID
+        if (item['name'] != null &&
+            item['name'].toString().toLowerCase().contains(
+              query.toLowerCase(),
+            )) {
+          suggestions.add({
+            'type': 'product',
+            'id': item['id'],
+            'name': item['name'],
+            'display': item['name'],
+          });
         }
-        if (item['brand'].toLowerCase().contains(query.toLowerCase()) &&
-            !suggestions.contains(item['brand'])) {
-          suggestions.add(item['brand']);
+
+        // Add brand suggestions (no ID, represents multiple products)
+        if (item['brand'] != null &&
+            item['brand'].toString().toLowerCase().contains(
+              query.toLowerCase(),
+            ) &&
+            !addedBrands.contains(item['brand'])) {
+          addedBrands.add(item['brand']);
+          suggestions.add({
+            'type': 'brand',
+            'name': item['brand'],
+            'display': item['brand'],
+          });
         }
       }
 
@@ -615,18 +844,34 @@ class ProductSearchService {
         throw Exception('Image file too large (max 20MB)');
       }
 
-      // Analyze image with OpenAI Vision
-      final productDescription = await _imageSearchService
-          .analyzeImageForProductSearch(imageFile);
+      // Analyze image with OpenAI Vision (with fallback handling)
+      String productDescription;
+      try {
+        productDescription = await _imageSearchService
+            .analyzeImageForProductSearch(imageFile);
+      } catch (e) {
+        print('❌ Image analysis failed: $e');
+        // Fallback: use basic keyword search with generic terms
+        print('🔄 Falling back to basic keyword search...');
+        return await enhancedKeywordSearch(query: 'product', limit: limit);
+      }
+
+      // Check if we got a generic fallback description
+      if (productDescription.toLowerCase() == 'product search' ||
+          productDescription.trim().isEmpty) {
+        print('⚠️ Received generic fallback description, using basic search');
+        return await enhancedKeywordSearch(query: 'product', limit: limit);
+      }
 
       // Use enhanced search with better relevance scoring for image search
       print('🔍 Searching products with description: "$productDescription"');
 
-      // Try semantic search first with stricter threshold
+      // Try semantic search first with stricter threshold for image search
       final semanticProducts = await semanticSearch(
         query: productDescription,
         limit: limit,
-        threshold: 0.05, // Slightly higher threshold for better relevance
+        threshold:
+            0.2, // Stricter threshold (0.2) for better relevance in image search
       );
 
       if (semanticProducts.isNotEmpty) {
@@ -765,6 +1010,90 @@ class ProductSearchService {
                 productName.contains('wireless')) {
               score += 100.0;
               print('   ✅ Electronics match bonus: +100');
+            }
+          }
+
+          // GENERIC PRODUCT TYPE DETECTION
+          // Extract common product type keywords from description
+          final productTypeKeywords = [
+            'bag',
+            'backpack',
+            'purse',
+            'handbag',
+            'hat',
+            'cap',
+            'beanie',
+            'belt',
+            'wallet',
+            'keychain',
+            'jewelry',
+            'necklace',
+            'bracelet',
+            'ring',
+            'phone',
+            'case',
+            'charger',
+            'cable',
+            'laptop',
+            'tablet',
+            'keyboard',
+            'mouse',
+            'book',
+            'notebook',
+            'pen',
+            'pencil',
+            'bottle',
+            'water bottle',
+            'tumbler',
+            'towel',
+            'blanket',
+            'pillow',
+          ];
+
+          for (final keyword in productTypeKeywords) {
+            if (descriptionLower.contains(keyword) &&
+                (productName.contains(keyword) ||
+                    productDesc.contains(keyword))) {
+              score += 50.0; // Medium bonus for generic product type match
+              print('   ✅ Product type match ($keyword): +50');
+              break; // Only count once
+            }
+          }
+
+          // MATERIAL/TEXTURE MATCHING
+          final materials = [
+            'leather',
+            'fabric',
+            'cotton',
+            'silk',
+            'wool',
+            'denim',
+            'metal',
+            'steel',
+            'aluminum',
+            'gold',
+            'silver',
+            'brass',
+            'plastic',
+            'silicone',
+            'rubber',
+            'wood',
+            'glass',
+            'ceramic',
+            'canvas',
+            'nylon',
+            'polyester',
+            'spandex',
+            'lycra',
+          ];
+
+          for (final material in materials) {
+            if (descriptionLower.contains(material) &&
+                (productName.contains(material) ||
+                    productDesc.contains(material))) {
+              score += 15.0; // Material match bonus
+              print('   ✅ Material match ($material): +15');
+              break; // Only count once
             }
           }
 
@@ -946,7 +1275,7 @@ class ProductSearchService {
           // Search in name
           var nameResults = await _supabase
               .from('products')
-              .select('*, vendors(*)')
+              .select('*, vendors(*), subcategories(*)')
               .ilike('name', '%$word%')
               .eq('in_stock', true)
               .eq('approval_status', 'approved')
@@ -955,7 +1284,7 @@ class ProductSearchService {
           // Search in description
           var descResults = await _supabase
               .from('products')
-              .select('*, vendors(*)')
+              .select('*, vendors(*), subcategories(*)')
               .ilike('description', '%$word%')
               .eq('in_stock', true)
               .eq('approval_status', 'approved')
@@ -964,14 +1293,50 @@ class ProductSearchService {
           // Search in brand
           var brandResults = await _supabase
               .from('products')
-              .select('*, vendors(*)')
+              .select('*, vendors(*), subcategories(*)')
               .ilike('brand', '%$word%')
               .eq('in_stock', true)
               .eq('approval_status', 'approved')
               .limit(limit);
 
+          // Search in tags (array field)
+          var tagResults = await _supabase
+              .from('products')
+              .select('*, vendors(*), subcategories(*)')
+              .contains('tags', [word])
+              .eq('in_stock', true)
+              .eq('approval_status', 'approved')
+              .limit(limit);
+
+          // Search in subcategory name via join
+          // First get subcategories matching the word
+          final subcategoryMatches = await _supabase
+              .from('subcategories')
+              .select('id')
+              .ilike('name', '%$word%')
+              .eq('is_active', true);
+
+          var subcategoryResults = <dynamic>[];
+          if (subcategoryMatches.isNotEmpty) {
+            final subcategoryIds =
+                subcategoryMatches.map((s) => s['id']).toList();
+            subcategoryResults = await _supabase
+                .from('products')
+                .select('*, vendors(*), subcategories(*)')
+                .inFilter('subcategory_id', subcategoryIds)
+                .eq('in_stock', true)
+                .eq('approval_status', 'approved')
+                .limit(limit);
+          }
+
           // Combine all results
-          final wordResults = [...nameResults, ...descResults, ...brandResults];
+          final wordResults = [
+            ...nameResults,
+            ...descResults,
+            ...brandResults,
+            ...tagResults,
+            ...subcategoryResults,
+          ];
           print('🔍 Found ${wordResults.length} results for word "$word"');
 
           for (final productData in wordResults) {

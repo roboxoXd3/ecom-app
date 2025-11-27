@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_model.dart';
 import '../../controllers/search_controller.dart';
@@ -13,10 +15,37 @@ class SearchResultsScreen extends StatelessWidget {
       Get.find<app.SearchController>();
   final CurrencyController _currencyController = Get.find<CurrencyController>();
 
-  SearchResultsScreen({super.key, required this.query});
+  SearchResultsScreen({super.key, required this.query}) {
+    print('🟢 [SEARCH_RESULTS_SCREEN] Screen initialized with query: "$query"');
+    print(
+      '🟢 [SEARCH_RESULTS_SCREEN] Current searchResults count: ${_searchController.searchResults.length}',
+    );
+    print(
+      '🟢 [SEARCH_RESULTS_SCREEN] Current originalResults count: ${_searchController.originalResults.length}',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Log when build is called
+    print('🟢 [SEARCH_RESULTS_SCREEN] build() called for query: "$query"');
+    print(
+      '🟢 [SEARCH_RESULTS_SCREEN] isLoading: ${_searchController.isLoading.value}',
+    );
+    print(
+      '🟢 [SEARCH_RESULTS_SCREEN] searchResults.length: ${_searchController.searchResults.length}',
+    );
+
+    // Log all products being displayed
+    if (_searchController.searchResults.isNotEmpty) {
+      print('🟢 [SEARCH_RESULTS_SCREEN] Products to display:');
+      for (int i = 0; i < _searchController.searchResults.length; i++) {
+        final product = _searchController.searchResults[i];
+        print(
+          '🟢 [SEARCH_RESULTS_SCREEN]   [$i] ID: ${product.id}, Name: "${product.name}", Price: ${product.price}',
+        );
+      }
+    }
     return Scaffold(
       appBar: AppBar(
         title: Obx(
@@ -104,120 +133,259 @@ class SearchResultsScreen extends StatelessWidget {
           );
         }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: _searchController.searchResults.length,
+        final resultsCount = _searchController.searchResults.length;
+        print(
+          '🟢 [SEARCH_RESULTS_SCREEN] Building ListView with $resultsCount products for query: "$query"',
+        );
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          itemCount: resultsCount,
           itemBuilder: (context, index) {
             final product = _searchController.searchResults[index];
-            return _buildProductCard(product);
+            if (index == 0) {
+              print(
+                '🟢 [SEARCH_RESULTS_SCREEN] Rendering first product: "${product.name}" (ID: ${product.id})',
+              );
+            }
+            if (index == resultsCount - 1) {
+              print(
+                '🟢 [SEARCH_RESULTS_SCREEN] Rendering last product: "${product.name}" (ID: ${product.id})',
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: _buildSlimProductCard(product),
+            );
           },
         );
       }),
     );
   }
 
-  Widget _buildProductCard(Product product) {
-    return GestureDetector(
-      onTap: () => Get.toNamed('/product-details', arguments: product.id),
-      child: Card(
-        elevation: 2,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
-                  ),
+  Widget _buildSlimProductCard(Product product) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed('/product-details', arguments: product.id);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Product Image Section (Left)
+              _buildProductImage(product),
+              const SizedBox(width: 12),
+              // Product Details Section (Right)
+              Expanded(child: _buildProductDetails(product)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductImage(Product product) {
+    String imageUrl = '';
+
+    // Get the best available image URL
+    if (product.primaryImage.isNotEmpty) {
+      imageUrl = product.primaryImage;
+    } else if (product.imageList.isNotEmpty) {
+      imageUrl = product.imageList.first;
+    }
+
+    return Stack(
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.grey[200],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child:
+                imageUrl.isNotEmpty
+                    ? CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
+                      placeholder:
+                          (context, url) => Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                      errorWidget:
+                          (context, url, error) => Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 40,
+                              color: Colors.grey[400],
+                            ),
+                          ),
+                    )
+                    : Icon(
+                      Icons.image_outlined,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
+          ),
+        ),
+        // Sale Badge
+        if (product.isOnSale)
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Text(
+                'SALE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
                 ),
-                child:
-                    product.primaryImage.isNotEmpty
-                        ? Image.network(
-                          product.primaryImage,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.image,
-                              size: 50,
-                              color: Colors.grey,
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                        ? loadingProgress
-                                                .cumulativeBytesLoaded /
-                                            loadingProgress.expectedTotalBytes!
-                                        : null,
-                              ),
-                            );
-                          },
-                        )
-                        : const Icon(Icons.image, size: 50, color: Colors.grey),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProductDetails(Product product) {
+    return SizedBox(
+      height: 120, // Fixed height to match image height
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Product Name
+          Text(
+            product.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Brand/Vendor (if available)
+          if (product.vendor?.businessName != null) ...[
+            Text(
+              product.vendor!.businessName,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+                fontWeight: FontWeight.w400,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+          ],
+          // Price and Rating Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Rating
+              Row(
                 children: [
-                  Text(
-                    product.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 14,
+                    color: AppTheme.ratingStars,
                   ),
-                  const SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      _currencyController.getFormattedProductPrice(
-                        product.price,
-                        product.currency,
-                      ),
-                      style: TextStyle(
-                        color: Theme.of(Get.context!).primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(width: 2),
+                  Text(
+                    product.rating.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        size: 16,
-                        color: AppTheme.ratingStars,
+                  if (product.reviews > 0) ...[
+                    Text(
+                      ' (${product.reviews})',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary.withOpacity(0.7),
                       ),
-                      Text(
-                        ' ${product.rating}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      Text(
-                        ' (${product.reviews})',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
               ),
-            ),
-          ],
-        ),
+              // Price
+              Flexible(
+                child: Obx(
+                  () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (product.isOnSale && product.salePrice != null) ...[
+                        Text(
+                          _currencyController.getFormattedProductPrice(
+                            product.price,
+                            product.currency,
+                          ),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondary,
+                            decoration: TextDecoration.lineThrough,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _currencyController.getFormattedProductPrice(
+                            product.salePrice!,
+                            product.currency,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          _currencyController.getFormattedProductPrice(
+                            product.price,
+                            product.currency,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

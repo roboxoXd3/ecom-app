@@ -31,17 +31,20 @@ class SearchController extends GetxController {
   final RxList<Product> searchResults = <Product>[].obs;
   final RxList<String> recentSearches = <String>[].obs;
   final RxBool isLoading = false.obs;
-  final RxList<String> suggestions = <String>[].obs;
+  final RxList<Map<String, dynamic>> suggestions = <Map<String, dynamic>>[].obs;
   final Rx<SortOption> currentSort = SortOption.newest.obs;
   final Rx<ProductFilter> currentFilter =
       ProductFilter(
-        priceRange: const RangeValues(0, 1000),
+        priceRange: const RangeValues(
+          0,
+          double.infinity,
+        ), // No price limit by default - filters only apply when user explicitly sets them
         categories: [],
         vendors: [],
         minRating: null,
       ).obs;
   final RxList<Product> originalResults = <Product>[].obs;
-  
+
   // Image search related variables
   final RxBool isImageSearching = false.obs;
   final Rx<File?> selectedImage = Rx<File?>(null);
@@ -56,23 +59,74 @@ class SearchController extends GetxController {
   Future<void> searchProducts(String query) async {
     if (query.isEmpty) return;
 
+    print(
+      '🟡 [SEARCH_CONTROLLER] searchProducts() called with query: "$query"',
+    );
+    print(
+      '🟡 [SEARCH_CONTROLLER] Before search - searchResults: ${searchResults.length}, originalResults: ${originalResults.length}',
+    );
+
     try {
       isLoading.value = true;
 
+      // Clear previous results immediately to prevent showing stale data
+      searchResults.clear();
+      originalResults.clear();
+      print('🟡 [SEARCH_CONTROLLER] Cleared previous results');
+
+      // Reset filters to default when starting a new search
+      // This ensures filters from previous searches don't affect new results
+      // No price limit by default - filters only apply when user explicitly sets them
+      currentFilter.value = ProductFilter(
+        priceRange: const RangeValues(
+          0,
+          double.infinity,
+        ), // No price limit - show all products
+        categories: [],
+        vendors: [],
+        minRating: null,
+      );
+      print('🟡 [SEARCH_CONTROLLER] Reset filters to default (no price limit)');
+
       // Use hybrid search for better results combining keyword and semantic search
+      // Build filters map, only including max_price if it's not infinity (no limit)
+      final filtersMap = <String, dynamic>{
+        'min_price': currentFilter.value.priceRange.start,
+        if (currentFilter.value.priceRange.end != double.infinity)
+          'max_price': currentFilter.value.priceRange.end,
+        'categories': currentFilter.value.categories,
+        'vendors': currentFilter.value.vendors,
+        if (currentFilter.value.minRating != null)
+          'min_rating': currentFilter.value.minRating,
+      };
+
       originalResults.value = await _searchService.hybridSearch(
         query: query,
         limit: 50,
-        filters: {
-          'min_price': currentFilter.value.priceRange.start,
-          'max_price': currentFilter.value.priceRange.end,
-          'categories': currentFilter.value.categories,
-          'vendors': currentFilter.value.vendors,
-          'min_rating': currentFilter.value.minRating,
-        },
+        filters: filtersMap.isEmpty ? null : filtersMap,
       );
 
+      print(
+        '🟡 [SEARCH_CONTROLLER] After hybridSearch - originalResults: ${originalResults.length}',
+      );
       _filterResults(); // This will update searchResults
+      print(
+        '🟡 [SEARCH_CONTROLLER] After _filterResults() - searchResults: ${searchResults.length}',
+      );
+
+      // Log first few products for verification
+      if (searchResults.isNotEmpty) {
+        print('🟡 [SEARCH_CONTROLLER] First 3 products in searchResults:');
+        for (
+          int i = 0;
+          i < (searchResults.length > 3 ? 3 : searchResults.length);
+          i++
+        ) {
+          print(
+            '🟡 [SEARCH_CONTROLLER]   [$i] "${searchResults[i].name}" (ID: ${searchResults[i].id})',
+          );
+        }
+      }
 
       // Track search analytics
       try {
@@ -102,6 +156,9 @@ class SearchController extends GetxController {
       addToRecentSearches(query);
     } catch (e) {
       print('Error searching products: $e');
+      // Ensure results are cleared on error to prevent showing incorrect data
+      searchResults.clear();
+      originalResults.clear();
     } finally {
       isLoading.value = false;
     }
@@ -113,6 +170,10 @@ class SearchController extends GetxController {
       isImageSearching.value = true;
       isLoading.value = true;
       selectedImage.value = imageFile;
+
+      // Clear previous results immediately to prevent showing stale data
+      searchResults.clear();
+      originalResults.clear();
 
       print('🖼️ Starting image-based product search...');
 
@@ -144,6 +205,9 @@ class SearchController extends GetxController {
       addToRecentSearches('🖼️ Image Search');
     } catch (e) {
       print('❌ Error in image search: $e');
+      // Ensure results are cleared on error to prevent showing incorrect data
+      searchResults.clear();
+      originalResults.clear();
       Get.snackbar(
         'Search Error',
         'Failed to search products by image. Please try again.',
@@ -239,11 +303,28 @@ class SearchController extends GetxController {
   }
 
   void _filterResults() {
+    print('🔍 Filtering ${originalResults.length} products');
+
+    // Format price range for logging
+    final maxPrice =
+        currentFilter.value.priceRange.end == double.infinity
+            ? 'No limit'
+            : currentFilter.value.priceRange.end.toString();
+    print(
+      '🔍 Current filter - Price: ${currentFilter.value.priceRange.start}-$maxPrice, Categories: ${currentFilter.value.categories.length}, Vendors: ${currentFilter.value.vendors.length}, MinRating: ${currentFilter.value.minRating}',
+    );
+
     searchResults.value =
         originalResults.where((product) {
+          // Handle infinity for max price (no upper limit)
+          final maxPrice =
+              currentFilter.value.priceRange.end == double.infinity
+                  ? double.infinity
+                  : currentFilter.value.priceRange.end;
+
           final matchesPrice =
               product.price >= currentFilter.value.priceRange.start &&
-              product.price <= currentFilter.value.priceRange.end;
+              (maxPrice == double.infinity || product.price <= maxPrice);
 
           final matchesCategory =
               currentFilter.value.categories.isEmpty ||
@@ -257,10 +338,18 @@ class SearchController extends GetxController {
               currentFilter.value.minRating == null ||
               product.rating >= currentFilter.value.minRating!;
 
-          return matchesPrice &&
-              matchesCategory &&
-              matchesVendor &&
-              matchesRating;
+          final matches =
+              matchesPrice && matchesCategory && matchesVendor && matchesRating;
+
+          if (!matches) {
+            print(
+              '❌ Product "${product.name}" filtered out - Price: ${product.price} (${matchesPrice ? "✓" : "✗"}), Category: ${matchesCategory ? "✓" : "✗"}), Vendor: ${matchesVendor ? "✓" : "✗"}), Rating: ${product.rating} (${matchesRating ? "✓" : "✗"})',
+            );
+          }
+
+          return matches;
         }).toList();
+
+    print('✅ Filtered to ${searchResults.length} products');
   }
 }

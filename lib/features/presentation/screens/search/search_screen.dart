@@ -27,8 +27,36 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _handleSearch(String query) {
     if (query.isNotEmpty) {
+      print('🔵 [SEARCH_SCREEN] Suggestion clicked: "$query"');
+      print('🔵 [SEARCH_SCREEN] Calling searchProducts with query: "$query"');
       _searchCtrl.searchProducts(query);
+      print(
+        '🔵 [SEARCH_SCREEN] Navigating to search-results with query: "$query"',
+      );
       Get.toNamed('/search-results', arguments: query);
+    }
+  }
+
+  /// Handle suggestion tap - navigate to product details if it's a product, otherwise perform search
+  void _handleSuggestionTap(Map<String, dynamic> suggestion) {
+    HapticFeedback.lightImpact();
+
+    final type = suggestion['type'] as String?;
+    final productId = suggestion['id'] as String?;
+    final displayText = suggestion['display'] as String? ?? '';
+
+    print(
+      '🔵 [SEARCH_SCREEN] Suggestion tapped: "$displayText" (type: $type, id: $productId)',
+    );
+
+    // If it's a product suggestion with valid ID, navigate directly to product details
+    if (type == 'product' && productId != null && productId.isNotEmpty) {
+      print('🔵 [SEARCH_SCREEN] Navigating to product details: $productId');
+      Get.toNamed('/product-details', arguments: productId);
+    } else {
+      // Otherwise, perform a search (for brands or fallback)
+      print('🔵 [SEARCH_SCREEN] Performing search for: "$displayText"');
+      _handleSearch(displayText);
     }
   }
 
@@ -36,7 +64,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _handleImageSearch() async {
     try {
       HapticFeedback.lightImpact();
-      
+
       // Show image source selection
       final ImageSource? source = await _showImageSourceDialog();
       if (source == null) return;
@@ -51,10 +79,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
       if (pickedFile != null) {
         final File imageFile = File(pickedFile.path);
-        
+
         // Start image search
         await _searchCtrl.searchProductsByImage(imageFile);
-        
+
         // Navigate to results
         Get.toNamed('/search-results', arguments: 'Image Search');
       }
@@ -91,10 +119,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
         ],
       ),
     );
@@ -114,29 +139,36 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Image search button
-                Obx(() => _searchCtrl.isImageSearching.value
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : IconButton(
-                        icon: const Icon(Icons.camera_alt, color: Colors.blue),
-                        onPressed: _handleImageSearch,
-                        tooltip: 'Search by image',
-                      )),
+                Obx(
+                  () =>
+                      _searchCtrl.isImageSearching.value
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : IconButton(
+                            icon: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.blue,
+                            ),
+                            onPressed: _handleImageSearch,
+                            tooltip: 'Search by image',
+                          ),
+                ),
                 // Clear/Search button
                 Obx(
-                  () => _isSearching.value
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            _searchCtrl.suggestions.clear();
-                            _isSearching.value = false;
-                          },
-                        )
-                      : const Icon(Icons.search),
+                  () =>
+                      _isSearching.value
+                          ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              _searchCtrl.suggestions.clear();
+                              _isSearching.value = false;
+                            },
+                          )
+                          : const Icon(Icons.search),
                 ),
               ],
             ),
@@ -231,13 +263,72 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildSuggestions() {
     return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _searchCtrl.suggestions.length,
       itemBuilder: (context, index) {
         final suggestion = _searchCtrl.suggestions[index];
-        return ListTile(
-          leading: const Icon(Icons.search),
-          title: Text(suggestion),
-          onTap: () => _handleSearch(suggestion),
+        final displayText = suggestion['display'] as String? ?? '';
+        final suggestionType = suggestion['type'] as String? ?? 'brand';
+
+        // Determine icon based on suggestion type
+        final icon =
+            suggestionType == 'product'
+                ? Icons.shopping_bag_rounded
+                : Icons.search_rounded;
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Material(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            elevation: 0.5,
+            child: InkWell(
+              onTap: () => _handleSuggestionTap(suggestion),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    // Icon - product icon for products, search icon for brands
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    // Suggestion text
+                    Expanded(
+                      child: Text(
+                        displayText,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textPrimary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Arrow icon
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: AppTheme.textSecondary.withOpacity(0.5),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         );
       },
     );
