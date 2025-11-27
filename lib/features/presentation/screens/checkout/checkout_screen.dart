@@ -5,9 +5,11 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/checkout_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/address_controller.dart';
+import '../../controllers/currency_controller.dart';
 import '../profile/add_address_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/currency_utils.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -132,9 +134,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
   }
 
+  // Method to handle adding a new address
+  Future<void> _handleAddNewAddress() async {
+    print('CheckoutScreen: Opening add address screen...');
+    
+    final result = await Get.to(() => const AddAddressScreen());
+    
+    print('CheckoutScreen: Returned from add address with result: $result');
+    
+    // Always refresh addresses when returning, regardless of result
+    await addressController.fetchAddresses();
+    
+    // Handle different return types
+    if (result is String) {
+      // New address ID returned - select it directly
+      print('CheckoutScreen: New address created with ID: $result, selecting it...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      checkoutController.setSelectedAddress(result);
+      _scrollToSelectedAddress(result);
+      checkoutController.update();
+    } else if (result == true) {
+      // Old boolean success - use existing logic
+      print('CheckoutScreen: Address added successfully (legacy), refreshing state...');
+      await Future.delayed(const Duration(milliseconds: 100));
+      checkoutController.refreshAddressSelection();
+      checkoutController.update();
+    } else {
+      print('CheckoutScreen: Address addition was not successful or cancelled');
+      // Still refresh the selection in case there were changes
+      checkoutController.refreshAddressSelection();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartController = Get.find<CartController>();
+    final currencyController = Get.find<CurrencyController>();
 
     void showPaymentMethodDialog() {
       Get.bottomSheet(
@@ -421,7 +456,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(
+        title: const Text('Checkout'),
+        actions: [
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                Icons.add_location_alt,
+                color: addressController.isLoading.value
+                    ? AppTheme.getTextSecondary(context).withOpacity(0.5)
+                    : AppTheme.getTextPrimary(context),
+              ),
+              tooltip: 'Add New Address',
+              onPressed: addressController.isLoading.value
+                  ? null
+                  : _handleAddNewAddress,
+            ),
+          ),
+        ],
+      ),
       body: Stack(
         children: [
           // Main content
@@ -469,54 +522,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 ElevatedButton.icon(
-                                  onPressed: () async {
-                                    print(
-                                      'CheckoutScreen: Opening add address screen...',
-                                    );
-                                    final result = await Get.to(
-                                      () => const AddAddressScreen(),
-                                    );
-                                    print(
-                                      'CheckoutScreen: Returned from add address with result: $result',
-                                    );
-
-                                    // Always refresh addresses when returning, regardless of result
-                                    await addressController.fetchAddresses();
-
-                                    // Handle different return types
-                                    if (result is String) {
-                                      // New address ID returned - select it directly
-                                      print(
-                                        'CheckoutScreen: New address created with ID: $result, selecting it...',
-                                      );
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 100),
-                                      );
-                                      checkoutController.setSelectedAddress(
-                                        result,
-                                      );
-                                      _scrollToSelectedAddress(result);
-                                      checkoutController.update();
-                                    } else if (result == true) {
-                                      // Old boolean success - use existing logic
-                                      print(
-                                        'CheckoutScreen: Address added successfully (legacy), refreshing state...',
-                                      );
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 100),
-                                      );
-                                      checkoutController
-                                          .refreshAddressSelection();
-                                      checkoutController.update();
-                                    } else {
-                                      print(
-                                        'CheckoutScreen: Address addition was not successful or cancelled',
-                                      );
-                                      // Still refresh the selection in case there were changes
-                                      checkoutController
-                                          .refreshAddressSelection();
-                                    }
-                                  },
+                                  onPressed: _handleAddNewAddress,
                                   icon: const Icon(Icons.add),
                                   label: const Text('Add New Address'),
                                 ),
@@ -703,93 +709,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            // Add new address button
-                            Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppTheme.primaryColor,
-                                  width: 1.5,
-                                ),
-                                color: Colors.transparent,
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () async {
-                                    print(
-                                      'CheckoutScreen: Opening add address screen...',
-                                    );
-                                    final result = await Get.to(
-                                      () => const AddAddressScreen(),
-                                    );
-                                    print(
-                                      'CheckoutScreen: Returned from add address with result: $result',
-                                    );
-
-                                    // Always refresh addresses when returning, regardless of result
-                                    await addressController.fetchAddresses();
-
-                                    // Handle different return types
-                                    if (result is String) {
-                                      // New address ID returned - select it directly
-                                      print(
-                                        'CheckoutScreen: New address created with ID: $result, selecting it...',
-                                      );
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 100),
-                                      );
-                                      checkoutController.setSelectedAddress(
-                                        result,
-                                      );
-                                      _scrollToSelectedAddress(result);
-                                      checkoutController.update();
-                                    } else if (result == true) {
-                                      // Old boolean success - use existing logic
-                                      print(
-                                        'CheckoutScreen: Address added successfully (legacy), refreshing state...',
-                                      );
-                                      await Future.delayed(
-                                        const Duration(milliseconds: 100),
-                                      );
-                                      checkoutController
-                                          .refreshAddressSelection();
-                                      checkoutController.update();
-                                    } else {
-                                      print(
-                                        'CheckoutScreen: Address addition was not successful or cancelled',
-                                      );
-                                      // Still refresh the selection in case there were changes
-                                      checkoutController
-                                          .refreshAddressSelection();
-                                    }
-                                  },
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.add,
-                                        color: AppTheme.primaryColor,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Add New Address',
-                                        style: TextStyle(
-                                          color: AppTheme.primaryColor,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
                             const SizedBox(height: 24),
                             // Loyalty Voucher Section
                             Container(
@@ -962,6 +881,177 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 24),
+                            // Order Items Section
+                            Obx(() {
+                              // Handle empty cart case
+                              if (cartController.items.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.getSurface(context),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppTheme.getBorder(context),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_bag,
+                                          color: AppTheme.primaryColor,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Order Items (${cartController.items.length})',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppTheme.getTextPrimary(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ...cartController.items.asMap().entries.map((entry) {
+                                      final index = entry.key;
+                                      final item = entry.value;
+                                      final isLast = index == cartController.items.length - 1;
+                                      
+                                      return Column(
+                                        children: [
+                                          Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              onTap: () {
+                                                // Navigate to product details page
+                                                Get.toNamed('/product-details', arguments: item.product.id);
+                                              },
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                                child: Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    // Product Image
+                                                    Container(
+                                                      width: 70,
+                                                      height: 70,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        color: AppTheme.getSurface(context),
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        child: item.product.imageList.isNotEmpty
+                                                            ? CachedNetworkImage(
+                                                                imageUrl: item.product.imageList.first,
+                                                                fit: BoxFit.cover,
+                                                                placeholder: (context, url) => Container(
+                                                                  color: AppTheme.getSurface(context),
+                                                                  child: const Center(
+                                                                    child: SizedBox(
+                                                                      width: 20,
+                                                                      height: 20,
+                                                                      child: CircularProgressIndicator(
+                                                                        strokeWidth: 2,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                errorWidget: (context, url, error) => Container(
+                                                                  color: AppTheme.getSurface(context),
+                                                                  child: Icon(
+                                                                    Icons.image,
+                                                                    color: AppTheme.getTextSecondary(context),
+                                                                    size: 24,
+                                                                  ),
+                                                                ),
+                                                              )
+                                                            : Container(
+                                                                color: AppTheme.getSurface(context),
+                                                                child: Icon(
+                                                                  Icons.image,
+                                                                  color: AppTheme.getTextSecondary(context),
+                                                                  size: 24,
+                                                                ),
+                                                              ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    // Product Details
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            item.product.name,
+                                                            style: TextStyle(
+                                                              fontSize: 15,
+                                                              fontWeight: FontWeight.w600,
+                                                              color: AppTheme.getTextPrimary(context),
+                                                            ),
+                                                            maxLines: 2,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 4),
+                                                          Text(
+                                                            'Qty: ${item.quantity} • Size: ${item.selectedSize} • Color: ${item.selectedColor}',
+                                                            style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: AppTheme.getTextSecondary(context),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(height: 6),
+                                                          Obx(() {
+                                                            final itemTotal = currencyController.convertPrice(
+                                                                  item.product.price,
+                                                                  item.product.currency,
+                                                                ) *
+                                                                item.quantity;
+                                                            return Text(
+                                                              currencyController.formatPrice(itemTotal),
+                                                              style: TextStyle(
+                                                                fontSize: 15,
+                                                                fontWeight: FontWeight.bold,
+                                                                color: AppTheme.primaryColor,
+                                                              ),
+                                                            );
+                                                          }),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // Arrow indicator
+                                                    Icon(
+                                                      Icons.chevron_right,
+                                                      color: AppTheme.getTextSecondary(context),
+                                                      size: 20,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          if (!isLast)
+                                            Divider(
+                                              height: 24,
+                                              color: AppTheme.getBorder(context).withOpacity(0.5),
+                                            ),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              );
+                            }),
                             const SizedBox(height: 24),
                             // Order Summary Section
                             Container(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../data/models/product_model.dart';
 import '../../controllers/enhanced_product_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../../controllers/product_controller.dart';
@@ -53,8 +55,10 @@ class _RealEnhancedProductDetailsScreenState
     Get.put(ReviewsController());
     Get.put(QAController());
 
-    // Load enhanced product data
-    enhancedController.loadEnhancedProduct(widget.productId);
+    // Defer loading until after build phase completes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      enhancedController.loadEnhancedProduct(widget.productId);
+    });
 
     // Listen to scroll to show/hide sticky CTA
     _scrollController.addListener(_onScroll);
@@ -74,6 +78,32 @@ class _RealEnhancedProductDetailsScreenState
       setState(() {
         _showStickyCTA = shouldShow;
       });
+    }
+  }
+
+  Future<void> _shareProduct(Product product) async {
+    try {
+      // Construct the product URL
+      final productUrl = 'https://ecomwebsite-production.up.railway.app/product/${product.id}';
+      
+      // Create share text with product name and URL
+      final shareText = 'Check out ${product.name}!\n\n$productUrl';
+      
+      // Share the product
+      await Share.share(
+        shareText,
+        subject: product.name,
+      );
+    } catch (e) {
+      // Show error message if sharing fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share product: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -182,9 +212,7 @@ class _RealEnhancedProductDetailsScreenState
                         Icons.share,
                         color: AppTheme.getTextPrimary(context),
                       ),
-                      onPressed: () {
-                        // TODO: Implement share functionality
-                      },
+                      onPressed: () => _shareProduct(product),
                     ),
                     Obx(
                       () => IconButton(
