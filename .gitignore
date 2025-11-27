@@ -93,3 +93,6 @@ coverage/
 **/*.g.dart
 **/*.freezed.dart
 **/*.mocks.dart
+
+# Documentation
+IMPLEMENTATION_CHANGELOG.md
