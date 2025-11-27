@@ -11,10 +11,11 @@ class SupportRepository {
   }
 
   Future<List<FAQ>> searchFAQs(String query) async {
+    // Search both question and answer fields using case-insensitive pattern matching
     final response = await _supabase
         .from('faqs')
         .select()
-        .textSearch('question', query)
+        .or('question.ilike.%$query%,answer.ilike.%$query%')
         .order('order_index');
 
     return (response as List).map((json) => FAQ.fromJson(json)).toList();
