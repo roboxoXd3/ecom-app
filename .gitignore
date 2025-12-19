@@ -94,5 +94,6 @@ coverage/
 **/*.freezed.dart
 **/*.mocks.dart
 
-# Documentation
-IMPLEMENTATION_CHANGELOG.md
+# Documentation (keep only README.md)
+*.md
+!README.md
