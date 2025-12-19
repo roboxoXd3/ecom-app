@@ -4,6 +4,7 @@ import '../../data/models/size_chart_model.dart';
 import '../../data/models/product_model.dart' as ProductModule;
 import '../../data/repositories/size_chart_repository.dart';
 import '../../../core/theme/app_theme.dart';
+import '../screens/profile/help_support_screen.dart';
 
 class SizeChartController extends GetxController {
   var isInches = false.obs;
@@ -62,7 +63,6 @@ class SizeChartController extends GetxController {
     // For now, this is a simple fallback mapping
     return 'mens_clothing'; // Default fallback
   }
-
 }
 
 class SizeChartButton extends StatelessWidget {
@@ -433,10 +433,10 @@ class _SizeChartModalState extends State<SizeChartModal> {
                                           : Colors.grey[400],
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Center(
+                                child: Center(
                                   child: Text(
-                                    'S', // entry.key
-                                    style: TextStyle(
+                                    entry.key,
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
@@ -475,76 +475,121 @@ class _SizeChartModalState extends State<SizeChartModal> {
           ),
           const SizedBox(height: 16),
 
-          // Basic table
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
+          // Conditional: Empty state or Table
+          if (sizeChart.entries.isEmpty) ...[
+            // Empty state message
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.info_outline, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Size Guide Coming Soon',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
                     ),
                   ),
-                  child: const Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Size',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Chest',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          'Waist',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'The vendor hasn\'t added size measurements for this product yet. Please check back later or contact support for assistance.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
                   ),
-                ),
-                // Rows
-                ...sizeChart.entries.map(
-                  (entry) => Container(
+                ],
+              ),
+            ),
+          ] else ...[
+            // Basic table
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Column(
+                children: [
+                  // Header
+                  Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey[200]!),
+                      color: Colors.grey[100],
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
                       ),
                     ),
                     child: Row(
                       children: [
-                        Expanded(child: Text(entry.size)),
-                        Expanded(
+                        const Expanded(
                           child: Text(
-                            '${entry.measurements.values.first.cm} cm',
+                            'Size',
+                            style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        Expanded(
-                          child: Text(
-                            '${entry.measurements.values.first.cm} cm',
+                        ...sizeChart.measurementTypes.map(
+                          (type) => Expanded(
+                            child: Text(
+                              type,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                  // Rows
+                  ...sizeChart.entries.map(
+                    (entry) => Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[200]!),
+                        ),
+                      ),
+                      child: Obx(() {
+                        final isInches = widget.controller.isInches.value;
+                        return Row(
+                          children: [
+                            Expanded(child: Text(entry.size)),
+                            ...sizeChart.measurementTypes.map((
+                              measurementType,
+                            ) {
+                              final measurement =
+                                  entry.measurements[measurementType];
+                              if (measurement == null) {
+                                return const Expanded(child: Text('-'));
+                              }
+
+                              final value =
+                                  isInches
+                                      ? measurement.inches
+                                      : measurement.cm;
+                              final unit = isInches ? 'inches' : 'cm';
+
+                              return Expanded(child: Text('$value $unit'));
+                            }),
+                          ],
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -623,13 +668,8 @@ class _SizeChartModalState extends State<SizeChartModal> {
                 ),
                 TextButton(
                   onPressed: () {
-                    // Navigate to customer support
-                    Get.snackbar(
-                      'Support',
-                      'Redirecting to customer support...',
-                      backgroundColor: Colors.blue[700],
-                      colorText: Colors.white,
-                    );
+                    Navigator.pop(context); // Close size chart modal first
+                    Get.to(() => HelpSupportScreen());
                   },
                   child: Text(
                     'Contact Us',

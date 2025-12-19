@@ -93,3 +93,7 @@ coverage/
 **/*.g.dart
 **/*.freezed.dart
 **/*.mocks.dart
+
+# Documentation (keep only README.md)
+*.md
+!README.md

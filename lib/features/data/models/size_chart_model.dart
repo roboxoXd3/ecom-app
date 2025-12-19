@@ -48,7 +48,7 @@ class SizeChartModel {
     return SizeChartModel(
       id: template['id'],
       name: template['name'],
-      category: template['category'] ?? 'Unknown',
+      category: _extractCategoryName(template),
       subcategory: template['subcategory'] ?? '',
       measurementTypes: List<String>.from(template['measurement_types'] ?? []),
       measurementInstructions: template['measurement_instructions'] ?? '',
@@ -61,6 +61,32 @@ class SizeChartModel {
       entries:
           entries.map((entry) => SizeChartEntry.fromDatabase(entry)).toList(),
     );
+  }
+
+  /// Helper method to extract category name from Supabase nested join structure
+  /// Handles both nested (categories!foreign_key(name)) and flat structures
+  static String _extractCategoryName(Map<String, dynamic> template) {
+    // Try nested structure first (Supabase join: categories!foreign_key(name))
+    if (template['categories'] != null) {
+      final categories = template['categories'];
+      if (categories is Map<String, dynamic>) {
+        final categoryName = categories['name'] as String?;
+        if (categoryName != null && categoryName.isNotEmpty) {
+          return categoryName;
+        }
+      }
+    }
+
+    // Try direct category field (fallback for non-joined queries)
+    if (template['category'] != null) {
+      final categoryName = template['category'] as String?;
+      if (categoryName != null && categoryName.isNotEmpty) {
+        return categoryName;
+      }
+    }
+
+    // Default fallback
+    return 'Unknown';
   }
 
   // Factory constructor for vendor templates
