@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -67,28 +68,136 @@ class AuthController extends GetxController {
         // Set loading to false immediately
         isLoading.value = false;
 
-        // Show success message
-        SnackbarUtils.showSuccess(
-          '🎉 Account created successfully!\nPlease check your email to verify your account before signing in.',
+        print('📧 Showing verification dialog...');
+
+        // Show a proper dialog that user must acknowledge
+        Get.dialog(
+          PopScope(
+            canPop: false, // Prevent dismissing by tapping outside or back button
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.mark_email_unread_outlined,
+                    color: Get.theme.primaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Verify Your Email',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '🎉 Account created successfully!',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'We\'ve sent a verification link to your email.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Get.theme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Get.theme.primaryColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Get.theme.primaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Next Steps:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            '1. Check your email inbox\n2. Click the verification link\n3. Return here to sign in',
+                            style: TextStyle(fontSize: 13, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Note: You must verify your email before signing in.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () {
+                      Get.back(); // Close dialog
+                      // Navigate to login screen
+                      Get.off(() => const LoginScreen());
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Get.theme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Got It!',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          barrierDismissible: false, // Must click button to proceed
         );
-
-        print('📧 Success message shown, preparing to navigate...');
-
-        // Simple approach: Use Timer to avoid async/await conflicts
-        Timer(const Duration(milliseconds: 1500), () {
-          print('⏰ NEW VERSION - Timer triggered, navigating with Get.off...');
-          try {
-            // Use Get.off instead of Get.back to avoid snackbar conflicts
-            Get.off(() => const LoginScreen());
-            print(
-              '✅ NEW VERSION - Navigation completed successfully with Get.off',
-            );
-          } catch (e) {
-            print('❌ Navigation failed: $e');
-            // Fallback
-            Get.offAllNamed('/login');
-          }
-        });
 
         return; // Important: return here to avoid setting isLoading to false again
       } else {

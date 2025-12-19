@@ -1,147 +1,131 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
+
+  static const String privacyPolicyUrl =
+      'https://ecomwebsite-production.up.railway.app/privacy-policy';
+
+  Future<void> _launchPrivacyPolicy(BuildContext context) async {
+    final Uri url = Uri.parse(privacyPolicyUrl);
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Could not open Privacy Policy. Please visit our website.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Privacy Policy')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Last Updated Date
-            Text(
-              'Last Updated: ${DateTime.now().toString().split(' ')[0]}',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-
-            // Introduction
-            _buildSection(
-              'Introduction',
-              'At Be Smart, we take your privacy seriously. This Privacy Policy explains how '
-                  'we collect, use, disclose, and safeguard your information when you use our mobile application.',
-            ),
-
-            // Information We Collect
-            _buildSection(
-              'Information We Collect',
-              _buildBulletPoints([
-                'Personal Information (name, email, phone number)',
-                'Payment Information',
-                'Device Information',
-                'Location Data',
-                'Usage Data',
-              ]),
-            ),
-
-            // How We Use Your Information
-            _buildSection(
-              'How We Use Your Information',
-              _buildBulletPoints([
-                'Process your orders and transactions',
-                'Provide customer support',
-                'Send promotional communications',
-                'Improve our services',
-                'Detect and prevent fraud',
-              ]),
-            ),
-
-            // Information Sharing
-            _buildSection(
-              'Information Sharing',
-              'We may share your information with:\n\n'
-                  '${_buildBulletPoints(['Service providers and partners', 'Payment processors', 'Legal authorities when required', 'Business partners with your consent'])}',
-            ),
-
-            // Data Security
-            _buildSection(
-              'Data Security',
-              'We implement appropriate technical and organizational measures to protect '
-                  'your personal information. However, no method of transmission over the '
-                  'internet is 100% secure.',
-            ),
-
-            // Your Rights
-            _buildSection(
-              'Your Rights',
-              'You have the right to:\n\n'
-                  '${_buildBulletPoints(['Access your personal data', 'Correct inaccurate data', 'Request deletion of your data', 'Object to data processing', 'Data portability'])}',
-            ),
-
-            // Cookies and Tracking
-            _buildSection(
-              'Cookies and Tracking',
-              'We use cookies and similar tracking technologies to improve your experience. '
-                  'You can control these through your device settings.',
-            ),
-
-            // Children\'s Privacy
-            _buildSection(
-              'Children\'s Privacy',
-              'Our services are not intended for children under 13. We do not knowingly '
-                  'collect information from children under 13.',
-            ),
-
-            // Third-Party Links
-            _buildSection(
-              'Third-Party Links',
-              'Our app may contain links to third-party websites. We are not responsible '
-                  'for their privacy practices.',
-            ),
-
-            // Changes to Privacy Policy
-            _buildSection(
-              'Changes to Privacy Policy',
-              'We may update this privacy policy from time to time. We will notify you '
-                  'of any changes by posting the new policy on this page.',
-            ),
-
-            // Contact Information
-            _buildSection(
-              'Contact Information',
-              'If you have questions about this Privacy Policy, please contact us at:\n\n'
-                  'Email: privacy@shopnow.com\n'
-                  'Phone: +1 234 567 890\n'
-                  'Address: 123 Privacy Street, NY 10001, USA',
-            ),
-
-            // Consent Button
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('I Understand and Agree'),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.privacy_tip_outlined,
+                  size: 80,
+                  color: AppTheme.primaryColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+              const SizedBox(height: 32),
+
+              // Title
+              const Text(
+                'Privacy Policy',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+
+              // Description
+              const Text(
+                'Your privacy is important to us. View our complete Privacy Policy to understand how we collect, use, and protect your information.',
+                style: TextStyle(fontSize: 16, height: 1.5, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+
+              // Open Privacy Policy Button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () => _launchPrivacyPolicy(context),
+                  icon: const Icon(Icons.open_in_browser),
+                  label: const Text(
+                    'View Privacy Policy',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Info Text
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      'Last Updated: October 28, 2025',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
-  }
-
-  Widget _buildSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Text(content, style: const TextStyle(fontSize: 16, height: 1.5)),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  String _buildBulletPoints(List<String> points) {
-    return points.map((point) => '• $point').join('\n');
   }
 }

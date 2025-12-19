@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/loyalty_controller.dart';
 
 class RewardsCatalogScreen extends StatelessWidget {
-  const RewardsCatalogScreen({Key? key}) : super(key: key);
+  const RewardsCatalogScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

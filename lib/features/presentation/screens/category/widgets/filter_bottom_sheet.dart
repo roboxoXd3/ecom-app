@@ -85,9 +85,9 @@ class FilterBottomSheet extends StatelessWidget {
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurface(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -97,7 +97,7 @@ class FilterBottomSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: AppTheme.getBorder(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -107,9 +107,13 @@ class FilterBottomSheet extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Filter & Sort',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.getTextPrimary(context),
+                  ),
                 ),
                 TextButton(
                   onPressed: onResetFilters,
@@ -126,19 +130,19 @@ class FilterBottomSheet extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Price Range
-                  _buildPriceRangeFilter(),
+                  _buildPriceRangeFilter(context),
                   const SizedBox(height: 24),
                   // Brands
-                  _buildBrandsFilter(categoryProducts),
+                  _buildBrandsFilter(context, categoryProducts),
                   const SizedBox(height: 24),
                   // Rating
-                  _buildRatingFilter(),
+                  _buildRatingFilter(context),
                   const SizedBox(height: 24),
                   // Toggles
                   _buildToggleFilters(),
                   const SizedBox(height: 24),
                   // Sort Options
-                  _buildSortOptions(),
+                  _buildSortOptions(context),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -169,17 +173,21 @@ class FilterBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRangeFilter() {
-    return Obx(
-      () => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Price Range',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  Widget _buildPriceRangeFilter(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Price Range',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
           ),
-          const SizedBox(height: 12),
-          RangeSlider(
+        ),
+        const SizedBox(height: 12),
+        Obx(
+          () => RangeSlider(
             values: RangeValues(minPrice.value, maxPrice.value),
             min: 0,
             max: 1000,
@@ -193,64 +201,92 @@ class FilterBottomSheet extends StatelessWidget {
               maxPrice.value = values.end;
             },
           ),
-          Row(
+        ),
+        Obx(
+          () => Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('₹${minPrice.value.round()}'),
-              Text('₹${maxPrice.value.round()}'),
+              Text(
+                '₹${minPrice.value.round()}',
+                style: TextStyle(color: AppTheme.getTextSecondary(context)),
+              ),
+              Text(
+                '₹${maxPrice.value.round()}',
+                style: TextStyle(color: AppTheme.getTextSecondary(context)),
+              ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBrandsFilter(List<Product> categoryProducts) {
-    final availableBrands =
-        categoryProducts.map((p) => p.brand).toSet().toList()..sort();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Brands',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        Obx(
-          () => Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                availableBrands.map((brand) {
-                  final isSelected = selectedBrands.contains(brand);
-                  return FilterChip(
-                    label: Text(brand),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      if (selected) {
-                        selectedBrands.add(brand);
-                      } else {
-                        selectedBrands.remove(brand);
-                      }
-                    },
-                    selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-                    checkmarkColor: AppTheme.primaryColor,
-                  );
-                }).toList(),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRatingFilter() {
+  Widget _buildBrandsFilter(
+    BuildContext context,
+    List<Product> categoryProducts,
+  ) {
+    final availableBrands =
+        categoryProducts.map((p) => p.brand).toSet().toList()..sort();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
+          'Brands',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (availableBrands.isEmpty)
+          Text(
+            'No brands available',
+            style: TextStyle(
+              color: AppTheme.getTextSecondary(context),
+              fontSize: 14,
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children:
+                availableBrands.map((brand) {
+                  return Obx(() {
+                    final isSelected = selectedBrands.contains(brand);
+                    return FilterChip(
+                      label: Text(brand),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        if (selected) {
+                          selectedBrands.add(brand);
+                        } else {
+                          selectedBrands.remove(brand);
+                        }
+                      },
+                      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                      checkmarkColor: AppTheme.primaryColor,
+                    );
+                  });
+                }).toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRatingFilter(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
           'Minimum Rating',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
+          ),
         ),
         const SizedBox(height: 12),
         Obx(
@@ -274,7 +310,10 @@ class FilterBottomSheet extends StatelessWidget {
             minRating.value > 0
                 ? '${minRating.value.toInt()}+ stars'
                 : 'Any rating',
-            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+            style: TextStyle(
+              color: AppTheme.getTextSecondary(context),
+              fontSize: 14,
+            ),
           ),
         ),
       ],
@@ -306,7 +345,7 @@ class FilterBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildSortOptions() {
+  Widget _buildSortOptions(BuildContext context) {
     final sortOptions = [
       {'value': 'newest', 'label': 'Newest First'},
       {'value': 'price_low_high', 'label': 'Price: Low to High'},
@@ -318,30 +357,31 @@ class FilterBottomSheet extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Sort By',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 12),
-        Obx(
-          () => Column(
-            children:
-                sortOptions.map((option) {
-                  return RadioListTile<String>(
-                    title: Text(option['label']!),
-                    value: option['value']!,
-                    groupValue: sortBy.value,
-                    onChanged: (value) {
-                      if (value != null) {
-                        sortBy.value = value;
-                      }
-                    },
-                    activeColor: AppTheme.primaryColor,
-                    contentPadding: EdgeInsets.zero,
-                  );
-                }).toList(),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
           ),
         ),
+        const SizedBox(height: 12),
+        ...sortOptions.map((option) {
+          return Obx(
+            () => RadioListTile<String>(
+              title: Text(option['label']!),
+              value: option['value']!,
+              groupValue: sortBy.value,
+              onChanged: (value) {
+                if (value != null) {
+                  sortBy.value = value;
+                }
+              },
+              activeColor: AppTheme.primaryColor,
+              contentPadding: EdgeInsets.zero,
+            ),
+          );
+        }),
       ],
     );
   }

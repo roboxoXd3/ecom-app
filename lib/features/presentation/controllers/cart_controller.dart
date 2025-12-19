@@ -21,7 +21,13 @@ class CartController extends GetxController {
       isLoading.value = true;
 
       // Get or create cart for current user
-      final userId = supabase.auth.currentUser!.id;
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        print('User not authenticated, skipping cart fetch');
+        items.clear();
+        return;
+      }
+      final userId = currentUser.id;
 
       // Try to get existing cart
       final cart =
@@ -82,7 +88,12 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = supabase.auth.currentUser!.id;
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        SnackbarUtils.showError('Please login to add items to cart');
+        return;
+      }
+      final userId = currentUser.id;
 
       // Get or create cart
       final cart =
@@ -147,7 +158,12 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = supabase.auth.currentUser!.id;
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        SnackbarUtils.showError('Please login to manage cart');
+        return;
+      }
+      final userId = currentUser.id;
       final cart =
           await supabase
               .from('carts')
@@ -180,11 +196,22 @@ class CartController extends GetxController {
 
   Future<void> updateQuantity(CartItem item, int quantity) async {
     try {
+      // If quantity is 0, remove the item from cart
+      if (quantity == 0) {
+        await removeFromCart(item);
+        return;
+      }
+      // Safety check for negative values
       if (quantity < 1) return;
 
       isLoading.value = true;
 
-      final userId = supabase.auth.currentUser!.id;
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        SnackbarUtils.showError('Please login to update cart');
+        return;
+      }
+      final userId = currentUser.id;
       final cart =
           await supabase
               .from('carts')
@@ -218,7 +245,12 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final userId = supabase.auth.currentUser!.id;
+      final currentUser = supabase.auth.currentUser;
+      if (currentUser == null) {
+        SnackbarUtils.showError('Please login to clear cart');
+        return;
+      }
+      final userId = currentUser.id;
       final cart =
           await supabase.from('carts').select().eq('user_id', userId).single();
 

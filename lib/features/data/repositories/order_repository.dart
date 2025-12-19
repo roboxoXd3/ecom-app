@@ -20,13 +20,14 @@ class OrderRepository {
       );
 
       // Check if user is authenticated
-      if (_supabase.auth.currentUser == null) {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
         throw Exception('User not authenticated');
       }
 
       // Start a transaction by creating the order first
       final orderData = {
-        'user_id': _supabase.auth.currentUser!.id,
+        'user_id': currentUser.id,
         'address_id': addressId,
         // Set payment_method_id to null for string-based payment methods
         'payment_method_id': null,
@@ -100,10 +101,15 @@ class OrderRepository {
   }
 
   Future<List<Order>> getUserOrders() async {
+    final currentUser = _supabase.auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+
     final ordersResponse = await _supabase
         .from('orders')
         .select()
-        .eq('user_id', _supabase.auth.currentUser!.id)
+        .eq('user_id', currentUser.id)
         .order('created_at', ascending: false);
 
     final orders = <Order>[];
@@ -153,13 +159,14 @@ class OrderRepository {
       print('Squad Transaction Ref: $squadTransactionRef');
 
       // Check if user is authenticated
-      if (_supabase.auth.currentUser == null) {
+      final currentUser = _supabase.auth.currentUser;
+      if (currentUser == null) {
         throw Exception('User not authenticated');
       }
 
       // Create order with payment details
       final orderData = {
-        'user_id': _supabase.auth.currentUser!.id,
+        'user_id': currentUser.id,
         'address_id': addressId,
         'payment_method_id': null,
         'subtotal': subtotal,

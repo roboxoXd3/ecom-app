@@ -106,66 +106,7 @@ class CategoryHeader extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 // Category Image Background
-                CachedNetworkImage(
-                  imageUrl: category.imageUrl ?? '',
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (context, url) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primaryColor.withOpacity(0.3),
-                              AppTheme.primaryColor.withOpacity(0.1),
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(40),
-                            ),
-                            child: Icon(
-                              Icons.category_rounded,
-                              color: AppTheme.primaryColor,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                  errorWidget:
-                      (context, url, error) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppTheme.primaryColor.withOpacity(0.3),
-                              Colors.deepPurple.withOpacity(0.2),
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(40),
-                            ),
-                            child: Icon(
-                              Icons.category_rounded,
-                              color: Colors.white,
-                              size: 40,
-                            ),
-                          ),
-                        ),
-                      ),
-                ),
+                _buildCategoryBackground(),
                 // Gradient Overlay
                 Container(
                   decoration: BoxDecoration(
@@ -221,6 +162,107 @@ class CategoryHeader extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  // Helper method to safely build category background
+  Widget _buildCategoryBackground() {
+    // Check if image URL is valid
+    final String? imageUrl = category.imageUrl;
+    final bool hasValidImage =
+        imageUrl != null && imageUrl.isNotEmpty && imageUrl != '';
+
+    // If no valid image, show fallback gradient
+    if (!hasValidImage) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.primaryColor.withOpacity(0.3),
+              AppTheme.primaryColor.withOpacity(0.1),
+            ],
+          ),
+        ),
+        child: Center(
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Icon(
+              Icons.category_rounded,
+              color: AppTheme.primaryColor,
+              size: 40,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // If image URL exists, try to load it
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.cover,
+      placeholder:
+          (context, url) => Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor.withOpacity(0.3),
+                  AppTheme.primaryColor.withOpacity(0.1),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Icon(
+                  Icons.category_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
+      errorWidget:
+          (context, url, error) => Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.primaryColor.withOpacity(0.3),
+                  Colors.deepPurple.withOpacity(0.2),
+                ],
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: Icon(
+                  Icons.category_rounded,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
     );
   }
 }
@@ -328,3 +370,4 @@ class CategoryInfoSection extends StatelessWidget {
     );
   }
 }
+

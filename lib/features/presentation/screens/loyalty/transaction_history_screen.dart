@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/loyalty_controller.dart';
 
 class TransactionHistoryScreen extends StatelessWidget {
-  const TransactionHistoryScreen({Key? key}) : super(key: key);
+  const TransactionHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

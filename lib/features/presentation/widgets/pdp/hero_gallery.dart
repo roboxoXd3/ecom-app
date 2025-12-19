@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'inline_video_player.dart';
+import 'fullscreen_image_viewer.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// Hero Gallery Widget for Enhanced PDP
@@ -85,7 +86,9 @@ class _HeroGalleryState extends State<HeroGallery> {
                     },
                   ),
                   items:
-                      widget.images.map((imageUrl) {
+                      widget.images.asMap().entries.map((entry) {
+                        final imageUrl = entry.value;
+                        final imageIndex = entry.key;
                         return Builder(
                           builder: (BuildContext context) {
                             return Container(
@@ -95,37 +98,73 @@ class _HeroGalleryState extends State<HeroGallery> {
                               ),
                               child: Stack(
                                 children: [
-                                  // Main image
-                                  CachedNetworkImage(
-                                    imageUrl: imageUrl,
-                                    fit: BoxFit.contain,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    placeholder:
-                                        (context, url) => Container(
-                                          color: AppTheme.getSurface(context),
-                                          child: const Center(
-                                            child: CircularProgressIndicator(),
+                                  // Main image with tap to zoom
+                                  GestureDetector(
+                                    onTap: () {
+                                      // Open full-screen image viewer
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              FullscreenImageViewer(
+                                            images: widget.images,
+                                            initialIndex: imageIndex,
+                                            productName: widget.productName,
                                           ),
                                         ),
-                                    errorWidget:
-                                        (context, url, error) => Container(
-                                          color: AppTheme.getSurface(context),
-                                          child: Center(
-                                            child: Icon(
-                                              Icons.image_not_supported,
-                                              size: 64,
-                                              color: AppTheme.getTextSecondary(
-                                                context,
+                                      );
+                                    },
+                                    child: CachedNetworkImage(
+                                      imageUrl: imageUrl,
+                                      fit: BoxFit.contain,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      placeholder:
+                                          (context, url) => Container(
+                                            color: AppTheme.getSurface(context),
+                                            child: const Center(
+                                              child: CircularProgressIndicator(),
+                                            ),
+                                          ),
+                                      errorWidget:
+                                          (context, url, error) => Container(
+                                            color: AppTheme.getSurface(context),
+                                            child: Center(
+                                              child: Icon(
+                                                Icons.image_not_supported,
+                                                size: 64,
+                                                color: AppTheme.getTextSecondary(
+                                                  context,
+                                                ),
                                               ),
                                             ),
                                           ),
+                                    ),
+                                  ),
+
+                                  // Subtle zoom icon hint (top-right corner)
+                                  Positioned(
+                                    top: 12,
+                                    right: 12,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.4),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.3),
+                                          width: 1,
                                         ),
+                                      ),
+                                      child: Icon(
+                                        Icons.zoom_in,
+                                        color: Colors.white.withOpacity(0.9),
+                                        size: 18,
+                                      ),
+                                    ),
                                   ),
 
                                   // Video button overlay (only on current image and if video exists)
-                                  if (widget.images.indexOf(imageUrl) ==
-                                          currentIndex &&
+                                  if (imageIndex == currentIndex &&
                                       widget.videoUrl != null &&
                                       widget.videoUrl!.isNotEmpty)
                                     Positioned(

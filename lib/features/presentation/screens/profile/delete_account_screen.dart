@@ -79,7 +79,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       }
 
       // Proceed with deletion
-      final result = await AccountDeletionService.deleteAccount();
+      final result = await AccountDeletionService.deleteAccount(
+        _passwordController.text,
+      );
 
       _isLoading.value = false;
 

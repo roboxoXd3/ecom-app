@@ -17,9 +17,23 @@ class PaymentMethodController extends GetxController {
   Future<void> fetchPaymentMethods() async {
     try {
       isLoading.value = true;
+      
+      // Check if user is authenticated before fetching
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print('User not authenticated, skipping payment methods fetch');
+        paymentMethods.clear();
+        return;
+      }
+      
       paymentMethods.value = await _repository.getPaymentMethods();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load payment methods');
+      print('Error fetching payment methods: $e');
+      // Only show error snackbar if user is authenticated
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        Get.snackbar('Error', 'Failed to load payment methods');
+      }
     } finally {
       isLoading.value = false;
     }

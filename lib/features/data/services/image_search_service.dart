@@ -10,21 +10,39 @@ class ImageSearchService {
 
   /// Main method to search products by image
   Future<String> analyzeImageForProductSearch(File imageFile) async {
-    try {
-      print('🖼️ Starting image analysis for product search...');
+    const maxRetries = 3;
+    int retryCount = 0;
+    
+    while (retryCount < maxRetries) {
+      try {
+        print('🖼️ Starting image analysis for product search... (attempt ${retryCount + 1}/$maxRetries)');
 
-      // Convert image to base64
-      final base64Image = await _convertImageToBase64(imageFile);
+        // Convert image to base64
+        final base64Image = await _convertImageToBase64(imageFile);
 
-      // Analyze with OpenAI Vision
-      final description = await _analyzeImageWithOpenAI(base64Image);
+        // Analyze with OpenAI Vision
+        final description = await _analyzeImageWithOpenAI(base64Image);
 
-      print('🧠 Image analysis result: $description');
-      return description;
-    } catch (e) {
-      print('❌ Error analyzing image: $e');
-      throw Exception('Failed to analyze image: $e');
+        print('🧠 Image analysis result: $description');
+        return description;
+      } catch (e) {
+        retryCount++;
+        print('❌ Error analyzing image (attempt $retryCount/$maxRetries): $e');
+        
+        // If it's the last retry or a non-retryable error, throw or return fallback
+        if (retryCount >= maxRetries) {
+          // Return a generic fallback description for graceful degradation
+          print('⚠️ All retry attempts failed, returning generic description');
+          return 'product search'; // Generic fallback that will trigger keyword search
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await Future.delayed(Duration(milliseconds: 1000 * retryCount));
+      }
     }
+    
+    // Should never reach here, but return fallback just in case
+    return 'product search';
   }
 
   /// Convert image file to base64 string

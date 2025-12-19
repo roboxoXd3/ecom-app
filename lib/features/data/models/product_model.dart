@@ -710,8 +710,9 @@ class Product {
     }
 
     // Fallback to first available color if current color not found
-    if (colorImages != null && colorImages!.isNotEmpty) {
-      return colorImages!.values.first;
+    final colorImgs = colorImages;
+    if (colorImgs != null && colorImgs.isNotEmpty) {
+      return colorImgs.values.first;
     }
 
     // Final fallback to original images parsing
@@ -721,8 +722,9 @@ class Product {
   // NEW: Get primary image for product listings
   String get primaryImage {
     // First try to get from color_images
-    if (colorImages != null && colorImages!.isNotEmpty) {
-      final firstColorImages = colorImages!.values.first;
+    final colorImgs = colorImages;
+    if (colorImgs != null && colorImgs.isNotEmpty) {
+      final firstColorImages = colorImgs.values.first;
       if (firstColorImages.isNotEmpty) {
         return firstColorImages.first;
       }
@@ -740,13 +742,15 @@ class Product {
 
   // NEW: Check if product has color-specific images
   bool get hasColorSpecificImages {
-    return colorImages != null && colorImages!.isNotEmpty;
+    final colorImgs = colorImages;
+    return colorImgs != null && colorImgs.isNotEmpty;
   }
 
   // NEW: Get image count for specific color
   int getImageCountForColor(String color) {
-    if (colorImages != null && colorImages!.containsKey(color)) {
-      return colorImages![color]!.length;
+    final colorImgs = colorImages;
+    if (colorImgs != null && colorImgs.containsKey(color)) {
+      return colorImgs[color]!.length;
     }
     return imageList.length;
   }
@@ -773,7 +777,10 @@ class Product {
   String? get subcategoryName => subcategory?.name;
 
   /// Returns true if the product has a subcategory assigned
-  bool get hasSubcategory => subcategoryId != null && subcategoryId!.isNotEmpty;
+  bool get hasSubcategory {
+    final subId = subcategoryId;
+    return subId != null && subId.isNotEmpty;
+  }
 
   /// Returns the full category path (Category > Subcategory)
   String getCategoryPath({String? categoryName}) {
@@ -789,8 +796,9 @@ class Product {
     if (categoryName != null) {
       breadcrumbs.add(categoryName);
     }
-    if (hasSubcategory && subcategory?.name != null) {
-      breadcrumbs.add(subcategory!.name);
+    final subcat = subcategory;
+    if (hasSubcategory && subcat != null) {
+      breadcrumbs.add(subcat.name);
     }
     return breadcrumbs;
   }

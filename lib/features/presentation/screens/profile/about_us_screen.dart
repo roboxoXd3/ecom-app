@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class AboutUsScreen extends StatelessWidget {
@@ -61,11 +62,13 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Be Smart is your one-stop destination for all your shopping needs. '
-                    'We started with a simple mission: to make quality products accessible '
-                    'to everyone, everywhere. Our journey began in 2023, and since then, '
-                    'we\'ve been committed to providing the best shopping experience to our customers.',
-                    style: TextStyle(fontSize: 16),
+                    'Welcome to Be Smart, your all-in-one online mall designed to make shopping smarter, easier, and more exciting!\n\n'
+                    'At Be Smart, we started as a fashion-forward brand, known for our premium-quality clothing and trendsetting styles. Our boutique collection brings you the best in fashion — from casual to classy, simple to standout — carefully selected to help you express your true style with confidence.\n\n'
+                    'But we didn\'t stop there. We\'ve grown beyond fashion to become a complete online marketplace, where you can find almost everything you need — from fashion wear and accessories to lifestyle products and everyday essentials — all in one trusted place.\n\n'
+                    'We believe in quality, convenience, and customer satisfaction. Every item we showcase is chosen with care to ensure that when you shop with Be Smart, you\'re getting real value for your money.\n\n'
+                    'Whether you\'re refreshing your wardrobe, shopping for a gift, or browsing for something unique, Be Smart is here to give you a smarter shopping experience — where quality meets affordability.\n\n'
+                    'Be Smart. Shop Smart. Live Smart.',
+                    style: TextStyle(fontSize: 16, height: 1.5),
                   ),
                   const SizedBox(height: 24),
 
@@ -102,19 +105,32 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _buildContactItem(
+                    context: context,
                     icon: Icons.email_outlined,
                     title: 'Email',
-                    detail: 'support@shopnow.com',
+                    detail: 'support@xbesmart.com',
+                    onTap: () => _launchEmail(context),
                   ),
                   _buildContactItem(
+                    context: context,
                     icon: Icons.phone_outlined,
                     title: 'Phone',
-                    detail: '+1 234 567 890',
+                    detail: '07018688881',
+                    onTap: () => _launchPhone(context),
                   ),
                   _buildContactItem(
+                    context: context,
+                    icon: Icons.chat_outlined,
+                    title: 'WhatsApp',
+                    detail: '+2347018688881',
+                    onTap: () => _launchWhatsApp(context),
+                  ),
+                  _buildContactItem(
+                    context: context,
                     icon: Icons.location_on_outlined,
-                    title: 'Address',
-                    detail: '123 Shopping Street, NY 10001, USA',
+                    title: 'Head Office',
+                    detail: 'Shop 38C/B Asaba Development Mall, Asaba, Delta State, Nigeria',
+                    onTap: null,
                   ),
                   const SizedBox(height: 24),
 
@@ -127,13 +143,18 @@ class AboutUsScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildSocialButton(Icons.facebook, 'Facebook'),
                       _buildSocialButton(
-                        Icons.camera_alt_outlined,
-                        'Instagram',
+                        context: context,
+                        icon: Icons.facebook,
+                        platform: 'Facebook',
+                        url: 'https://facebook.com/besmartworld',
                       ),
-                      _buildSocialButton(Icons.telegram, 'Twitter'),
-                      _buildSocialButton(Icons.link, 'LinkedIn'),
+                      _buildSocialButton(
+                        context: context,
+                        icon: Icons.camera_alt_outlined,
+                        platform: 'Instagram',
+                        url: 'https://instagram.com/besmartcollections',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -180,33 +201,48 @@ class AboutUsScreen extends StatelessWidget {
   }
 
   Widget _buildContactItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String detail,
+    VoidCallback? onTap,
   }) {
-    return Padding(
+    final widget = Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
           Icon(icon, color: AppTheme.primaryColor),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(detail, style: const TextStyle(color: Colors.grey)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(detail, style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
           ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        child: widget,
+      );
+    }
+    return widget;
   }
 
-  Widget _buildSocialButton(IconData icon, String platform) {
+  Widget _buildSocialButton({
+    required BuildContext context,
+    required IconData icon,
+    required String platform,
+    required String url,
+  }) {
     return InkWell(
-      onTap: () {
-        // TODO: Implement social media links
-      },
+      onTap: () => _launchSocialMedia(context, url),
       child: Column(
         children: [
           Container(
@@ -222,5 +258,113 @@ class AboutUsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _launchEmail(BuildContext context) async {
+    final Uri emailUri = Uri.parse('mailto:support@xbesmart.com');
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        await launchUrl(emailUri, mode: LaunchMode.platformDefault);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open email app.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchPhone(BuildContext context) async {
+    final Uri phoneUri = Uri.parse('tel:07018688881');
+    try {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri, mode: LaunchMode.platformDefault);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open phone dialer.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchWhatsApp(BuildContext context) async {
+    final Uri whatsappUri = Uri.parse('https://wa.me/2347018688881');
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open WhatsApp.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchSocialMedia(BuildContext context, String url) async {
+    final Uri socialUri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(socialUri)) {
+        await launchUrl(socialUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open social media page.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

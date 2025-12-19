@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../controllers/chatbot_controller.dart';
 import '../../../../core/utils/currency_utils.dart';
@@ -235,7 +236,7 @@ class ChatbotScreen extends StatelessWidget {
     BuildContext context,
   ) {
     return Obx(() {
-      if (chatController.isLoading.value) {
+      if (chatController.isLoading.value && chatController.messages.isEmpty) {
         return _buildLoadingState(context);
       }
 
@@ -243,18 +244,70 @@ class ChatbotScreen extends StatelessWidget {
         return _buildWelcomeMessage(screenWidth, context);
       }
 
-      return SizedBox(
-        width: double.infinity,
-        child: ListView.builder(
-          controller: chatController.scrollController,
-          padding: const EdgeInsets.all(20),
-          physics: const BouncingScrollPhysics(),
-          itemCount: chatController.messages.length,
-          itemBuilder: (context, index) {
-            final message = chatController.messages[index];
-            return _buildMessageBubble(message, screenWidth, context);
-          },
-        ),
+      return Column(
+        children: [
+          // Top loading indicator for older messages
+          if (chatController.isLoadingMoreMessages.value)
+            Container(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Loading older messages...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.getTextSecondary(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // No more messages indicator
+          if (!chatController.hasMoreMessages.value &&
+              chatController.messages.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'No more messages',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.getTextSecondary(context),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+
+          // Messages list
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: ListView.builder(
+                controller: chatController.scrollController,
+                padding: const EdgeInsets.all(20),
+                physics: const BouncingScrollPhysics(),
+                itemCount: chatController.messages.length,
+                itemBuilder: (context, index) {
+                  final message = chatController.messages[index];
+                  return _buildMessageBubble(message, screenWidth, context);
+                },
+              ),
+            ),
+          ),
+        ],
       );
     });
   }
@@ -544,12 +597,23 @@ class ChatbotScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 20),
                 itemCount: message.products!.length,
                 itemBuilder: (context, index) {
-                  return _buildProductCard(
-                    message.products![index],
-                    screenWidth,
-                    context,
+                  final product = message.products![index];
+                  // Debug: Log product info
+                  print(
+                    '🛍️ Displaying product card: ${product.name} (ID: ${product.id})',
                   );
+                  return _buildProductCard(product, screenWidth, context);
                 },
+              ),
+            ),
+          ] else if (message.messageType == 'products') ...[
+            // Debug: Show if message type is products but no products found
+            Container(
+              margin: EdgeInsets.only(left: isUser ? 0 : 48),
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                '⚠️ Products should be displayed here but products list is empty',
+                style: TextStyle(fontSize: 10, color: Colors.orange),
               ),
             ),
           ],
@@ -648,8 +712,15 @@ class ChatbotScreen extends StatelessWidget {
         elevation: 0,
         shadowColor: Colors.black.withOpacity(0.1),
         child: InkWell(
-          onTap: () => Get.toNamed('/product-details', arguments: product.id),
+          onTap: () {
+            print(
+              '🖱️ Product card tapped: ${product.name} (ID: ${product.id})',
+            );
+            Get.toNamed('/product-details', arguments: product.id);
+          },
           borderRadius: BorderRadius.circular(16),
+          splashColor: AppTheme.primaryColor.withOpacity(0.1),
+          highlightColor: AppTheme.primaryColor.withOpacity(0.05),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -1195,100 +1266,62 @@ class ChatbotScreen extends StatelessWidget {
     );
   }
 
-  /// Build formatted text with markdown-like styling
+  /// Build formatted text with markdown support for proper UTF-8/emoji handling
   Widget _buildFormattedText(String text, bool isUser, BuildContext context) {
     final textColor = isUser ? Colors.white : AppTheme.getTextPrimary(context);
+    final linkColor = isUser ? Colors.white70 : AppTheme.primaryColor;
 
-    return RichText(
-      text: TextSpan(
-        style: TextStyle(
+    return MarkdownBody(
+      data: text,
+      styleSheet: MarkdownStyleSheet(
+        p: TextStyle(
           color: textColor,
           fontSize: 14,
           height: 1.4,
           fontWeight: FontWeight.w400,
         ),
-        children: _parseFormattedText(text, textColor),
+        strong: TextStyle(color: textColor, fontWeight: FontWeight.w700),
+        em: TextStyle(color: textColor, fontStyle: FontStyle.italic),
+        listBullet: TextStyle(color: textColor),
+        listIndent: 24.0,
+        h1: TextStyle(
+          color: textColor,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+        h2: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        h3: TextStyle(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+        a: TextStyle(color: linkColor, decoration: TextDecoration.underline),
+        code: TextStyle(
+          backgroundColor: textColor.withOpacity(0.1),
+          color: textColor,
+          fontFamily: 'monospace',
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: textColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        blockquote: TextStyle(
+          color: textColor.withOpacity(0.8),
+          fontStyle: FontStyle.italic,
+        ),
+        blockquoteDecoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(color: textColor.withOpacity(0.3), width: 4),
+          ),
+        ),
       ),
+      shrinkWrap: true,
+      selectable: true, // Allow text selection for better UX
     );
-  }
-
-  /// Parse text with **bold** formatting and emojis
-  List<TextSpan> _parseFormattedText(String text, Color baseColor) {
-    final spans = <TextSpan>[];
-    final lines = text.split('\n');
-
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-
-      if (line.trim().isEmpty) {
-        spans.add(const TextSpan(text: '\n'));
-        continue;
-      }
-
-      // Handle bullet points
-      if (line.startsWith('• ')) {
-        spans.add(
-          TextSpan(
-            text: line,
-            style: TextStyle(
-              color: baseColor.withOpacity(0.9),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        );
-      } else if (line.contains('**')) {
-        // Handle inline bold text
-        _parseInlineBold(line, baseColor, spans);
-      } else {
-        // Regular text
-        spans.add(TextSpan(text: line, style: TextStyle(color: baseColor)));
-      }
-
-      // Add line break if not the last line
-      if (i < lines.length - 1) {
-        spans.add(const TextSpan(text: '\n'));
-      }
-    }
-
-    return spans;
-  }
-
-  /// Parse inline bold text with **text** syntax
-  void _parseInlineBold(String line, Color baseColor, List<TextSpan> spans) {
-    final regex = RegExp(r'\*\*(.*?)\*\*');
-    int lastEnd = 0;
-
-    for (final match in regex.allMatches(line)) {
-      // Add text before bold
-      if (match.start > lastEnd) {
-        spans.add(
-          TextSpan(
-            text: line.substring(lastEnd, match.start),
-            style: TextStyle(color: baseColor),
-          ),
-        );
-      }
-
-      // Add bold text
-      spans.add(
-        TextSpan(
-          text: match.group(1),
-          style: TextStyle(fontWeight: FontWeight.w700, color: baseColor),
-        ),
-      );
-
-      lastEnd = match.end;
-    }
-
-    // Add remaining text
-    if (lastEnd < line.length) {
-      spans.add(
-        TextSpan(
-          text: line.substring(lastEnd),
-          style: TextStyle(color: baseColor),
-        ),
-      );
-    }
   }
 
   void _showOptionsMenu(BuildContext context) {

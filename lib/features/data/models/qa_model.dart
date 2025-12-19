@@ -94,17 +94,22 @@ class ProductQA {
     }
   }
 
-  bool get hasAnswer => answer != null && answer!.isNotEmpty;
+  bool get hasAnswer {
+    final ans = answer;
+    return ans != null && ans.isNotEmpty;
+  }
 
   String get displayAnswer {
-    if (vendorResponse != null && vendorResponse!.isNotEmpty) {
-      return vendorResponse!;
+    final vendorResp = vendorResponse;
+    if (vendorResp != null && vendorResp.isNotEmpty) {
+      return vendorResp;
     }
     return answer ?? '';
   }
 
   String get displayAnsweredBy {
-    if (vendorResponse != null && vendorResponse!.isNotEmpty) {
+    final vendorResp = vendorResponse;
+    if (vendorResp != null && vendorResp.isNotEmpty) {
       return 'Vendor';
     }
     return answeredBy ?? 'Community';

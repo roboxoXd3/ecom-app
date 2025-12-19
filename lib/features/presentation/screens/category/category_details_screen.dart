@@ -13,10 +13,18 @@ import 'widgets/filter_bottom_sheet.dart';
 import 'widgets/category_products_grid.dart';
 import 'widgets/subcategory_chips.dart';
 
-class CategoryDetailsScreen extends StatelessWidget {
+class CategoryDetailsScreen extends StatefulWidget {
   final Category category;
-  final productController = Get.find<ProductController>();
-  final subcategoryController = Get.put(SubcategoryController());
+
+  const CategoryDetailsScreen({super.key, required this.category});
+
+  @override
+  State<CategoryDetailsScreen> createState() => _CategoryDetailsScreenState();
+}
+
+class _CategoryDetailsScreenState extends State<CategoryDetailsScreen> {
+  late final ProductController productController;
+  late final SubcategoryController subcategoryController;
 
   // Add search and filter state
   final RxString searchQuery = ''.obs;
@@ -32,11 +40,16 @@ class CategoryDetailsScreen extends StatelessWidget {
   // NEW: Subcategory filtering state
   final RxList<String> selectedSubcategoryIds = <String>[].obs;
 
-  CategoryDetailsScreen({super.key, required this.category}) {
+  @override
+  void initState() {
+    super.initState();
+    productController = Get.find<ProductController>();
+    subcategoryController = Get.put(SubcategoryController());
+    
     // Initialize subcategory selection - select all by default
     ever(subcategoryController.subcategories, (subcategories) {
       final categorySubcategories = subcategoryController
-          .getSubcategoriesForCategory(category.id);
+          .getSubcategoriesForCategory(widget.category.id);
       if (categorySubcategories.isNotEmpty && selectedSubcategoryIds.isEmpty) {
         selectedSubcategoryIds.addAll(categorySubcategories.map((s) => s.id));
       }
@@ -52,21 +65,21 @@ class CategoryDetailsScreen extends StatelessWidget {
         slivers: [
           // Category Header with SliverAppBar
           CategoryHeader(
-            category: category,
+            category: widget.category,
             productController: productController,
             onSearchTap: () => _showSearchDialog(context),
           ),
 
           // Category Info Section
           CategoryInfoSection(
-            category: category,
+            category: widget.category,
             productController: productController,
           ),
 
           // NEW: Subcategory Chips Section
           SliverToBoxAdapter(
             child: SubcategoryChips(
-              categoryId: category.id,
+              categoryId: widget.category.id,
               selectedSubcategoryIds: selectedSubcategoryIds,
               onSelectionChanged: (selectedIds) {
                 selectedSubcategoryIds.assignAll(selectedIds);
@@ -79,7 +92,7 @@ class CategoryDetailsScreen extends StatelessWidget {
 
           // Products Grid
           CategoryProductsGrid(
-            category: category,
+            category: widget.category,
             productController: productController,
             searchQuery: searchQuery,
             applyFilters: _applyFilters,
@@ -89,7 +102,7 @@ class CategoryDetailsScreen extends StatelessWidget {
               _resetFilters();
               // Reset subcategory selection to all selected
               final categorySubcategories = subcategoryController
-                  .getSubcategoriesForCategory(category.id);
+                  .getSubcategoriesForCategory(widget.category.id);
               selectedSubcategoryIds.assignAll(
                 categorySubcategories.map((s) => s.id),
               );
@@ -102,14 +115,14 @@ class CategoryDetailsScreen extends StatelessWidget {
 
   void _showSearchDialog(BuildContext context) {
     HapticFeedback.lightImpact();
-    SearchDialog.show(context, category, searchQuery);
+    SearchDialog.show(context, widget.category, searchQuery);
   }
 
   void _showFilterBottomSheet(BuildContext context) {
     HapticFeedback.lightImpact();
     FilterBottomSheet.show(
       context,
-      category,
+      widget.category,
       productController,
       minPrice,
       maxPrice,
@@ -194,13 +207,13 @@ class CategoryDetailsScreen extends StatelessWidget {
 
     // Reset subcategory selection to all selected
     final categorySubcategories = subcategoryController
-        .getSubcategoriesForCategory(category.id);
+        .getSubcategoriesForCategory(widget.category.id);
     selectedSubcategoryIds.assignAll(categorySubcategories.map((s) => s.id));
 
     // Reset price range to full range
     final categoryProducts =
         productController.allProducts
-            .where((product) => product.categoryId == category.id)
+            .where((product) => product.categoryId == widget.category.id)
             .toList();
 
     if (categoryProducts.isNotEmpty) {

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import '../../controllers/loyalty_controller.dart';
 
 class BadgesScreen extends StatelessWidget {
-  const BadgesScreen({Key? key}) : super(key: key);
+  const BadgesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -106,12 +106,13 @@ class ChatRepository {
     String conversationId, {
     int limit = 50,
     int offset = 0,
+    bool newestFirst = true, // NEW: Order by newest first for easier pagination
   }) async {
     final response = await _supabase
         .from('chat_messages')
         .select()
         .eq('conversation_id', conversationId)
-        .order('created_at', ascending: true)
+        .order('created_at', ascending: !newestFirst)
         .range(offset, offset + limit - 1);
 
     return (response as List)

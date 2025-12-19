@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// Result class for account deletion operations
 class DeleteAccountResult {
@@ -34,7 +36,7 @@ class AccountDeletionService {
   static Future<DeleteAccountResult> checkDeletionEligibility() async {
     try {
       final user = _supabase.auth.currentUser;
-      
+
       if (user == null) {
         return DeleteAccountResult(
           success: false,
@@ -44,8 +46,10 @@ class AccountDeletionService {
       }
 
       // Call the is_active_vendor function
-      final response = await _supabase
-          .rpc('is_active_vendor', params: {'user_uuid': user.id});
+      final response = await _supabase.rpc(
+        'is_active_vendor',
+        params: {'user_uuid': user.id},
+      );
 
       final bool isVendor = response as bool;
 
@@ -88,9 +92,9 @@ class AccountDeletionService {
   /// - Delete all personal information
   /// - Anonymize order history (for legal compliance)
   /// - Remove the user from authentication system
-  /// 
-  /// Requires: User must be authenticated and not an active vendor
-  static Future<DeleteAccountResult> deleteAccount() async {
+  ///
+  /// Requires: User must be authenticated, not an active vendor, and password
+  static Future<DeleteAccountResult> deleteAccount(String password) async {
     try {
       final user = _supabase.auth.currentUser;
 
@@ -104,56 +108,64 @@ class AccountDeletionService {
 
       print('🗑️ Starting account deletion for user: ${user.id}');
 
-      // Call the delete_user_account function
-      final response = await _supabase
-          .rpc('delete_user_account', params: {'user_uuid': user.id});
-
-      print('🗑️ Deletion response: $response');
-
-      // Parse the response
-      if (response == null) {
+      // Get the current session token
+      final session = _supabase.auth.currentSession;
+      if (session == null) {
         return DeleteAccountResult(
           success: false,
-          message: 'Failed to delete account. Please try again or contact support.',
-          errorCode: 'no_response',
+          message: 'No active session. Please log in again.',
+          errorCode: 'no_session',
         );
       }
 
-      final Map<String, dynamic> result = response as Map<String, dynamic>;
+      // API URL for account deletion (Railway deployment)
+      const apiUrl =
+          'https://ecomwebsite-production.up.railway.app/api/account/delete';
 
-      if (result['success'] == true) {
-        print('✅ Account data deleted successfully');
-        
+      print('🌐 Calling deletion API: $apiUrl');
+
+      // Call the Next.js API endpoint with admin privileges
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer ${session.accessToken}',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'password': password}),
+      );
+
+      print('🗑️ API Response status: ${response.statusCode}');
+      print('🗑️ API Response body: ${response.body}');
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        print('✅ Account deleted successfully via API');
+
         // Sign out the user
         await _supabase.auth.signOut();
         print('✅ User signed out');
 
         return DeleteAccountResult(
           success: true,
-          message: result['message'] ??
+          message:
+              responseData['message'] ??
               'Your account has been successfully deleted. '
-              'All personal information has been removed.',
-        );
-      } else {
-        // Handle error cases
-        final errorCode = result['error'] ?? 'deletion_failed';
-        final errorMessage = result['message'] ?? 'Account deletion failed';
-
-        print('❌ Account deletion failed: $errorCode - $errorMessage');
-
-        return DeleteAccountResult(
-          success: false,
-          message: errorMessage,
-          errorCode: errorCode,
-          isVendor: errorCode == 'vendor_active',
+                  'All personal information has been removed.',
         );
       }
-    } on PostgrestException catch (e) {
-      print('❌ Supabase error during account deletion: ${e.message}');
+
+      // Handle error responses
+      final errorCode = responseData['error'] ?? 'deletion_failed';
+      final errorMessage = responseData['message'] ?? 'Account deletion failed';
+
+      print('❌ Account deletion failed: $errorCode - $errorMessage');
+
       return DeleteAccountResult(
         success: false,
-        message: 'Database error: ${e.message}',
-        errorCode: 'database_error',
+        message: errorMessage,
+        errorCode: errorCode,
+        isVendor: errorCode == 'vendor_active',
       );
     } on AuthException catch (e) {
       print('❌ Auth error during account deletion: ${e.message}');
@@ -179,7 +191,7 @@ class AccountDeletionService {
   static Future<bool> verifyPassword(String password) async {
     try {
       final user = _supabase.auth.currentUser;
-      
+
       if (user == null || user.email == null) {
         return false;
       }
@@ -222,4 +234,3 @@ class AccountDeletionService {
     };
   }
 }
-

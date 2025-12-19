@@ -19,23 +19,27 @@ class CartTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Shopping Cart'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () {
-              if (cartController.items.isNotEmpty) {
-                Get.defaultDialog(
-                  title: 'Clear Cart',
-                  middleText: 'Are you sure you want to clear your cart?',
-                  textConfirm: 'Clear',
-                  textCancel: 'Cancel',
-                  confirmTextColor: Colors.white,
-                  onConfirm: () {
-                    cartController.clearCart();
-                    Get.back();
-                  },
-                );
-              }
-            },
+          Obx(
+            () =>
+                cartController.items.isEmpty
+                    ? const SizedBox.shrink()
+                    : IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () {
+                        Get.defaultDialog(
+                          title: 'Clear Cart',
+                          middleText:
+                              'Are you sure you want to clear your cart?',
+                          textConfirm: 'Clear',
+                          textCancel: 'Cancel',
+                          confirmTextColor: Colors.white,
+                          onConfirm: () {
+                            cartController.clearCart();
+                            Get.back();
+                          },
+                        );
+                      },
+                    ),
           ),
         ],
       ),

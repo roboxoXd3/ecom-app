@@ -6,6 +6,7 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/currency_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/routes/app_routes.dart';
 
 // Design style options for the CTA section
 enum CTADesignStyle {
@@ -1217,10 +1218,22 @@ class EnhancedStickyCTA extends StatelessWidget {
     EnhancedProductController enhancedController,
     CartController cartController,
   ) async {
-    // First add to cart
-    await _handleAddToCart(enhancedController, cartController);
-
-    // Then navigate to checkout
-    // Get.toNamed('/checkout');
+    try {
+      // Store cart item count before adding
+      final cartItemCountBefore = cartController.items.length;
+      
+      // First add to cart
+      await _handleAddToCart(enhancedController, cartController);
+      
+      // Verify item was added (check if cart has more items than before)
+      // This ensures we only navigate if the product was actually added
+      if (cartController.items.length > cartItemCountBefore) {
+        // Navigate to checkout
+        Get.toNamed(AppRoutes.checkout);
+      }
+    } catch (e) {
+      // Error already handled in _handleAddToCart
+      // Don't navigate if add to cart failed
+    }
   }
 }

@@ -9,7 +9,7 @@ import '../../data/services/conversation_context_service.dart';
 import '../../data/services/size_guide_service.dart';
 
 import '../../data/models/product_model.dart';
-import '../../data/models/chat_models.dart';
+import '../../data/models/chat_models.dart' as chat_models;
 import '../../data/repositories/chat_repository.dart';
 import '../../data/models/order_model.dart';
 import '../../data/models/order_status.dart';
@@ -103,8 +103,18 @@ class ChatbotController extends GetxController {
   final OrderRepository _orderRepository = OrderRepository();
 
   // Current conversation for persistence
-  ChatConversation? currentConversation;
-  final RxList<ChatConversation> conversations = <ChatConversation>[].obs;
+  chat_models.ChatConversation? currentConversation;
+  final RxList<chat_models.ChatConversation> conversations = <chat_models.ChatConversation>[].obs;
+
+  // Pagination state for lazy loading
+  final RxBool hasMoreMessages = true.obs;
+  final RxBool isLoadingMoreMessages = false.obs;
+  final RxInt currentOffset = 0.obs;
+  final int messagesPerPage = 30; // Load 30 messages at a time
+  final RxBool isInitialLoad = true.obs;
+
+  // Scroll listener callback (stored for cleanup)
+  void Function()? _scrollListener;
 
   // Sample bot responses
   final Map<String, List<String>> botResponses = {
@@ -147,10 +157,25 @@ class ChatbotController extends GetxController {
 
   Future<void> _initializeChat() async {
     isLoading.value = true;
+    isInitialLoad.value = true;
     try {
       await _loadUserConversations();
       await _startNewConversationIfNeeded();
+
+      // NEW: Load chat history instead of just welcome message
+      if (currentConversation != null) {
+        await loadChatHistory(refresh: true);
+        // Only add welcome message if no messages exist
+        if (messages.isEmpty) {
       _addWelcomeMessage();
+        }
+      } else {
+        _addWelcomeMessage();
+      }
+
+      // Setup scroll listener for loading older messages
+      _setupScrollListener();
+
       // Debug: Check what products we have
       _debugProducts();
       // Debug: Check auth status
@@ -160,6 +185,7 @@ class ChatbotController extends GetxController {
       _addWelcomeMessage(); // Fallback to welcome message
     } finally {
       isLoading.value = false;
+      isInitialLoad.value = false;
     }
   }
 
@@ -194,8 +220,245 @@ class ChatbotController extends GetxController {
     }
   }
 
+  /// Fetch products by their IDs for chat history restoration
+  Future<List<Product>> _fetchProductsByIds(List<String> productIds) async {
+    if (productIds.isEmpty) return [];
+    
+    try {
+      print('🔍 Fetching products with IDs: ${productIds.take(5).join(", ")}${productIds.length > 5 ? "..." : ""}');
+      final response = await Supabase.instance.client
+          .from('products')
+          .select('*, vendors(*)')
+          .inFilter('id', productIds)
+          .eq('approval_status', 'approved'); // Only approved products
+      
+      final products = (response as List)
+          .map((json) => Product.fromJson(json))
+          .toList();
+      
+      print('✅ Fetched ${products.length} products (requested ${productIds.length})');
+      return products;
+    } catch (e) {
+      print('❌ Error fetching products for chat history: $e');
+      print('   Product IDs: $productIds');
+      return [];
+    }
+  }
+
+  /// Convert database ChatMessage (from chat_models.dart) to UI ChatMessage (now async for product fetching)
+  Future<ChatMessage> _convertDatabaseMessageToUIMessage(
+    chat_models.ChatMessage dbMessage,
+  ) async {
+    // Extract image URL if present
+    String? imageUrl;
+    String? imagePath;
+    if (dbMessage.metadata != null) {
+      if (dbMessage.metadata!['image_url'] != null) {
+        imageUrl = dbMessage.metadata!['image_url'] as String;
+      }
+      if (dbMessage.metadata!['image_path'] != null) {
+        imagePath = dbMessage.metadata!['image_path'] as String;
+      }
+    }
+
+    // Extract message type
+    String messageType = dbMessage.messageType;
+    if (dbMessage.metadata != null &&
+        dbMessage.metadata!['products_count'] != null &&
+        (dbMessage.metadata!['products_count'] as int) > 0) {
+      messageType = 'products';
+    }
+
+    // Extract and fetch products from metadata
+    List<Product>? products;
+    if (dbMessage.metadata != null && 
+        dbMessage.metadata!['product_ids'] != null) {
+      try {
+        final productIds = List<String>.from(
+          dbMessage.metadata!['product_ids'] as List
+        );
+        print('🔄 Restoring ${productIds.length} products for message ${dbMessage.id}');
+        products = await _fetchProductsByIds(productIds);
+        print('✅ Successfully restored ${products.length} products for message ${dbMessage.id}');
+        if (products.isEmpty && productIds.isNotEmpty) {
+          print('⚠️ Warning: No products found for IDs: $productIds');
+        }
+      } catch (e) {
+        print('❌ Error fetching products for message: $e');
+        products = null; // Show message without products on error
+      }
+    } else {
+      // Debug: Check if message has products_count but no product_ids (old messages)
+      if (dbMessage.metadata != null && 
+          dbMessage.metadata!['products_count'] != null &&
+          (dbMessage.metadata!['products_count'] as int) > 0) {
+        print('⚠️ Message ${dbMessage.id} has products_count but no product_ids (old message format)');
+      }
+    }
+
+    // Create UI ChatMessage
+    return ChatMessage(
+      id: dbMessage.id,
+      text: dbMessage.messageText,
+      isUser: dbMessage.senderType == 'user',
+      createdAt: dbMessage.createdAt,
+      messageType: messageType,
+      imagePath: imagePath,
+      imageUrl: imageUrl,
+      hasImage: imagePath != null || imageUrl != null,
+      products: products, // NEW: Restored products
+    );
+  }
+
+  /// Convert list of database messages to UI messages (now async)
+  Future<List<ChatMessage>> _convertDatabaseMessagesToUIMessages(
+    List<chat_models.ChatMessage> dbMessages,
+  ) async {
+    // Convert all messages in parallel for better performance
+    final futures = dbMessages.map(
+      (dbMsg) => _convertDatabaseMessageToUIMessage(dbMsg)
+    );
+    return await Future.wait(futures);
+  }
+
+  /// Load chat history (initial load or refresh)
+  Future<void> loadChatHistory({bool refresh = false}) async {
+    if (currentConversation == null) return;
+
+    try {
+      if (refresh) {
+        messages.clear();
+        currentOffset.value = 0;
+        hasMoreMessages.value = true;
+      }
+
+      isLoading.value = refresh || messages.isEmpty;
+
+      // Load most recent messages (newest first, then reverse for display)
+      final dbMessages = await _chatRepository.getConversationMessages(
+        currentConversation!.id,
+        limit: messagesPerPage,
+        offset: currentOffset.value,
+        newestFirst: true,
+      );
+
+      if (dbMessages.isEmpty) {
+        hasMoreMessages.value = false;
+        isLoading.value = false;
+        return;
+      }
+
+      // Convert and add to UI messages list (now async)
+      final uiMessages = await _convertDatabaseMessagesToUIMessages(dbMessages);
+
+      if (refresh || messages.isEmpty) {
+        // Reverse: newest at bottom for display
+        messages.value = uiMessages.reversed.toList();
+      } else {
+        // Prepend older messages to beginning
+        messages.insertAll(0, uiMessages.reversed.toList());
+      }
+
+      // Check if more messages exist
+      hasMoreMessages.value = dbMessages.length >= messagesPerPage;
+      if (hasMoreMessages.value) {
+        currentOffset.value += messagesPerPage;
+      }
+
+      // Scroll to bottom on initial load
+      if (refresh || isInitialLoad.value) {
+        _scrollToBottom();
+      }
+    } catch (e) {
+      print('Error loading chat history: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// Load older messages when scrolling up
+  Future<void> loadOlderMessages() async {
+    if (!hasMoreMessages.value || isLoadingMoreMessages.value) return;
+    if (currentConversation == null) return;
+
+    isLoadingMoreMessages.value = true;
+
+    try {
+      final dbMessages = await _chatRepository.getConversationMessages(
+        currentConversation!.id,
+        limit: messagesPerPage,
+        offset: currentOffset.value,
+        newestFirst: true,
+      );
+
+      if (dbMessages.isEmpty) {
+        hasMoreMessages.value = false;
+        return;
+      }
+
+      final uiMessages = await _convertDatabaseMessagesToUIMessages(dbMessages);
+
+      // Save current scroll position and max scroll extent
+      double? scrollPosition;
+      double? oldMaxScrollExtent;
+      if (scrollController.hasClients) {
+        scrollPosition = scrollController.position.pixels;
+        oldMaxScrollExtent = scrollController.position.maxScrollExtent;
+      }
+
+      // Prepend older messages
+      messages.insertAll(0, uiMessages.reversed.toList());
+
+      // Restore scroll position after rebuild
+      if (scrollController.hasClients && scrollPosition != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (scrollController.hasClients) {
+            final newMaxScrollExtent = scrollController.position.maxScrollExtent;
+            if (oldMaxScrollExtent != null) {
+              // Adjust scroll position by the difference in content height
+              final heightDifference = newMaxScrollExtent - oldMaxScrollExtent;
+              scrollController.jumpTo(scrollPosition! + heightDifference);
+            } else {
+              // Fallback: maintain relative position
+              scrollController.jumpTo(scrollPosition!);
+            }
+          }
+        });
+      }
+
+      hasMoreMessages.value = dbMessages.length >= messagesPerPage;
+      if (hasMoreMessages.value) {
+        currentOffset.value += messagesPerPage;
+      }
+    } catch (e) {
+      print('Error loading older messages: $e');
+    } finally {
+      isLoadingMoreMessages.value = false;
+    }
+  }
+
+  /// Setup scroll listener to detect when user scrolls near top
+  void _setupScrollListener() {
+    _scrollListener = () {
+      if (!scrollController.hasClients) return;
+
+      // Load older messages when scrolled to top 20% of list
+      final position = scrollController.position;
+      if (position.pixels < position.maxScrollExtent * 0.2 &&
+          hasMoreMessages.value &&
+          !isLoadingMoreMessages.value) {
+        loadOlderMessages();
+      }
+    };
+    scrollController.addListener(_scrollListener!);
+  }
+
   @override
   void onClose() {
+    // Remove scroll listener before disposing
+    if (_scrollListener != null) {
+      scrollController.removeListener(_scrollListener!);
+    }
     messageController.dispose();
     scrollController.dispose();
     super.onClose();
@@ -260,6 +523,12 @@ class ChatbotController extends GetxController {
         messageType: ujunwaResponse.products.isNotEmpty ? 'products' : 'text',
         // ujunwaResponse: ujunwaResponse, // TODO: Add structured response support
       );
+      
+      // Debug: Log products in new message
+      if (ujunwaResponse.products.isNotEmpty) {
+        print('✅ New message created with ${ujunwaResponse.products.length} products');
+        print('   Product IDs: ${ujunwaResponse.products.map((p) => p.id).join(", ")}');
+      }
 
       // Add typing delay for natural feel
       await Future.delayed(const Duration(milliseconds: 1500));
@@ -278,6 +547,7 @@ class ChatbotController extends GetxController {
               'intent_type': ujunwaResponse.intent?.type.toString(),
               'intent_confidence': ujunwaResponse.intent?.confidence,
               'products_count': ujunwaResponse.products.length,
+              'product_ids': ujunwaResponse.products.map((p) => p.id).toList(), // NEW: Save product IDs for restoration
               'suggestions': ujunwaResponse.suggestions,
             },
           );

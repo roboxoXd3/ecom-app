@@ -7,7 +7,7 @@ import 'transaction_history_screen.dart';
 import 'badges_screen.dart';
 
 class LoyaltyHomeScreen extends StatelessWidget {
-  const LoyaltyHomeScreen({Key? key}) : super(key: key);
+  const LoyaltyHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

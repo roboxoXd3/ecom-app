@@ -3,8 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_model.dart';
+import '../../../core/utils/currency_utils.dart';
 
 import 'product_search_service.dart';
+import 'knowledge_base_service.dart'
+    show KnowledgeBaseService, FAQ, ProductSpecDetail;
 
 /// UJUNWA Response Model
 class UjunwaResponse {
@@ -34,6 +37,7 @@ class UjunwaAIService {
 
   final SupabaseClient _supabase = Supabase.instance.client;
   final ProductSearchService _productSearchService = ProductSearchService();
+  final KnowledgeBaseService _knowledgeBaseService = KnowledgeBaseService();
 
   /// Generate intelligent response using OpenAI GPT with structured templates
   Future<UjunwaResponse> generateResponse({
@@ -157,9 +161,13 @@ Examples:
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final aiResponse =
-          data['choices'][0]['message']['content'].toString().trim();
+      // Ensure UTF-8 encoding is preserved
+      final responseBody = utf8.decode(response.bodyBytes);
+      final data = jsonDecode(responseBody);
+      
+      // Properly extract string without toString() to preserve UTF-8
+      final content = data['choices'][0]['message']['content'];
+      final aiResponse = (content is String ? content : content.toString()).trim();
 
       // Parse the JSON response
       final result = jsonDecode(aiResponse);
@@ -275,31 +283,15 @@ Examples:
         if (searchTerms.isNotEmpty) {
           print('🔍 Enhanced search terms: "$searchTerms"');
 
-          // Use hybrid search for best results
+          // Use hybrid search for best results - increased limit for better context
           contextData.products = await _productSearchService.hybridSearch(
             query: searchTerms,
-            limit: 5,
+            limit: 10, // Increased from 5 to 10 for better context
           );
 
-          // If no results, try semantic search with lower threshold
+          // No fallback - if no results, return empty list
           if (contextData.products.isEmpty) {
-            contextData.products = await _productSearchService.semanticSearch(
-              query: searchTerms,
-              limit: 5,
-              threshold: 0.05,
-            );
-          }
-
-          // If still no results, try broader search terms
-          if (contextData.products.isEmpty) {
-            final broadSearchTerms = _getBroaderSearchTerms(userMessage);
-            if (broadSearchTerms != searchTerms) {
-              print('🔍 Trying broader search: "$broadSearchTerms"');
-              contextData.products = await _productSearchService.hybridSearch(
-                query: broadSearchTerms,
-                limit: 5,
-              );
-            }
+            print('⚠️ No products found for query: "$searchTerms"');
           }
         }
       }
@@ -315,6 +307,23 @@ Examples:
         contextData.userPreferences = _extractUserPreferences(
           conversationContext,
         );
+      }
+
+      // NEW: Retrieve knowledge base content (FAQs, policies) for support and general queries
+      if (intent.type == IntentType.support ||
+          intent.type == IntentType.general ||
+          intent.type == IntentType.productInfo) {
+        final relevantFAQs = await _knowledgeBaseService
+            .getRelevantFAQsForQuery(userMessage);
+        contextData.additionalData['faqs'] = relevantFAQs;
+      }
+
+      // NEW: Get product specifications for product info queries
+      if (intent.type == IntentType.productInfo &&
+          contextData.products.isNotEmpty) {
+        final productId = contextData.products.first.id;
+        final specs = await _knowledgeBaseService.getProductSpecs(productId);
+        contextData.additionalData['product_specs'] = specs;
       }
     } catch (e) {
       print('❌ Error gathering context data: $e');
@@ -387,59 +396,49 @@ Examples:
   }) async {
     switch (intent.type) {
       case IntentType.productSearch:
-        if (contextData.products.isEmpty) {
-          return UjunwaResponse(
-            text:
-                "I couldn't find any products matching \"$userMessage\" right now. 😔\n\nBut don't worry! Here are some suggestions:\n\n• Try using different keywords\n• Browse our trending products\n• Check out our sale items\n• Contact our support team for personalized help\n\nI'm here to help you find exactly what you need! 🛍️",
-            suggestions: [
-              'Browse all products',
-              'Show trending items',
-              'View sale products',
-              'Help me search better',
-            ],
+        // Use AI generation with retrieved products for better responses
+        final aiResponse = await _generateAIResponse(
+          userMessage: userMessage,
             intent: intent,
-          );
-        } else {
-          final count = contextData.products.length;
-          final firstProduct = contextData.products.first;
-          String text;
-          if (count == 1) {
-            text =
-                "Perfect! I found exactly what you're looking for. Check out our **${firstProduct.name}** priced at ₹${firstProduct.price}.\n\n${firstProduct.description.length > 100 ? '${firstProduct.description.substring(0, 100)}...' : firstProduct.description}\n\n⭐ **Rating:** ${firstProduct.rating}/5 (${firstProduct.reviews} reviews)";
-          } else {
-            text =
-                "Great! I found **$count products** matching your search. Here are some top picks:\n\n• **${firstProduct.name}** - ₹${firstProduct.price} (${firstProduct.rating}⭐)\n${count > 1 ? '• **${contextData.products[1].name}** - ₹${contextData.products[1].price} (${contextData.products[1].rating}⭐)' : ''}\n\nSwipe through the product cards below to explore all options! 👆";
-          }
+          contextData: contextData,
+          conversationContext: conversationContext,
+        );
           return UjunwaResponse(
-            text: text,
+          text: aiResponse.text,
             products: contextData.products,
-            suggestions: [
-              'Show me more details',
-              'Find similar products',
-              'Compare these items',
-              'Check availability',
-            ],
+          suggestions: aiResponse.suggestions,
             intent: intent,
           );
-        }
 
       case IntentType.productInfo:
-        if (contextData.products.isNotEmpty) {
-          final product = contextData.products.first;
+        // Use AI generation with product details and specs
+        final aiResponse = await _generateAIResponse(
+          userMessage: userMessage,
+          intent: intent,
+          contextData: contextData,
+          conversationContext: conversationContext,
+        );
           return UjunwaResponse(
-            text:
-                "Here are the details for **${product.name}**:\n\n💰 **Price:** ₹${product.price}\n⭐ **Rating:** ${product.rating}/5 (${product.reviews} reviews)\n📦 **Stock:** ${product.inStock ? 'In Stock' : 'Out of Stock'}\n🏷️ **Brand:** ${product.brand}\n\n**Description:**\n${product.description}",
-            products: [product],
-            suggestions: [
-              'Show me similar products',
-              'Check customer reviews',
-              'View size guide',
-              'Add to cart',
-            ],
+          text: aiResponse.text,
+          products: contextData.products,
+          suggestions: aiResponse.suggestions,
             intent: intent,
           );
-        }
-        break;
+
+      case IntentType.recommendation:
+        // Use AI generation for personalized recommendations
+        final aiResponse = await _generateAIResponse(
+          userMessage: userMessage,
+          intent: intent,
+          contextData: contextData,
+          conversationContext: conversationContext,
+        );
+        return UjunwaResponse(
+          text: aiResponse.text,
+          products: contextData.products,
+          suggestions: aiResponse.suggestions,
+          intent: intent,
+        );
 
       case IntentType.greeting:
         return UjunwaResponse(
@@ -481,7 +480,6 @@ Examples:
         );
 
       case IntentType.general:
-      default:
         // For general queries, use AI to generate a contextual response
         final aiText = await _generateAIResponse(
           userMessage: userMessage,
@@ -495,9 +493,9 @@ Examples:
           suggestions: aiText.suggestions,
           intent: intent,
         );
-    }
 
-    // Fallback to general response
+      default:
+        // Fallback for any unhandled intent types
     return UjunwaResponse(
       text:
           "I understand you're looking for information. How can I help you today?",
@@ -509,6 +507,7 @@ Examples:
       ],
       intent: intent,
     );
+    }
   }
 
   /// Generate AI response using OpenAI GPT (fallback for complex queries)
@@ -557,9 +556,13 @@ Examples:
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final aiText =
-            data['choices'][0]['message']['content'].toString().trim();
+        // Ensure UTF-8 encoding is preserved
+        final responseBody = utf8.decode(response.bodyBytes);
+        final data = jsonDecode(responseBody);
+        
+        // Properly extract string without toString() to preserve UTF-8
+        final content = data['choices'][0]['message']['content'];
+        final aiText = (content is String ? content : content.toString()).trim();
 
         // Generate suggestions based on intent
         final suggestions = _generateSuggestions(intent, contextData);
@@ -586,31 +589,40 @@ Examples:
 You are UJUNWA, an intelligent AI shopping assistant for Be Smart e-commerce platform. You are helpful, friendly, knowledgeable, and professional.
 
 Your capabilities include:
-- Helping customers find products
-- Providing detailed product information
-- Making personalized recommendations
+- Helping customers find products using semantic understanding
+- Providing detailed product information including specifications, highlights, and reviews
+- Making personalized recommendations based on user preferences
 - Assisting with orders and support
-- Comparing products
-- Answering questions about policies
+- Comparing products with detailed analysis
+- Answering questions about policies, returns, shipping, and FAQs
 
 Your personality:
 - Warm and approachable
-- Expert knowledge about products
+- Expert knowledge about products and e-commerce
 - Patient and understanding
-- Proactive in offering help
+- Proactive in offering help and suggestions
 - Always honest about limitations
+- Enthusiastic but not pushy
 
 Current context:
 - User intent: ${intent.type}
 - Available products: ${contextData.products.length}
 - Order info: ${contextData.orderInfo ?? 'None'}
+- User preferences: ${contextData.userPreferences.isNotEmpty ? contextData.userPreferences : 'None'}
 
 Guidelines:
-- Keep responses conversational and natural
-- If showing products, mention their key features
-- Always offer to help further
+- Keep responses conversational and natural (2-4 sentences typically)
+- When showing products, highlight key features, benefits, and why they match the user's needs
+- Compare products when multiple options are available, highlighting differences
+- Include pricing, ratings, availability, and key specifications when relevant
+- Reference product highlights and unique selling points
+- If FAQs or policies are relevant, incorporate that information naturally
+- Always offer to help further with specific actions
 - If you don't know something, be honest and offer alternatives
-- Use emojis sparingly and appropriately
+- Use emojis sparingly (1-2 per response max) and appropriately
+- For product searches with no results, suggest alternatives and help refine the search
+- For product info queries, provide comprehensive details including specs, highlights, and reviews summary
+- For recommendations, explain why products match the user's needs
 ''';
   }
 
@@ -625,24 +637,89 @@ Guidelines:
 
     prompt.writeln('User message: "$userMessage"');
 
-    // Add product context if available
+    // Add product context if available - ENHANCED with full details
     if (contextData.products.isNotEmpty) {
-      prompt.writeln('\nRelevant products found:');
-      for (int i = 0; i < contextData.products.length && i < 3; i++) {
+      prompt.writeln(
+        '\nRelevant products found (${contextData.products.length} total):',
+      );
+      // Increased from 3 to 8 products for better context
+      for (int i = 0; i < contextData.products.length && i < 8; i++) {
         final product = contextData.products[i];
+        prompt.writeln('\n${i + 1}. ${product.name}');
+        // Format price using user's globally selected currency (converts from product currency)
+        final formattedPrice = CurrencyUtils.formatProductPrice(product.price, product.currency);
+        final formattedSalePrice = product.salePrice != null 
+            ? CurrencyUtils.formatProductPrice(product.salePrice!, product.currency)
+            : null;
         prompt.writeln(
-          '${i + 1}. ${product.name} - ₹${product.price} (Rating: ${product.rating}/5)',
+          '   Price: $formattedPrice${formattedSalePrice != null ? ' (Sale: $formattedSalePrice)' : ''}',
         );
+        prompt.writeln(
+          '   Rating: ${product.rating}/5 (${product.reviews} reviews)',
+        );
+        prompt.writeln('   Brand: ${product.brand}');
+        prompt.writeln('   In Stock: ${product.inStock ? 'Yes' : 'No'}');
+        if (product.discountPercentage != null) {
+          prompt.writeln('   Discount: ${product.discountPercentage}% off');
+        }
+
+        // Full description (not truncated)
         if (product.description.isNotEmpty) {
+          prompt.writeln('   Description: ${product.description}');
+        }
+
+        // Product highlights
+        if (product.highlights.isNotEmpty) {
+          prompt.writeln('   Key Highlights:');
+          for (final highlight in product.highlights.take(5)) {
+            prompt.writeln('     - ${highlight.label}');
+          }
+        }
+
+        // Product specifications (if available) - using grouped format
+        if (product.specifications.isNotEmpty) {
+          prompt.writeln('   Specifications:');
+          for (final spec in product.specifications.take(3)) {
+            prompt.writeln('     ${spec.group}:');
+            for (final row in spec.rows.take(3)) {
+              prompt.writeln('       - ${row.name}: ${row.value}');
+            }
+          }
+        }
+
+        // Reviews summary - using available fields
+        if (product.reviewsSummary != null) {
+          final totalReviews = product.reviewsSummary!.histogram.fold(
+            0,
+            (sum, count) => sum + count,
+          );
+          final ratingSum = product.reviewsSummary!.histogram
+              .asMap()
+              .entries
+              .fold(0, (sum, entry) => sum + (entry.key + 1) * entry.value);
+          final avgRating =
+              totalReviews > 0
+                  ? (ratingSum / totalReviews).toStringAsFixed(1)
+                  : '0.0';
           prompt.writeln(
-            '   Description: ${product.description.length > 100 ? '${product.description.substring(0, 100)}...' : product.description}',
+            '   Reviews Summary: Average $avgRating/5, $totalReviews total reviews (${product.reviewsSummary!.withMedia} with photos)',
+          );
+        }
+
+        // Available sizes and colors
+        if (product.sizes.isNotEmpty) {
+          prompt.writeln('   Available Sizes: ${product.sizes.join(', ')}');
+        }
+        if (product.colors.isNotEmpty) {
+          prompt.writeln(
+            '   Available Colors: ${product.colors.map((c) => c.name).join(', ')}',
           );
         }
       }
     } else if (intent.type == IntentType.productSearch) {
       prompt.writeln('\nNo products found for this specific search.');
       prompt.writeln(
-        'Please provide a helpful response explaining this and suggest alternatives.',
+        'Please provide a helpful response explaining this and suggest alternatives or ways to refine the search.',
       );
     }
 
@@ -662,7 +739,37 @@ Guidelines:
       prompt.writeln('\nUser preferences: ${contextData.userPreferences}');
     }
 
-    prompt.writeln('\nPlease provide a helpful, natural response as UJUNWA.');
+    // NEW: Add FAQ context if available
+    if (contextData.additionalData.containsKey('faqs')) {
+      final faqs = contextData.additionalData['faqs'] as List;
+      if (faqs.isNotEmpty) {
+        prompt.writeln(
+          _knowledgeBaseService.formatFAQsForPrompt(
+            faqs.map((f) => FAQ.fromJson(f as Map<String, dynamic>)).toList(),
+          ),
+        );
+      }
+    }
+
+    // NEW: Add product specifications context if available
+    if (contextData.additionalData.containsKey('product_specs')) {
+      final specs = contextData.additionalData['product_specs'] as List;
+      if (specs.isNotEmpty) {
+        prompt.writeln(
+          _knowledgeBaseService.formatSpecsForPrompt(
+            specs
+                .map(
+                  (s) => ProductSpecDetail.fromJson(s as Map<String, dynamic>),
+                )
+                .toList(),
+          ),
+        );
+      }
+    }
+
+    prompt.writeln(
+      '\nPlease provide a helpful, natural response as UJUNWA. Be specific about product features and benefits when relevant.',
+    );
 
     return prompt.toString();
   }
@@ -921,47 +1028,6 @@ Guidelines:
     return allTerms.join(' ').trim();
   }
 
-  /// Get broader search terms when specific search fails
-  String _getBroaderSearchTerms(String message) {
-    final lowerMessage = message.toLowerCase();
-
-    // Map specific terms to broader categories
-    if (lowerMessage.contains('running') || lowerMessage.contains('footwear')) {
-      return 'shoes';
-    }
-    if (lowerMessage.contains('workout') ||
-        lowerMessage.contains('fitness') ||
-        lowerMessage.contains('gym')) {
-      return 'athletic sports';
-    }
-    if (lowerMessage.contains('yoga')) {
-      return 'yoga fitness';
-    }
-    if (lowerMessage.contains('shirt') || lowerMessage.contains('clothing')) {
-      return 'clothes';
-    }
-    if (lowerMessage.contains('phone') || lowerMessage.contains('mobile')) {
-      return 'electronics';
-    }
-
-    // Extract just the main product category
-    final words = message.toLowerCase().split(' ');
-    final productWords =
-        words
-            .where(
-              (word) => [
-                'shoes',
-                'clothes',
-                'electronics',
-                'accessories',
-                'bags',
-                'watches',
-              ].contains(word),
-            )
-            .toList();
-
-    return productWords.isNotEmpty ? productWords.first : message;
-  }
 
   String _extractUserPreferences(List<ConversationContext> context) {
     final preferences = <String>[];

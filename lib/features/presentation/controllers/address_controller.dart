@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/models/address_model.dart';
 import '../../data/repositories/address_repository.dart';
@@ -19,15 +20,28 @@ class AddressController extends GetxController {
   Future<void> fetchAddresses() async {
     try {
       isLoading.value = true;
+
+      // Check if user is authenticated before fetching
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print('User not authenticated, skipping address fetch');
+        addresses.clear();
+        return;
+      }
+
       final fetchedAddresses = await _addressRepository.getAddresses();
       addresses.assignAll(fetchedAddresses);
     } catch (e) {
       print('Error fetching addresses: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to load addresses',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      // Only show error snackbar if user is authenticated
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        Get.snackbar(
+          'Error',
+          'Failed to load addresses',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } finally {
       isLoading.value = false;
     }

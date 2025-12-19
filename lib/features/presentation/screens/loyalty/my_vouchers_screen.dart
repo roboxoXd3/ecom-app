@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import '../../controllers/loyalty_controller.dart';
 
 class MyVouchersScreen extends StatelessWidget {
-  const MyVouchersScreen({Key? key}) : super(key: key);
+  const MyVouchersScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +101,7 @@ class MyVouchersScreen extends StatelessWidget {
                       Theme.of(context).colorScheme.surface,
                     ]
                     : [
-                      Theme.of(context).colorScheme.surfaceVariant,
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
                       Theme.of(context).colorScheme.surface,
                     ],
             begin: Alignment.topLeft,
@@ -163,7 +163,7 @@ class MyVouchersScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceVariant,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outline,

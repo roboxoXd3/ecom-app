@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/order_model.dart';
 import '../../data/models/order_status.dart';
 import '../../data/repositories/order_repository.dart';
@@ -18,9 +19,23 @@ class OrderController extends GetxController {
   Future<void> fetchUserOrders() async {
     try {
       isLoading.value = true;
+      
+      // Check if user is authenticated before fetching
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print('User not authenticated, skipping orders fetch');
+        orders.clear();
+        return;
+      }
+      
       orders.value = await _repository.getUserOrders();
     } catch (e) {
-      SnackbarUtils.showError('Failed to fetch orders');
+      print('Error fetching orders: $e');
+      // Only show error snackbar if user is authenticated
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        SnackbarUtils.showError('Failed to fetch orders');
+      }
     } finally {
       isLoading.value = false;
     }

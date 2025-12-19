@@ -93,83 +93,62 @@ class CategoryProductsGrid extends StatelessWidget {
           hasScrollBody: false,
           child: FadeInUp(
             duration: const Duration(milliseconds: 600),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Adjust content based on available space
-                final availableHeight = constraints.maxHeight;
-                final isCompact = availableHeight < 200;
-
-                return Center(
-                  child: SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: availableHeight),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: isCompact ? 80 : 120,
-                              height: isCompact ? 80 : 120,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(
-                                  isCompact ? 40 : 60,
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.inventory_2_outlined,
-                                size: isCompact ? 40 : 60,
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                            SizedBox(height: isCompact ? 12 : 24),
-                            Flexible(
-                              child: Text(
-                                searchQuery.value.isNotEmpty
-                                    ? 'No products found for "${searchQuery.value}"'
-                                    : 'No products found',
-                                style: TextStyle(
-                                  fontSize: isCompact ? 16 : 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            SizedBox(height: isCompact ? 4 : 8),
-                            Flexible(
-                              child: Text(
-                                searchQuery.value.isNotEmpty
-                                    ? 'Try adjusting your search or filters.'
-                                    : 'This category doesn\'t have any products yet.',
-                                style: TextStyle(
-                                  fontSize: isCompact ? 14 : 16,
-                                  color: Colors.grey[500],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                            if (searchQuery.value.isNotEmpty && !isCompact) ...[
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: onClearFilters,
-                                child: const Text('Clear Search & Filters'),
-                              ),
-                            ],
-                            if (searchQuery.value.isNotEmpty && isCompact) ...[
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: onClearFilters,
-                                child: const Text('Clear Filters'),
-                              ),
-                            ],
-                          ],
-                        ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(60),
+                      ),
+                      child: Icon(
+                        Icons.inventory_2_outlined,
+                        size: 60,
+                        color: Colors.grey[400],
                       ),
                     ),
-                  ),
-                );
-              },
+                    const SizedBox(height: 24),
+                    Text(
+                      searchQuery.value.isNotEmpty
+                          ? 'No products found for "${searchQuery.value}"'
+                          : 'No products found',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[700],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      searchQuery.value.isNotEmpty
+                          ? 'Try adjusting your search or filters.'
+                          : 'This category doesn\'t have any products yet.',
+                      style: TextStyle(fontSize: 16, color: Colors.grey[500]),
+                      textAlign: TextAlign.center,
+                    ),
+                    if (searchQuery.value.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: onClearFilters,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text('Clear Search & Filters'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         );

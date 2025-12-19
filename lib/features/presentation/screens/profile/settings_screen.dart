@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/theme/app_theme.dart';
-import 'edit_profile_screen.dart';
-import 'change_password_screen.dart';
 import 'privacy_settings_screen.dart';
 import 'about_us_screen.dart';
 import 'terms_of_service_screen.dart';
@@ -18,30 +16,12 @@ class SettingsScreen extends StatelessWidget {
     final CurrencyController currencyController =
         Get.find<CurrencyController>();
 
-    // Observable variables for settings
-    final RxBool pushNotifications = true.obs;
-    final RxBool emailNotifications = true.obs;
-    final RxBool darkMode = false.obs;
-    final RxString selectedLanguage = 'English'.obs;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
           // Account Settings Section
           _buildSectionHeader('Account Settings'),
-          ListTile(
-            leading: const Icon(Icons.person_outline),
-            title: const Text('Edit Profile'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Get.to(() => const EditProfileScreen()),
-          ),
-          ListTile(
-            leading: const Icon(Icons.lock_outline),
-            title: const Text('Change Password'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Get.to(() => const ChangePasswordScreen()),
-          ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
             title: const Text('Privacy Settings'),
@@ -51,48 +31,8 @@ class SettingsScreen extends StatelessWidget {
 
           const Divider(),
 
-          // Notifications Section
-          _buildSectionHeader('Notifications'),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Push Notifications'),
-              subtitle: const Text('Receive push notifications'),
-              value: pushNotifications.value,
-              onChanged: (value) => pushNotifications.value = value,
-            ),
-          ),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Email Notifications'),
-              subtitle: const Text('Receive email notifications'),
-              value: emailNotifications.value,
-              onChanged: (value) => emailNotifications.value = value,
-            ),
-          ),
-
-          const Divider(),
-
           // App Settings Section
           _buildSectionHeader('App Settings'),
-          Obx(
-            () => SwitchListTile(
-              title: const Text('Dark Mode'),
-              subtitle: const Text('Enable dark theme'),
-              value: darkMode.value,
-              onChanged: (value) {
-                darkMode.value = value;
-                // TODO: Implement theme switching
-              },
-            ),
-          ),
-          ListTile(
-            title: const Text('Language'),
-            subtitle: Obx(() => Text(selectedLanguage.value)),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              _showLanguageSelector(context, selectedLanguage);
-            },
-          ),
           Obx(
             () => ListTile(
               leading: Container(
@@ -203,32 +143,6 @@ class SettingsScreen extends StatelessWidget {
           color: AppTheme.primaryColor,
         ),
       ),
-    );
-  }
-
-  void _showLanguageSelector(BuildContext context, RxString selectedLanguage) {
-    final languages = ['English', 'Spanish', 'French', 'German', 'Chinese'];
-
-    showModalBottomSheet(
-      context: context,
-      builder:
-          (context) => ListView.builder(
-            shrinkWrap: true,
-            itemCount: languages.length,
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(languages[index]),
-                trailing:
-                    languages[index] == selectedLanguage.value
-                        ? const Icon(Icons.check, color: AppTheme.primaryColor)
-                        : null,
-                onTap: () {
-                  selectedLanguage.value = languages[index];
-                  Navigator.pop(context);
-                },
-              );
-            },
-          ),
     );
   }
 
