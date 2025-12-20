@@ -32,7 +32,7 @@ void main() async {
     print('GetStorage initialized');
 
     // Load environment variables
-    await dotenv.load();
+    await dotenv.load(fileName: "assets/.env");
     print('Environment variables loaded');
     print('SUPABASE_URL: ${dotenv.env['SUPABASE_URL']}');
     print(
