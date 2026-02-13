@@ -76,8 +76,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         wishlistProducts.sort((a, b) => a.name.compareTo(b.name));
         break;
       case WishlistSortOption.dateAdded:
-      default:
-        // Keep original order (most recently added first)
+      // Keep original order (most recently added first)
         break;
     }
 
@@ -87,13 +86,11 @@ class _WishlistScreenState extends State<WishlistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text(
           'My Wishlist',
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
-        backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
         elevation: 0,
         centerTitle: true,
@@ -203,7 +200,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Widget _buildSearchAndFilterBar() {
     return Container(
-      color: Colors.white,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [

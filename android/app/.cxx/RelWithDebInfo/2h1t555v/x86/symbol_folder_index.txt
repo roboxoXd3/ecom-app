@@ -1,0 +1,1 @@
+/Users/tushar/Documents/github/ecom-app/android/app/build/intermediates/cxx/RelWithDebInfo/2h1t555v/obj/x86

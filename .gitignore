@@ -11,7 +11,7 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
-
+assets/.env
 # IntelliJ related
 *.iml
 *.ipr
@@ -44,11 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Environment variables
-.env
-.env.backup
-.env.*
-
+# CodeGPT cache files
 .codegpt
 .cursor
 
@@ -80,7 +76,6 @@ app.*.map.json
 **/android/build/
 **/android/.gradle/
 **/android/local.properties
-**/android/key.properties
 
 # Gradle
 **/.gradle/

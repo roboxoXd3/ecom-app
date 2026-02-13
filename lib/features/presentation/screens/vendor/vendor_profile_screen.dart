@@ -22,7 +22,6 @@ class VendorProfileScreen extends StatelessWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       body: CustomScrollView(
         slivers: [
           // Enhanced App Bar with Vendor Cover

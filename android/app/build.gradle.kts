@@ -3,8 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -17,20 +16,24 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.besmartmall.app"
-    compileSdk = 35
+    compileSdk = 36
+    ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.besmartmall.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 21
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
     }
 
     signingConfigs {
+        // Debug signing (default)
+        getByName("debug") {
+            // uses default debug keystore
+        }
+
+        // Release signing
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
@@ -40,11 +43,16 @@ android {
     }
 
     buildTypes {
-        release {
-            // Use the release signing config
-            signingConfig = signingConfigs.getByName("release")
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             isShrinkResources = false
+        }
+
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -75,6 +83,9 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.core:core-ktx:1.12.0")
+
+    // Required for Flutter + R8
+    implementation("com.google.android.play:core:1.10.3")
 }
 
 configurations.all {

@@ -1,0 +1,2 @@
+/Users/tushar/Documents/github/ecom-app/android/app/.cxx/RelWithDebInfo/2h1t555v/arm64-v8a/CMakeFiles/edit_cache.dir
+/Users/tushar/Documents/github/ecom-app/android/app/.cxx/RelWithDebInfo/2h1t555v/arm64-v8a/CMakeFiles/rebuild_cache.dir

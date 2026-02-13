@@ -73,7 +73,7 @@ flutter:
     - assets/images/logo.png
     - assets/images/placeholder.jpg
     - assets/lottie/
-    - .env
+    - assets/.env
 
 flutter_launcher_icons:
   android: "launcher_icon"

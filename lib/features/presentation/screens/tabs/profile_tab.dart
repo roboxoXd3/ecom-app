@@ -118,9 +118,8 @@ class ProfileTab extends StatelessWidget {
                 debugPrint('Logout error: $e');
               }
             },
-            isDestructive: true,
+            isDestructive: true
           ),
-          const Divider(),
         ],
       ),
     );
