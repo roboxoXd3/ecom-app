@@ -1,7 +1,7 @@
 buildscript {
-    val kotlinVersion = "1.9.10"
-    val agpVersion = "8.1.4"
-    
+    val kotlinVersion = "1.9.22"
+    val agpVersion = "8.3.2"
+
     repositories {
         google()
         mavenCentral()
@@ -11,6 +11,7 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
     }
 }
+
 
 allprojects {
     repositories {

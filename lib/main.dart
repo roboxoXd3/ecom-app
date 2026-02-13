@@ -33,7 +33,7 @@ void main() async {
     print('GetStorage initialized');
 
     // Load environment variables
-    await dotenv.load();
+    await dotenv.load(fileName: "assets/.env");
     print('Environment variables loaded');
     print('API_BASE_URL: ${dotenv.env['API_BASE_URL']}');
 

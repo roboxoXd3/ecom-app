@@ -1,0 +1,2 @@
+/Users/tushar/Documents/github/ecom-app/android/app/.cxx/Debug/d3z4k4a1/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/tushar/Documents/github/ecom-app/android/app/.cxx/Debug/d3z4k4a1/armeabi-v7a/CMakeFiles/rebuild_cache.dir
