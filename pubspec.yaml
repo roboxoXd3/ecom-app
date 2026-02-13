@@ -33,6 +33,7 @@ dependencies:
   package_info_plus: ^8.1.2
   image_picker: ^1.0.7
   http: ^1.2.1
+  dio: ^5.4.0
   path: ^1.9.0
   mime: ^1.0.4
   country_state_city_pro: ^0.0.6

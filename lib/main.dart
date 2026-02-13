@@ -8,6 +8,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'core/routes/app_routes.dart';
+import 'core/network/api_client.dart';
 import 'features/presentation/controllers/product_controller.dart';
 import 'features/presentation/controllers/category_controller.dart';
 import 'features/presentation/controllers/vendor_controller.dart';
@@ -34,7 +35,11 @@ void main() async {
     // Load environment variables
     await dotenv.load();
     print('Environment variables loaded');
-    print('SUPABASE_URL: ${dotenv.env['SUPABASE_URL']}');
+    print('API_BASE_URL: ${dotenv.env['API_BASE_URL']}');
+
+    // Initialize Django API client
+    ApiClient.instance.init();
+    print('ApiClient initialized');
     print(
       'SUPABASE_ANON_KEY exists: ${dotenv.env['SUPABASE_ANON_KEY'] != null}',
     );

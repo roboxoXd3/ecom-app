@@ -1047,7 +1047,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                             ),
                                         ],
                                       );
-                                    }).toList(),
+                                    }),
                                   ],
                                 ),
                               );
