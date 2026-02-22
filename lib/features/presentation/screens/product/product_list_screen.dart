@@ -1,58 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../data/models/product_filter.dart' as filter;
-import '../../../data/models/product_model.dart';
 import '../../controllers/product_controller.dart';
-import '../../controllers/currency_controller.dart';
 import '../../../../core/utils/currency_utils.dart';
+import '../category/widgets/product_card.dart';
 
 import '../../../data/models/sort_option.dart' as sort;
 
 class ProductListScreen extends StatelessWidget {
   final String title;
   final ProductController productController = Get.find();
-  final CurrencyController currencyController = Get.find();
 
   ProductListScreen({super.key, required this.title});
-
-  Widget _buildProductImage(Product product) {
-    String imageUrl = '';
-
-    // Get the best available image URL
-    if (product.primaryImage.isNotEmpty) {
-      imageUrl = product.primaryImage;
-    } else if (product.imageList.isNotEmpty) {
-      imageUrl = product.imageList.first;
-    }
-
-    // If no valid image URL, show placeholder
-    if (imageUrl.isEmpty) {
-      return Container(
-        color: Colors.grey[200],
-        child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
-      );
-    }
-
-    return CachedNetworkImage(
-      imageUrl: imageUrl,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      placeholder:
-          (context, url) => Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-      errorWidget:
-          (context, url, error) => Container(
-            color: Colors.grey[200],
-            child: Icon(Icons.image, size: 40, color: Colors.grey[400]),
-          ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,58 +64,7 @@ class ProductListScreen extends StatelessWidget {
                   itemCount: sortedProducts.length,
                   itemBuilder: (context, index) {
                     final product = sortedProducts[index];
-                    return Card(
-                      child: InkWell(
-                        onTap:
-                            () => Get.toNamed(
-                              '/product-details',
-                              arguments: product.id,
-                            ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(4),
-                                ),
-                                child: _buildProductImage(product),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    product.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Obx(
-                                    () => Text(
-                                      currencyController
-                                          .getFormattedProductPrice(
-                                            product.price,
-                                            product.currency,
-                                          ),
-                                      style: TextStyle(
-                                        color: AppTheme.primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
+                    return ProductCard(product: product, index: index);
                   },
                 ),
               ),

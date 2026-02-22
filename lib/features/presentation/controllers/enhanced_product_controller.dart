@@ -1,11 +1,15 @@
 import 'package:get/get.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/enhanced_product_service.dart';
+import 'product_controller.dart';
 
 /// Enhanced Product Controller for managing Enhanced PDP state
 /// Handles loading complete product data from database with all enhanced features
 class EnhancedProductController extends GetxController {
   final EnhancedProductService _productService = EnhancedProductService();
+
+  // In-memory cache: productId → fully loaded Product
+  final Map<String, Product> _cache = {};
 
   // Core product data
   final Rx<Product?> product = Rx<Product?>(null);
@@ -33,28 +37,48 @@ class EnhancedProductController extends GetxController {
   final RxString selectedSpecGroup = ''.obs;
   final RxBool showAllSpecs = false.obs;
 
-  /// Load complete enhanced product data
+  /// Load complete enhanced product data with two-phase strategy:
+  /// Phase 1 — show immediately from cache or allProducts list (zero network).
+  /// Phase 2 — fetch full enhanced data in background and update UI.
   Future<void> loadEnhancedProduct(String productId) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
+    error.value = '';
 
-      // Load main product data
+    // Phase 1: show something immediately without any network call
+    final cached = _cache[productId];
+    if (cached != null) {
+      product.value = cached;
+      _initializeProductState(cached);
+      isLoading.value = false;
+      _loadAdditionalData(productId);
+      return;
+    }
+
+    // Try to use the product already loaded for the home/listing screen
+    if (Get.isRegistered<ProductController>()) {
+      final listProduct = Get.find<ProductController>()
+          .allProducts
+          .firstWhereOrNull((p) => p.id == productId);
+      if (listProduct != null) {
+        product.value = listProduct;
+        _initializeProductState(listProduct);
+      }
+    }
+
+    // Phase 2: fetch full enhanced product (specs, highlights, etc.)
+    // Only show the full-screen loader if we have nothing to show yet
+    if (product.value == null) isLoading.value = true;
+
+    try {
       final enhancedProduct = await _productService.getEnhancedProduct(
         productId,
       );
+      _cache[productId] = enhancedProduct;
       product.value = enhancedProduct;
-
-      // Initialize UI state
       _initializeProductState(enhancedProduct);
-
-      // Track product view for analytics
       _productService.trackProductView(productId);
-
-      // Load additional data in parallel
       _loadAdditionalData(productId);
     } catch (e) {
-      error.value = e.toString();
+      if (product.value == null) error.value = e.toString();
       print('Error loading enhanced product: $e');
     } finally {
       isLoading.value = false;
@@ -322,6 +346,11 @@ class EnhancedProductController extends GetxController {
     if (currentProduct != null) {
       await loadEnhancedProduct(currentProduct.id);
     }
+  }
+
+  /// Invalidate the cache for a specific product (call after write operations)
+  void invalidateCache(String productId) {
+    _cache.remove(productId);
   }
 
   /// Clear controller state

@@ -5,7 +5,6 @@ import 'core/theme/app_theme.dart';
 import 'core/bindings/initial_bindings.dart';
 import 'features/presentation/screens/splash/splash_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:get_storage/get_storage.dart';
 import 'core/routes/app_routes.dart';
 import 'core/network/api_client.dart';
@@ -39,17 +38,11 @@ void main() async {
 
     // Initialize Django API client
     ApiClient.instance.init();
+    ApiClient.onSessionExpired = () {
+      print('🔑 Session expired — redirecting to login');
+      Get.offAllNamed('/login');
+    };
     print('ApiClient initialized');
-    print(
-      'SUPABASE_ANON_KEY exists: ${dotenv.env['SUPABASE_ANON_KEY'] != null}',
-    );
-
-    // Initialize Supabase before starting the app
-    await Supabase.initialize(
-      url: dotenv.env['SUPABASE_URL']!,
-      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-    );
-    print('Supabase initialized');
 
     // Initialize controllers in background after app starts
     // Note: This will run after InitialBindings
@@ -66,27 +59,26 @@ void main() async {
 }
 
 Future<void> _initializeControllersInBackground() async {
-  try {
-    // Initialize services and controllers
-    Get.put(ProductSearchService());
+  Get.put(ProductSearchService());
 
-    // Get existing controllers instead of creating new ones
-    final productController = Get.find<ProductController>();
-    final categoryController = Get.find<CategoryController>();
-    final vendorController = Get.find<VendorController>();
+  final productController = Get.find<ProductController>();
+  final categoryController = Get.find<CategoryController>();
+  final vendorController = Get.find<VendorController>();
 
-    // Manually trigger data fetching if needed
-    await Future.wait([
-      productController.fetchAllProducts(),
-      categoryController.fetchCategories(),
-      vendorController.fetchVendors(),
-    ]);
+  // Run each fetch independently — one failure should not block others
+  await Future.wait([
+    productController.fetchAllProducts().catchError((e) {
+      print('❌ fetchAllProducts failed: $e');
+    }),
+    categoryController.fetchCategories().catchError((e) {
+      print('❌ fetchCategories failed: $e');
+    }),
+    vendorController.fetchVendors().catchError((e) {
+      print('❌ fetchVendors failed: $e');
+    }),
+  ]);
 
-    print('All controllers initialized and data fetched');
-  } catch (e, stackTrace) {
-    print('Error during controller initialization: $e');
-    print('Stack trace: $stackTrace');
-  }
+  print('✅ Background initialization complete');
 }
 
 class MyApp extends StatelessWidget {

@@ -31,6 +31,12 @@ class Vendor {
     required this.updatedAt,
   });
 
+  static double _toDouble(dynamic v) =>
+      v == null ? 0.0 : double.tryParse(v.toString()) ?? 0.0;
+
+  static int _toInt(dynamic v) =>
+      v == null ? 0 : int.tryParse(v.toString()) ?? 0;
+
   factory Vendor.fromJson(Map<String, dynamic> json) {
     return Vendor(
       id: json['id']?.toString() ?? '',
@@ -46,8 +52,8 @@ class Vendor {
               ? VendorStatus.fromString(json['status'].toString())
               : VendorStatus.pending,
       isFeatured: json['is_featured'] as bool? ?? false,
-      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
-      totalReviews: json['total_reviews'] as int? ?? 0,
+      averageRating: _toDouble(json['average_rating']),
+      totalReviews: _toInt(json['total_reviews']),
       createdAt:
           json['created_at'] != null
               ? DateTime.parse(json['created_at'].toString())

@@ -30,7 +30,7 @@ class _CategoryDetailsScreenState extends State<CategoryDetailsScreen> {
   final RxString searchQuery = ''.obs;
   final RxBool isSearching = false.obs;
   final RxDouble minPrice = 0.0.obs;
-  final RxDouble maxPrice = 1000.0.obs;
+  final RxDouble maxPrice = double.infinity.obs;
   final RxList<String> selectedBrands = <String>[].obs;
   final RxDouble minRating = 0.0.obs;
   final RxBool showOnSaleOnly = false.obs;
@@ -220,6 +220,9 @@ class _CategoryDetailsScreenState extends State<CategoryDetailsScreen> {
       final prices = categoryProducts.map((p) => p.price).toList();
       minPrice.value = prices.reduce((a, b) => a < b ? a : b);
       maxPrice.value = prices.reduce((a, b) => a > b ? a : b);
+    } else {
+      minPrice.value = 0.0;
+      maxPrice.value = double.infinity;
     }
   }
 }

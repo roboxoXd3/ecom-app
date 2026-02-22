@@ -1,34 +1,29 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/network/api_client.dart';
 import '../models/size_chart_model.dart';
 import '../repositories/size_chart_repository.dart';
 
 class SizeGuideService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
   final SizeChartRepository _sizeChartRepository = SizeChartRepository();
 
-  /// Get comprehensive size guide information for shopping assistant
   Future<SizeGuideResponse> getSizeGuideInfo({
     String? categoryId,
     String? productId,
     String? query,
   }) async {
     try {
-      // If specific product is requested
       if (productId != null) {
         return await _getProductSizeGuide(productId);
       }
 
-      // If specific category is requested
       if (categoryId != null) {
         return await _getCategorySizeGuide(categoryId);
       }
 
-      // If query is provided, try to match categories
       if (query != null && query.isNotEmpty) {
         return await _getQueryBasedSizeGuide(query);
       }
 
-      // Default: Return general size guide information
       return await _getGeneralSizeGuide();
     } catch (e) {
       print('Error in getSizeGuideInfo: $e');
@@ -36,36 +31,32 @@ class SizeGuideService {
     }
   }
 
-  /// Get size guide for a specific product
   Future<SizeGuideResponse> _getProductSizeGuide(String productId) async {
     try {
-      // Get product details
-      final productResponse =
-          await _supabase
-              .from('products')
-              .select('*, categories(name)')
-              .eq('id', productId)
-              .single();
+      final response = await _api.get('/products/$productId/');
+      final product = response.data as Map<String, dynamic>;
+      final categoryName = product['category_name'] ??
+          product['categories']?['name'] ??
+          'Unknown';
 
-      final product = productResponse;
-      final categoryName = product['categories']?['name'] ?? 'Unknown';
-
-      // Get size chart for this product
-      final sizeChart = await _sizeChartRepository.getSizeChartForProduct(
-        _createProductFromData(product),
-      );
+      final sizeChart =
+          await _sizeChartRepository.getSizeChartByCategory(
+            product['category_id']?.toString() ?? '',
+          );
 
       if (sizeChart != null) {
         return SizeGuideResponse(
           title: 'Size Guide for ${product['name']}',
           description: 'Here\'s the detailed size chart for this product:',
           sizeChart: sizeChart,
-          measurementTips: _getMeasurementTips(categoryName),
-          recommendations: _getSizeRecommendations(categoryName),
+          measurementTips: _getMeasurementTips(categoryName.toString()),
+          recommendations: _getSizeRecommendations(categoryName.toString()),
           hasSpecificChart: true,
         );
       } else {
-        return await _getCategorySizeGuide(product['category_id']);
+        return await _getCategorySizeGuide(
+          product['category_id']?.toString() ?? '',
+        );
       }
     } catch (e) {
       print('Error getting product size guide: $e');
@@ -73,21 +64,12 @@ class SizeGuideService {
     }
   }
 
-  /// Get size guide for a category
   Future<SizeGuideResponse> _getCategorySizeGuide(String categoryId) async {
     try {
-      // Get category details
-      final categoryResponse =
-          await _supabase
-              .from('categories')
-              .select('*')
-              .eq('id', categoryId)
-              .single();
+      final response = await _api.get('/categories/$categoryId/');
+      final category = response.data as Map<String, dynamic>;
+      final categoryName = category['name']?.toString() ?? 'Unknown';
 
-      final category = categoryResponse;
-      final categoryName = category['name'];
-
-      // Get size chart templates for this category
       final sizeChart = await _sizeChartRepository.getSizeChartByCategory(
         categoryId,
       );
@@ -106,37 +88,32 @@ class SizeGuideService {
     }
   }
 
-  /// Get size guide based on search query
   Future<SizeGuideResponse> _getQueryBasedSizeGuide(String query) async {
     try {
       final lowerQuery = query.toLowerCase();
 
-      // Search for matching categories
-      final categoriesResponse = await _supabase
-          .from('categories')
-          .select('*')
-          .ilike('name', '%$query%')
-          .eq('requires_size_chart', true)
-          .limit(1);
+      final catResponse = await _api.get(
+        '/categories/',
+        queryParameters: {'search': query},
+      );
+      final categories = ApiClient.unwrapResults(catResponse.data);
 
-      if (categoriesResponse.isNotEmpty) {
-        final category = categoriesResponse.first;
-        return await _getCategorySizeGuide(category['id']);
+      if (categories.isNotEmpty) {
+        final category = categories.first as Map<String, dynamic>;
+        return await _getCategorySizeGuide(category['id'].toString());
       }
 
-      // Search for products if no category match
-      final productsResponse = await _supabase
-          .from('products')
-          .select('*, categories(name)')
-          .or('name.ilike.%$query%,description.ilike.%$query%')
-          .limit(1);
+      final prodResponse = await _api.get(
+        '/products/',
+        queryParameters: {'search': query, 'limit': 1},
+      );
+      final products = ApiClient.unwrapResults(prodResponse.data);
 
-      if (productsResponse.isNotEmpty) {
-        final product = productsResponse.first;
-        return await _getProductSizeGuide(product['id']);
+      if (products.isNotEmpty) {
+        final product = products.first as Map<String, dynamic>;
+        return await _getProductSizeGuide(product['id'].toString());
       }
 
-      // If no specific match, provide general guidance based on query keywords
       return _getKeywordBasedSizeGuide(lowerQuery);
     } catch (e) {
       print('Error getting query-based size guide: $e');
@@ -144,23 +121,21 @@ class SizeGuideService {
     }
   }
 
-  /// Get general size guide information
   Future<SizeGuideResponse> _getGeneralSizeGuide() async {
     try {
-      // Get all categories that require size charts
-      final categoriesResponse = await _supabase
-          .from('categories')
-          .select('name, id')
-          .eq('requires_size_chart', true)
-          .limit(5);
-
-      final categories = categoriesResponse.map((c) => c['name']).join(', ');
+      final response = await _api.get(
+        '/categories/',
+        queryParameters: {'limit': 5},
+      );
+      final results = ApiClient.unwrapResults(response.data);
+      final categoryNames =
+          results.map((c) => (c as Map)['name']).join(', ');
 
       return SizeGuideResponse(
         title: 'Size Guide Information',
         description:
             'I can help you with size guides for various product categories. '
-            'We have detailed size charts for: $categories.\n\n'
+            'We have detailed size charts for: $categoryNames.\n\n'
             'You can ask me about:\n'
             '• Specific product sizes\n'
             '• Category-specific size guides\n'
@@ -177,7 +152,6 @@ class SizeGuideService {
     }
   }
 
-  /// Get size guide based on keywords in query
   SizeGuideResponse _getKeywordBasedSizeGuide(String query) {
     if (query.contains('shirt') ||
         query.contains('top') ||
@@ -220,7 +194,6 @@ class SizeGuideService {
     return _getFallbackSizeGuide();
   }
 
-  /// Get measurement tips for specific category
   List<String> _getMeasurementTips(String categoryName) {
     final lowerCategory = categoryName.toLowerCase();
 
@@ -277,7 +250,6 @@ class SizeGuideService {
     ];
   }
 
-  /// Get size recommendations for specific category
   List<String> _getSizeRecommendations(String categoryName) {
     final lowerCategory = categoryName.toLowerCase();
 
@@ -320,7 +292,6 @@ class SizeGuideService {
     ];
   }
 
-  /// Get general measurement tips
   List<String> _getGeneralMeasurementTips() {
     return [
       '📏 **Use a flexible measuring tape** for the most accurate measurements',
@@ -333,7 +304,6 @@ class SizeGuideService {
     ];
   }
 
-  /// Get general recommendations
   List<String> _getGeneralRecommendations() {
     return [
       '📋 **Always check the size chart** for each specific product',
@@ -346,7 +316,6 @@ class SizeGuideService {
     ];
   }
 
-  /// Fallback size guide when other methods fail
   SizeGuideResponse _getFallbackSizeGuide() {
     return SizeGuideResponse(
       title: 'Size Guide Help',
@@ -363,23 +332,8 @@ class SizeGuideService {
       hasSpecificChart: false,
     );
   }
-
-  /// Helper method to create product object from database data
-  dynamic _createProductFromData(Map<String, dynamic> productData) {
-    // This is a simplified version - you might need to adjust based on your Product model
-    return {
-      'id': productData['id'],
-      'name': productData['name'],
-      'categoryId': productData['category_id'],
-      'sizeChartOverride': productData['size_chart_override'],
-      'sizeGuideType': productData['size_guide_type'],
-      'sizeChartTemplateId': productData['size_chart_template_id'],
-      'customSizeChartData': productData['custom_size_chart_data'],
-    };
-  }
 }
 
-/// Response model for size guide information
 class SizeGuideResponse {
   final String title;
   final String description;
@@ -397,7 +351,6 @@ class SizeGuideResponse {
     required this.hasSpecificChart,
   });
 
-  /// Convert to a formatted string for chat display
   String toFormattedString() {
     final buffer = StringBuffer();
 

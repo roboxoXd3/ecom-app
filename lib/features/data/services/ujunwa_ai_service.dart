@@ -1,20 +1,13 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_model.dart';
-import '../../../core/utils/currency_utils.dart';
-
-import 'product_search_service.dart';
-import 'knowledge_base_service.dart'
-    show KnowledgeBaseService, FAQ, ProductSpecDetail;
+import '../../../core/network/api_client.dart';
+import 'conversation_context_service.dart';
 
 /// UJUNWA Response Model
 class UjunwaResponse {
   final String text;
   final List<Product> products;
   final List<String> suggestions;
-  final UserIntent? intent; // Add intent back for analytics
+  final UserIntent? intent;
 
   UjunwaResponse({
     required this.text,
@@ -24,22 +17,16 @@ class UjunwaResponse {
   });
 }
 
-/// UJUNWA AI Service - The Brain of the AI Shopping Assistant
+/// UJUNWA AI Service
 ///
-/// This service handles all AI-powered interactions including:
-/// - Intent recognition and classification
-/// - Context-aware response generation
-/// - Product knowledge integration
-/// - Conversation memory management
+/// All AI processing (intent recognition, response generation) happens
+/// server-side via POST /api/ai/chat/. The OpenAI API key never ships
+/// in the APK.
 class UjunwaAIService {
-  static const String _openAiApiUrl =
-      'https://api.openai.com/v1/chat/completions';
+  final _api = ApiClient.instance;
+  final ConversationContextService _contextService = ConversationContextService();
 
-  final SupabaseClient _supabase = Supabase.instance.client;
-  final ProductSearchService _productSearchService = ProductSearchService();
-  final KnowledgeBaseService _knowledgeBaseService = KnowledgeBaseService();
-
-  /// Generate intelligent response using OpenAI GPT with structured templates
+  /// Send a message to the backend and get an AI-powered response.
   Future<UjunwaResponse> generateResponse({
     required String userMessage,
     required String userId,
@@ -47,43 +34,69 @@ class UjunwaAIService {
     List<ConversationContext>? context,
   }) async {
     try {
-      print('🤖 UJUNWA: Processing message: "$userMessage"');
+      print('🤖 UJUNWA: Sending to backend: "$userMessage"');
 
-      // Step 1: Recognize user intent
-      final intent = await _recognizeIntent(userMessage);
-      print('🧠 Intent recognized: ${intent.type}');
+      final contextList = context
+          ?.take(5)
+          .map((c) => {
+                'user_message': c.userMessage,
+                'ai_response': c.aiResponse,
+                'intent_type': c.intentType,
+              })
+          .toList();
 
-      // Step 2: Gather relevant context and data
-      final contextData = await _gatherContextData(
-        intent: intent,
-        userMessage: userMessage,
-        userId: userId,
-        conversationContext: context,
+      final response = await _api.post(
+        '/ai/chat/',
+        data: {
+          'message': userMessage,
+          if (contextList != null && contextList.isNotEmpty)
+            'conversation_context': contextList,
+        },
       );
 
-      // Step 3: Generate structured response based on intent
-      final structuredResponse = await _generateStructuredResponse(
-        userMessage: userMessage,
-        intent: intent,
-        contextData: contextData,
-        conversationContext: context,
-      );
+      final data = response.data as Map<String, dynamic>;
+      final text = data['text'] as String? ?? '';
+      final suggestions = (data['suggestions'] as List<dynamic>?)
+              ?.map((s) => s.toString())
+              .toList() ??
+          [];
 
-      // Step 4: Store conversation context for future use
-      await _storeConversationContext(
-        userId: userId,
-        conversationId: conversationId,
-        userMessage: userMessage,
-        intent: intent,
-        aiResponse: structuredResponse,
-      );
+      final rawProducts = data['products'] as List<dynamic>? ?? [];
+      final products = rawProducts
+          .map((p) => _productFromMap(p as Map<String, dynamic>))
+          .whereType<Product>()
+          .toList();
 
-      return structuredResponse;
+      final intentData = data['intent'] as Map<String, dynamic>?;
+      final intent = intentData != null
+          ? UserIntent(
+              type: _mapStringToIntentType(
+                  intentData['intent'] as String? ?? 'general'),
+              confidence:
+                  (intentData['confidence'] as num?)?.toDouble() ?? 0.5,
+              parameters: {'entities': intentData['entities'] ?? []},
+            )
+          : null;
+
+      if (intent != null) {
+        await _storeConversationContext(
+          userId: userId,
+          conversationId: conversationId,
+          userMessage: userMessage,
+          intent: intent,
+          aiResponse:
+              UjunwaResponse(text: text, products: products, suggestions: suggestions),
+        );
+      }
+
+      print('🤖 UJUNWA: Response received (${products.length} products)');
+      return UjunwaResponse(
+          text: text, products: products, suggestions: suggestions, intent: intent);
     } catch (e) {
       print('❌ UJUNWA Error: $e');
       return UjunwaResponse(
         text:
-            'I apologize, but I\'m having trouble processing your request right now. Please try again or ask me something else!',
+            "I apologize, but I'm having trouble processing your request right now. Please try again or ask me something else!",
         suggestions: [
           'Try asking about products',
           'Check order status',
@@ -94,146 +107,15 @@ class UjunwaAIService {
     }
   }
 
-  /// Recognize user intent using OpenAI for intelligent classification
-  Future<UserIntent> _recognizeIntent(String message) async {
+  Product? _productFromMap(Map<String, dynamic> map) {
     try {
-      // Use OpenAI for smart intent recognition
-      return await _recognizeIntentWithAI(message);
+      return Product.fromJson(map);
     } catch (e) {
-      print('❌ AI intent recognition failed: $e');
-      // Fallback to simple keyword-based recognition
-      return _recognizeIntentWithKeywords(message);
+      print('⚠️ UJUNWA: Could not parse product: $e');
+      return null;
     }
   }
 
-  /// AI-powered intent recognition using OpenAI
-  Future<UserIntent> _recognizeIntentWithAI(String message) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('OpenAI API key not found');
-    }
-
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
-    };
-
-    final body = jsonEncode({
-      'model': 'gpt-4o-mini',
-      'messages': [
-        {
-          'role': 'system',
-          'content':
-              '''You are an expert e-commerce intent classifier. Analyze user messages and classify their intent.
-
-Return ONLY a JSON object with this exact format:
-{
-  "intent": "intent_type",
-  "confidence": 0.95,
-  "entities": ["extracted", "entities"]
-}
-
-Intent types (use exactly these values):
-- "product_search": Looking for products, asking about availability, wanting to buy something
-- "order_inquiry": Asking about orders, delivery, tracking, shipping status
-- "product_info": Asking for product details, specifications, features, prices
-- "comparison": Comparing products, asking which is better
-- "recommendation": Asking for suggestions, recommendations, what to buy
-- "support": Need help, returns, refunds, issues, problems
-- "greeting": Hello, hi, general greetings
-- "general": Everything else
-
-Examples:
-"dont you have any yoga pant" → {"intent": "product_search", "confidence": 0.95, "entities": ["yoga", "pant"]}
-"show me running shoes" → {"intent": "product_search", "confidence": 0.98, "entities": ["running", "shoes"]}
-"track my order" → {"intent": "order_inquiry", "confidence": 0.97, "entities": ["order", "track"]}''',
-        },
-        {'role': 'user', 'content': 'Classify this message: $message'},
-      ],
-      'temperature': 0.1, // Low temperature for consistent results
-      'max_tokens': 100,
-    });
-
-    final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: headers,
-      body: body,
-    );
-
-    if (response.statusCode == 200) {
-      // Ensure UTF-8 encoding is preserved
-      final responseBody = utf8.decode(response.bodyBytes);
-      final data = jsonDecode(responseBody);
-      
-      // Properly extract string without toString() to preserve UTF-8
-      final content = data['choices'][0]['message']['content'];
-      final aiResponse = (content is String ? content : content.toString()).trim();
-
-      // Parse the JSON response
-      final result = jsonDecode(aiResponse);
-
-      final intentType = _mapStringToIntentType(result['intent']);
-      final confidence = (result['confidence'] as num).toDouble();
-
-      print('🤖 AI Intent: ${result['intent']} (confidence: $confidence)');
-
-      return UserIntent(
-        type: intentType,
-        confidence: confidence,
-        parameters: {
-          'entities': result['entities'] ?? [],
-          'ai_classified': true,
-        },
-      );
-    } else {
-      throw Exception('OpenAI API error: ${response.statusCode}');
-    }
-  }
-
-  /// Fallback keyword-based intent recognition (simplified)
-  UserIntent _recognizeIntentWithKeywords(String message) {
-    final lowerMessage = message.toLowerCase();
-
-    // Simplified keyword matching for fallback
-    if (_containsAny(lowerMessage, [
-      'find',
-      'search',
-      'show',
-      'need',
-      'want',
-      'buy',
-      'have',
-      'got',
-      'any',
-      'yoga',
-      'pant',
-      'shoes',
-      'clothes',
-    ])) {
-      return UserIntent(type: IntentType.productSearch, confidence: 0.7);
-    }
-
-    if (_containsAny(lowerMessage, [
-      'order',
-      'track',
-      'delivery',
-      'shipping',
-    ])) {
-      return UserIntent(type: IntentType.orderInquiry, confidence: 0.7);
-    }
-
-    if (_containsAny(lowerMessage, ['hello', 'hi', 'hey'])) {
-      return UserIntent(type: IntentType.greeting, confidence: 0.8);
-    }
-
-    if (_containsAny(lowerMessage, ['help', 'support', 'problem', 'return'])) {
-      return UserIntent(type: IntentType.support, confidence: 0.7);
-    }
-
-    return UserIntent(type: IntentType.general, confidence: 0.5);
-  }
-
-  /// Map string intent to IntentType enum
   IntentType _mapStringToIntentType(String intentString) {
     switch (intentString) {
       case 'product_search':
@@ -255,591 +137,6 @@ Examples:
     }
   }
 
-  /// Gather relevant context data based on intent
-  Future<ContextData> _gatherContextData({
-    required UserIntent intent,
-    required String userMessage,
-    required String userId,
-    List<ConversationContext>? conversationContext,
-  }) async {
-    final contextData = ContextData();
-
-    try {
-      // For product-related intents, search for relevant products
-      if (intent.type == IntentType.productSearch ||
-          intent.type == IntentType.productInfo ||
-          intent.type == IntentType.recommendation) {
-        // Extract search terms from user message
-        String searchTerms = _extractSearchTerms(userMessage);
-
-        // Handle context-aware queries (e.g., "yoga pant that can go with this")
-        if (_isContextAwareQuery(userMessage) && conversationContext != null) {
-          searchTerms = _enhanceSearchWithContext(
-            searchTerms,
-            conversationContext,
-          );
-        }
-
-        if (searchTerms.isNotEmpty) {
-          print('🔍 Enhanced search terms: "$searchTerms"');
-
-          // Use hybrid search for best results - increased limit for better context
-          contextData.products = await _productSearchService.hybridSearch(
-            query: searchTerms,
-            limit: 10, // Increased from 5 to 10 for better context
-          );
-
-          // No fallback - if no results, return empty list
-          if (contextData.products.isEmpty) {
-            print('⚠️ No products found for query: "$searchTerms"');
-          }
-        }
-      }
-
-      // For order inquiries, we would fetch order data (placeholder for now)
-      if (intent.type == IntentType.orderInquiry) {
-        // TODO: Implement order fetching
-        contextData.orderInfo = 'Order tracking functionality coming soon';
-      }
-
-      // Get user preferences from conversation history
-      if (conversationContext != null && conversationContext.isNotEmpty) {
-        contextData.userPreferences = _extractUserPreferences(
-          conversationContext,
-        );
-      }
-
-      // NEW: Retrieve knowledge base content (FAQs, policies) for support and general queries
-      if (intent.type == IntentType.support ||
-          intent.type == IntentType.general ||
-          intent.type == IntentType.productInfo) {
-        final relevantFAQs = await _knowledgeBaseService
-            .getRelevantFAQsForQuery(userMessage);
-        contextData.additionalData['faqs'] = relevantFAQs;
-      }
-
-      // NEW: Get product specifications for product info queries
-      if (intent.type == IntentType.productInfo &&
-          contextData.products.isNotEmpty) {
-        final productId = contextData.products.first.id;
-        final specs = await _knowledgeBaseService.getProductSpecs(productId);
-        contextData.additionalData['product_specs'] = specs;
-      }
-    } catch (e) {
-      print('❌ Error gathering context data: $e');
-    }
-
-    return contextData;
-  }
-
-  /// Check if the query references previous context
-  bool _isContextAwareQuery(String message) {
-    final contextIndicators = [
-      'this',
-      'that',
-      'it',
-      'them',
-      'go with',
-      'match',
-      'pair with',
-      'complement',
-      'coordinate',
-      'wear with',
-      'similar to',
-      'like the',
-      'same as',
-    ];
-
-    final lowerMessage = message.toLowerCase();
-    return contextIndicators.any(
-      (indicator) => lowerMessage.contains(indicator),
-    );
-  }
-
-  /// Enhance search terms with context from previous conversation
-  String _enhanceSearchWithContext(
-    String searchTerms,
-    List<ConversationContext> context,
-  ) {
-    // Look for recently mentioned products in conversation
-    final recentProducts = <String>[];
-
-    for (final ctx in context.take(3)) {
-      // Check last 3 interactions
-      if (ctx.productsMentioned.isNotEmpty) {
-        // Add product categories or types from recent mentions
-        // This is a simplified approach - in a full implementation,
-        // you'd fetch actual product details and extract categories
-        recentProducts.addAll(ctx.productsMentioned);
-      }
-    }
-
-    // If we found recent products, we can enhance the search
-    if (recentProducts.isNotEmpty) {
-      print(
-        '🔗 Found context from recent products: ${recentProducts.join(', ')}',
-      );
-      // For now, just return the original search terms
-      // In a full implementation, you'd analyze the recent products
-      // and add complementary search terms
-    }
-
-    return searchTerms;
-  }
-
-  /// Generate structured response based on intent and context
-  Future<UjunwaResponse> _generateStructuredResponse({
-    required String userMessage,
-    required UserIntent intent,
-    required ContextData contextData,
-    List<ConversationContext>? conversationContext,
-  }) async {
-    switch (intent.type) {
-      case IntentType.productSearch:
-        // Use AI generation with retrieved products for better responses
-        final aiResponse = await _generateAIResponse(
-          userMessage: userMessage,
-            intent: intent,
-          contextData: contextData,
-          conversationContext: conversationContext,
-        );
-          return UjunwaResponse(
-          text: aiResponse.text,
-            products: contextData.products,
-          suggestions: aiResponse.suggestions,
-            intent: intent,
-          );
-
-      case IntentType.productInfo:
-        // Use AI generation with product details and specs
-        final aiResponse = await _generateAIResponse(
-          userMessage: userMessage,
-          intent: intent,
-          contextData: contextData,
-          conversationContext: conversationContext,
-        );
-          return UjunwaResponse(
-          text: aiResponse.text,
-          products: contextData.products,
-          suggestions: aiResponse.suggestions,
-            intent: intent,
-          );
-
-      case IntentType.recommendation:
-        // Use AI generation for personalized recommendations
-        final aiResponse = await _generateAIResponse(
-          userMessage: userMessage,
-          intent: intent,
-          contextData: contextData,
-          conversationContext: conversationContext,
-        );
-        return UjunwaResponse(
-          text: aiResponse.text,
-          products: contextData.products,
-          suggestions: aiResponse.suggestions,
-          intent: intent,
-        );
-
-      case IntentType.greeting:
-        return UjunwaResponse(
-          text:
-              "Hello there! 👋 Welcome to **Be Smart**!\n\nI'm **UJUNWA**, your personal shopping assistant. I'm here to help you:\n\n🔍 **Find products** you're looking for\n📦 **Track your orders** and deliveries\n💡 **Get recommendations** based on your preferences\n🛠️ **Answer questions** about products and services\n\nWhat can I help you with today? 😊",
-          suggestions: [
-            'Show me trending products',
-            'Find products on sale',
-            'Browse categories',
-            'Track my order',
-          ],
-          intent: intent,
-        );
-
-      case IntentType.orderInquiry:
-        return UjunwaResponse(
-          text:
-              "I'd be happy to help you with your order! Could you please provide your order number or email address so I can look up your order details?",
-          suggestions: [
-            'Track another order',
-            'Contact support',
-            'View order history',
-            'Return an item',
-          ],
-          intent: intent,
-        );
-
-      case IntentType.support:
-        return UjunwaResponse(
-          text:
-              "I'm here to help! What specific issue are you experiencing? I can assist with:\n\n• Product questions\n• Order issues\n• Returns and refunds\n• Account problems\n• Technical support",
-          suggestions: [
-            'Contact live support',
-            'View FAQ',
-            'Return policy',
-            'Shipping information',
-          ],
-          intent: intent,
-        );
-
-      case IntentType.general:
-        // For general queries, use AI to generate a contextual response
-        final aiText = await _generateAIResponse(
-          userMessage: userMessage,
-          intent: intent,
-          contextData: contextData,
-          conversationContext: conversationContext,
-        );
-        return UjunwaResponse(
-          text: aiText.text,
-          products: contextData.products,
-          suggestions: aiText.suggestions,
-          intent: intent,
-        );
-
-      default:
-        // Fallback for any unhandled intent types
-    return UjunwaResponse(
-      text:
-          "I understand you're looking for information. How can I help you today?",
-      suggestions: [
-        'Browse products',
-        'Check offers',
-        'Contact support',
-        'Track order',
-      ],
-      intent: intent,
-    );
-    }
-  }
-
-  /// Generate AI response using OpenAI GPT (fallback for complex queries)
-  Future<UjunwaResponse> _generateAIResponse({
-    required String userMessage,
-    required UserIntent intent,
-    required ContextData contextData,
-    List<ConversationContext>? conversationContext,
-  }) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('OpenAI API key not found in environment variables');
-    }
-
-    // Build the system prompt that defines UJUNWA's personality and capabilities
-    final systemPrompt = _buildSystemPrompt(intent, contextData);
-
-    // Build the user prompt with context
-    final userPrompt = _buildUserPrompt(
-      userMessage: userMessage,
-      intent: intent,
-      contextData: contextData,
-      conversationContext: conversationContext,
-    );
-
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
-    };
-
-    final body = jsonEncode({
-      'model': 'gpt-4o-mini', // Cost-effective and fast
-      'messages': [
-        {'role': 'system', 'content': systemPrompt},
-        {'role': 'user', 'content': userPrompt},
-      ],
-      'max_tokens': 300,
-      'temperature': 0.7, // Balanced creativity and consistency
-    });
-
-    try {
-      final response = await http.post(
-        Uri.parse(_openAiApiUrl),
-        headers: headers,
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        // Ensure UTF-8 encoding is preserved
-        final responseBody = utf8.decode(response.bodyBytes);
-        final data = jsonDecode(responseBody);
-        
-        // Properly extract string without toString() to preserve UTF-8
-        final content = data['choices'][0]['message']['content'];
-        final aiText = (content is String ? content : content.toString()).trim();
-
-        // Generate suggestions based on intent
-        final suggestions = _generateSuggestions(intent, contextData);
-
-        return UjunwaResponse(
-          text: aiText,
-          products: contextData.products,
-          suggestions: suggestions,
-          intent: intent,
-        );
-      } else {
-        print('❌ OpenAI API Error: ${response.statusCode} - ${response.body}');
-        throw Exception('OpenAI API request failed: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('❌ Error calling OpenAI API: $e');
-      rethrow;
-    }
-  }
-
-  /// Build system prompt that defines UJUNWA's personality
-  String _buildSystemPrompt(UserIntent intent, ContextData contextData) {
-    return '''
-You are UJUNWA, an intelligent AI shopping assistant for Be Smart e-commerce platform. You are helpful, friendly, knowledgeable, and professional.
-
-Your capabilities include:
-- Helping customers find products using semantic understanding
-- Providing detailed product information including specifications, highlights, and reviews
-- Making personalized recommendations based on user preferences
-- Assisting with orders and support
-- Comparing products with detailed analysis
-- Answering questions about policies, returns, shipping, and FAQs
-
-Your personality:
-- Warm and approachable
-- Expert knowledge about products and e-commerce
-- Patient and understanding
-- Proactive in offering help and suggestions
-- Always honest about limitations
-- Enthusiastic but not pushy
-
-Current context:
-- User intent: ${intent.type}
-- Available products: ${contextData.products.length}
-- Order info: ${contextData.orderInfo ?? 'None'}
-- User preferences: ${contextData.userPreferences.isNotEmpty ? contextData.userPreferences : 'None'}
-
-Guidelines:
-- Keep responses conversational and natural (2-4 sentences typically)
-- When showing products, highlight key features, benefits, and why they match the user's needs
-- Compare products when multiple options are available, highlighting differences
-- Include pricing, ratings, availability, and key specifications when relevant
-- Reference product highlights and unique selling points
-- If FAQs or policies are relevant, incorporate that information naturally
-- Always offer to help further with specific actions
-- If you don't know something, be honest and offer alternatives
-- Use emojis sparingly (1-2 per response max) and appropriately
-- For product searches with no results, suggest alternatives and help refine the search
-- For product info queries, provide comprehensive details including specs, highlights, and reviews summary
-- For recommendations, explain why products match the user's needs
-''';
-  }
-
-  /// Build user prompt with context
-  String _buildUserPrompt({
-    required String userMessage,
-    required UserIntent intent,
-    required ContextData contextData,
-    List<ConversationContext>? conversationContext,
-  }) {
-    final prompt = StringBuffer();
-
-    prompt.writeln('User message: "$userMessage"');
-
-    // Add product context if available - ENHANCED with full details
-    if (contextData.products.isNotEmpty) {
-      prompt.writeln(
-        '\nRelevant products found (${contextData.products.length} total):',
-      );
-      // Increased from 3 to 8 products for better context
-      for (int i = 0; i < contextData.products.length && i < 8; i++) {
-        final product = contextData.products[i];
-        prompt.writeln('\n${i + 1}. ${product.name}');
-        // Format price using user's globally selected currency (converts from product currency)
-        final formattedPrice = CurrencyUtils.formatProductPrice(product.price, product.currency);
-        final formattedSalePrice = product.salePrice != null 
-            ? CurrencyUtils.formatProductPrice(product.salePrice!, product.currency)
-            : null;
-        prompt.writeln(
-          '   Price: $formattedPrice${formattedSalePrice != null ? ' (Sale: $formattedSalePrice)' : ''}',
-        );
-        prompt.writeln(
-          '   Rating: ${product.rating}/5 (${product.reviews} reviews)',
-        );
-        prompt.writeln('   Brand: ${product.brand}');
-        prompt.writeln('   In Stock: ${product.inStock ? 'Yes' : 'No'}');
-        if (product.discountPercentage != null) {
-          prompt.writeln('   Discount: ${product.discountPercentage}% off');
-        }
-
-        // Full description (not truncated)
-        if (product.description.isNotEmpty) {
-          prompt.writeln('   Description: ${product.description}');
-        }
-
-        // Product highlights
-        if (product.highlights.isNotEmpty) {
-          prompt.writeln('   Key Highlights:');
-          for (final highlight in product.highlights.take(5)) {
-            prompt.writeln('     - ${highlight.label}');
-          }
-        }
-
-        // Product specifications (if available) - using grouped format
-        if (product.specifications.isNotEmpty) {
-          prompt.writeln('   Specifications:');
-          for (final spec in product.specifications.take(3)) {
-            prompt.writeln('     ${spec.group}:');
-            for (final row in spec.rows.take(3)) {
-              prompt.writeln('       - ${row.name}: ${row.value}');
-            }
-          }
-        }
-
-        // Reviews summary - using available fields
-        if (product.reviewsSummary != null) {
-          final totalReviews = product.reviewsSummary!.histogram.fold(
-            0,
-            (sum, count) => sum + count,
-          );
-          final ratingSum = product.reviewsSummary!.histogram
-              .asMap()
-              .entries
-              .fold(0, (sum, entry) => sum + (entry.key + 1) * entry.value);
-          final avgRating =
-              totalReviews > 0
-                  ? (ratingSum / totalReviews).toStringAsFixed(1)
-                  : '0.0';
-          prompt.writeln(
-            '   Reviews Summary: Average $avgRating/5, $totalReviews total reviews (${product.reviewsSummary!.withMedia} with photos)',
-          );
-        }
-
-        // Available sizes and colors
-        if (product.sizes.isNotEmpty) {
-          prompt.writeln('   Available Sizes: ${product.sizes.join(', ')}');
-        }
-        if (product.colors.isNotEmpty) {
-          prompt.writeln(
-            '   Available Colors: ${product.colors.map((c) => c.name).join(', ')}',
-          );
-        }
-      }
-    } else if (intent.type == IntentType.productSearch) {
-      prompt.writeln('\nNo products found for this specific search.');
-      prompt.writeln(
-        'Please provide a helpful response explaining this and suggest alternatives or ways to refine the search.',
-      );
-    }
-
-    // Add conversation context if available
-    if (conversationContext != null && conversationContext.isNotEmpty) {
-      prompt.writeln('\nRecent conversation context:');
-      for (final context in conversationContext.take(3)) {
-        prompt.writeln('- User mentioned: ${context.userMessage}');
-        if (context.extractedInfo.isNotEmpty) {
-          prompt.writeln('  Preferences: ${context.extractedInfo}');
-        }
-      }
-    }
-
-    // Add user preferences if available
-    if (contextData.userPreferences.isNotEmpty) {
-      prompt.writeln('\nUser preferences: ${contextData.userPreferences}');
-    }
-
-    // NEW: Add FAQ context if available
-    if (contextData.additionalData.containsKey('faqs')) {
-      final faqs = contextData.additionalData['faqs'] as List;
-      if (faqs.isNotEmpty) {
-        prompt.writeln(
-          _knowledgeBaseService.formatFAQsForPrompt(
-            faqs.map((f) => FAQ.fromJson(f as Map<String, dynamic>)).toList(),
-          ),
-        );
-      }
-    }
-
-    // NEW: Add product specifications context if available
-    if (contextData.additionalData.containsKey('product_specs')) {
-      final specs = contextData.additionalData['product_specs'] as List;
-      if (specs.isNotEmpty) {
-        prompt.writeln(
-          _knowledgeBaseService.formatSpecsForPrompt(
-            specs
-                .map(
-                  (s) => ProductSpecDetail.fromJson(s as Map<String, dynamic>),
-                )
-                .toList(),
-          ),
-        );
-      }
-    }
-
-    prompt.writeln(
-      '\nPlease provide a helpful, natural response as UJUNWA. Be specific about product features and benefits when relevant.',
-    );
-
-    return prompt.toString();
-  }
-
-  /// Generate contextual suggestions
-  List<String> _generateSuggestions(
-    UserIntent intent,
-    ContextData contextData,
-  ) {
-    switch (intent.type) {
-      case IntentType.productSearch:
-        if (contextData.products.isNotEmpty) {
-          return [
-            'Show me more details about these products',
-            'Find similar products',
-            'Compare these products',
-            'Check if these are in stock',
-          ];
-        } else {
-          return [
-            'Browse all products',
-            'Show me trending items',
-            'Find products in different categories',
-            'Help me refine my search',
-          ];
-        }
-
-      case IntentType.productInfo:
-        return [
-          'Show me similar products',
-          'Check customer reviews',
-          'Find products in my size',
-          'Add to wishlist',
-        ];
-
-      case IntentType.recommendation:
-        return [
-          'Tell me more about your preferences',
-          'Show me products in different price ranges',
-          'Find trending products',
-          'Browse by category',
-        ];
-
-      case IntentType.orderInquiry:
-        return [
-          'Track another order',
-          'View order history',
-          'Contact customer support',
-          'Return or exchange item',
-        ];
-
-      case IntentType.support:
-        return [
-          'View return policy',
-          'Contact customer service',
-          'Check shipping information',
-          'Browse help articles',
-        ];
-
-      default:
-        return [
-          'Find products',
-          'Track my orders',
-          'Get recommendations',
-          'Browse categories',
-        ];
-    }
-  }
-
-  /// Store conversation context for future reference
   Future<void> _storeConversationContext({
     required String userId,
     String? conversationId,
@@ -850,223 +147,43 @@ Guidelines:
     try {
       if (conversationId == null) return;
 
-      // Extract key information from the conversation
-      final extractedInfo = _extractKeyInformation(userMessage, intent);
+      final info = _extractKeyInformation(userMessage, intent);
 
-      // Store in conversation_context table
-      await _supabase.from('conversation_context').insert({
-        'conversation_id': conversationId,
-        'user_id': userId,
-        'user_message': userMessage,
-        'intent_type': intent.type.toString(),
-        'intent_confidence': intent.confidence,
-        'ai_response': aiResponse.text,
-        'extracted_info': extractedInfo,
-        'products_mentioned': aiResponse.products.map((p) => p.id).toList(),
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      await _contextService.storeConversationContext(
+        conversationId: conversationId,
+        userId: userId,
+        userMessage: userMessage,
+        intentType: intent.type.toString(),
+        intentConfidence: intent.confidence,
+        aiResponse: aiResponse.text,
+        extractedInfo: info,
+        productsMentioned: aiResponse.products.map((p) => p.id).toList(),
+      );
     } catch (e) {
       print('❌ Error storing conversation context: $e');
-      // Don't throw error as this is not critical for user experience
     }
-  }
-
-  /// Helper methods
-  bool _containsAny(String text, List<String> keywords) {
-    return keywords.any((keyword) => text.contains(keyword));
-  }
-
-  String _extractSearchTerms(String message) {
-    // Use AI-extracted entities if available, otherwise use improved keyword extraction
-
-    // Priority product keywords that should always be included
-    final productKeywords = [
-      'shoes',
-      'shoe',
-      'sneakers',
-      'sneaker',
-      'boots',
-      'sandals',
-      'footwear',
-      'shirt',
-      'shirts',
-      't-shirt',
-      'tshirt',
-      'pants',
-      'pant',
-      'jeans',
-      'dress',
-      'jacket',
-      'coat',
-      'sweater',
-      'hoodie',
-      'shorts',
-      'skirt',
-      'top',
-      'blouse',
-      'yoga',
-      'running',
-      'workout',
-      'fitness',
-      'gym',
-      'sports',
-      'athletic',
-      'phone',
-      'laptop',
-      'tablet',
-      'headphones',
-      'earbuds',
-      'watch',
-      'smartwatch',
-      'bag',
-      'purse',
-      'wallet',
-      'belt',
-      'hat',
-      'cap',
-      'sunglasses',
-      'glasses',
-      'black',
-      'white',
-      'blue',
-      'red',
-      'green',
-      'yellow',
-      'pink',
-      'purple',
-      'gray',
-      'brown',
-      'small',
-      'medium',
-      'large',
-      'xl',
-      'xxl',
-      'xs',
-      'comfortable',
-      'stylish',
-      'casual',
-      'formal',
-      'premium',
-      'affordable',
-      'cheap',
-    ];
-
-    // Words to remove (but keep product-specific terms)
-    final commonWords = [
-      'find',
-      'search',
-      'looking',
-      'for',
-      'show',
-      'me',
-      'i',
-      'want',
-      'need',
-      'buy',
-      'purchase',
-      'get',
-      'can',
-      'you',
-      'please',
-      'do',
-      'dont',
-      'have',
-      'got',
-      'any',
-      'some',
-      'good',
-      'nice',
-      'great',
-      'best',
-      'the',
-      'a',
-      'an',
-      'is',
-      'are',
-      'that',
-      'this',
-      'with',
-      'go',
-      'and',
-      'or',
-      'but',
-      'to',
-      'from',
-      'in',
-      'on',
-      'at',
-      'by',
-    ];
-
-    final words = message.toLowerCase().split(' ');
-
-    // First, collect all product-related keywords
-    final productTerms =
-        words
-            .where((word) => productKeywords.contains(word) && word.length > 2)
-            .toList();
-
-    // Then, add other meaningful words that aren't common words
-    final otherTerms =
-        words
-            .where(
-              (word) =>
-                  !commonWords.contains(word) &&
-                  !productKeywords.contains(word) &&
-                  word.length > 2,
-            )
-            .toList();
-
-    // Combine product terms first (higher priority) then other terms
-    final allTerms = [...productTerms, ...otherTerms];
-
-    // If we have product terms, prioritize them
-    if (productTerms.isNotEmpty) {
-      return productTerms.join(' ');
-    }
-
-    return allTerms.join(' ').trim();
-  }
-
-
-  String _extractUserPreferences(List<ConversationContext> context) {
-    final preferences = <String>[];
-
-    for (final ctx in context) {
-      if (ctx.extractedInfo.isNotEmpty) {
-        preferences.add(ctx.extractedInfo);
-      }
-    }
-
-    return preferences.join(', ');
   }
 
   String _extractKeyInformation(String userMessage, UserIntent intent) {
-    final lowerMessage = userMessage.toLowerCase();
+    final lower = userMessage.toLowerCase();
     final info = <String>[];
 
-    // Extract price preferences
-    if (lowerMessage.contains('cheap') || lowerMessage.contains('affordable')) {
+    if (lower.contains('cheap') || lower.contains('affordable')) {
       info.add('prefers affordable options');
     }
-    if (lowerMessage.contains('premium') ||
-        lowerMessage.contains('expensive')) {
+    if (lower.contains('premium') || lower.contains('expensive')) {
       info.add('interested in premium products');
     }
-
-    // Extract size preferences
-    if (lowerMessage.contains('large') || lowerMessage.contains('xl')) {
+    if (lower.contains('large') || lower.contains('xl')) {
       info.add('prefers large sizes');
     }
-    if (lowerMessage.contains('small') || lowerMessage.contains('xs')) {
+    if (lower.contains('small') || lower.contains('xs')) {
       info.add('prefers small sizes');
     }
-
-    // Extract activity preferences
-    if (lowerMessage.contains('workout') || lowerMessage.contains('gym')) {
+    if (lower.contains('workout') || lower.contains('gym')) {
       info.add('interested in fitness products');
     }
-    if (lowerMessage.contains('work') || lowerMessage.contains('office')) {
+    if (lower.contains('work') || lower.contains('office')) {
       info.add('needs professional/work items');
     }
 
@@ -1074,7 +191,9 @@ Guidelines:
   }
 }
 
-/// Data Models for UJUNWA AI Service
+// ---------------------------------------------------------------------------
+// Data Models
+// ---------------------------------------------------------------------------
 
 enum IntentType {
   productSearch,
@@ -1114,30 +233,6 @@ class ConversationContext {
   final List<String> productsMentioned;
   final DateTime createdAt;
 
-  // Helper method to parse string lists from various data structures
-  static List<String> _parseStringList(dynamic data) {
-    if (data == null) return [];
-
-    try {
-      if (data is List) {
-        return data.map((item) => item.toString()).toList();
-      } else if (data is Map<String, dynamic>) {
-        return data.keys.toList();
-      } else if (data is String) {
-        // Handle comma-separated string
-        return data
-            .split(',')
-            .map((item) => item.trim())
-            .where((item) => item.isNotEmpty)
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error parsing string list: $e');
-      return [];
-    }
-  }
-
   ConversationContext({
     required this.id,
     required this.conversationId,
@@ -1158,11 +253,20 @@ class ConversationContext {
       userId: json['user_id'],
       userMessage: json['user_message'],
       intentType: json['intent_type'],
-      intentConfidence: json['intent_confidence']?.toDouble() ?? 0.0,
+      intentConfidence: (json['intent_confidence'] as num?)?.toDouble() ?? 0.0,
       aiResponse: json['ai_response'],
       extractedInfo: json['extracted_info'] ?? '',
       productsMentioned: _parseStringList(json['products_mentioned']),
       createdAt: DateTime.parse(json['created_at']),
     );
+  }
+
+  static List<String> _parseStringList(dynamic data) {
+    if (data == null) return [];
+    if (data is List) return data.map((e) => e.toString()).toList();
+    if (data is String) {
+      return data.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+    return [];
   }
 }

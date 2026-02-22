@@ -169,30 +169,30 @@ class ProductController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchAllProducts();
     loadWishlist();
   }
 
   Future<void> fetchAllProducts() async {
-    try {
-      isLoading.value = true;
+    isLoading.value = true;
+    print('ProductController: fetchAllProducts started');
 
-      // Fetch all data in parallel
-      final results = await Future.wait([
-        _repository.getProducts(),
-        _repository.getNewArrivals(),
-        _repository.getFeaturedProducts(),
-      ]);
-
-      allProducts.value = results[0];
-      newArrivals.value = results[1];
-      featuredProducts.value = results[2];
-    } catch (e) {
-      print('Error fetching products: $e');
-      // You might want to show an error message to the user
-    } finally {
+    final productsFuture = _repository.getProducts().then((products) {
+      allProducts.value = products;
+      print('ProductController: allProducts loaded (${products.length})');
       isLoading.value = false;
-    }
+    });
+
+    final newArrivalsFuture = _repository.getNewArrivals().then((products) {
+      newArrivals.value = products;
+      print('ProductController: newArrivals loaded (${products.length})');
+    });
+
+    final featuredFuture = _repository.getFeaturedProducts().then((products) {
+      featuredProducts.value = products;
+      print('ProductController: featured loaded (${products.length})');
+    });
+
+    await Future.wait([productsFuture, newArrivalsFuture, featuredFuture]);
   }
 
   Future<List<Product>> getNewArrivals() async {

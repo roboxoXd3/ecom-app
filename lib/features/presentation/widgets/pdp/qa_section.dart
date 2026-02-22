@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/models/qa_model.dart';
 import '../../controllers/qa_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/services/auth_service.dart';
 
 class QASection extends StatefulWidget {
   final String productId;
@@ -483,11 +483,8 @@ class _QASectionState extends State<QASection> {
       return;
     }
 
-    // Check if user is authenticated
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
+    if (!AuthService.isAuthenticated()) {
       SnackbarUtils.showError('Please sign in to ask a question');
-      // Navigate to login after a short delay
       Future.delayed(const Duration(seconds: 1), () {
         Get.toNamed('/login');
       });

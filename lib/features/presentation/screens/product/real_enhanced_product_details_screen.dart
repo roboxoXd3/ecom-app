@@ -26,7 +26,7 @@ import '../../widgets/pdp/recommendation_shelves.dart';
 import '../../widgets/pdp/enhanced_sticky_cta.dart';
 
 /// Real Enhanced Product Details Screen using database data
-/// This replaces the mock data version with real Supabase integration
+/// This replaces the mock data version with real API integration
 class RealEnhancedProductDetailsScreen extends StatefulWidget {
   final String productId;
 

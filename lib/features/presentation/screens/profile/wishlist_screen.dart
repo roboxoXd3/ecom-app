@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../data/models/product_model.dart';
 import '../../controllers/product_controller.dart';
-import '../../controllers/cart_controller.dart';
 import '../../controllers/currency_controller.dart';
-
-import 'package:cached_network_image/cached_network_image.dart';
+import '../category/widgets/product_card.dart';
 
 enum WishlistSortOption { dateAdded, priceLowToHigh, priceHighToLow, name }
 
@@ -17,15 +16,41 @@ class WishlistScreen extends StatefulWidget {
 
 class _WishlistScreenState extends State<WishlistScreen> {
   final ProductController productController = Get.find<ProductController>();
-  final CartController cartController = Get.find<CartController>();
   final CurrencyController currencyController = Get.find<CurrencyController>();
 
   final TextEditingController searchController = TextEditingController();
   final RxString searchQuery = ''.obs;
   final Rx<WishlistSortOption> currentSort = WishlistSortOption.dateAdded.obs;
   final RxDouble minPrice = 0.0.obs;
-  final RxDouble maxPrice = 1000.0.obs;
+  final RxDouble maxPrice = double.infinity.obs;
   final RxBool showFilters = false.obs;
+
+  double get _maxWishlistPrice {
+    final wishlistProducts = productController.allProducts
+        .where((p) => productController.wishlistProductIds.contains(p.id))
+        .toList();
+    if (wishlistProducts.isEmpty) return 1000;
+    final highest = wishlistProducts
+        .map((p) => (p.price as num).toDouble())
+        .reduce((a, b) => a > b ? a : b);
+    return (highest * 1.1).ceilToDouble();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    productController.loadWishlist();
+    ever(productController.wishlistProductIds, (_) {
+      if (maxPrice.value == double.infinity) {
+        maxPrice.value = _maxWishlistPrice;
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (maxPrice.value == double.infinity) {
+        maxPrice.value = _maxWishlistPrice;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -54,15 +79,18 @@ class _WishlistScreenState extends State<WishlistScreen> {
               .toList();
     }
 
-    // Apply price filter
-    wishlistProducts =
-        wishlistProducts
-            .where(
-              (product) =>
-                  product.price >= minPrice.value &&
-                  product.price <= maxPrice.value,
-            )
-            .toList();
+    // Apply price filter only when user has adjusted it
+    final effectiveMax = _maxWishlistPrice;
+    if (minPrice.value > 0 || maxPrice.value < effectiveMax) {
+      wishlistProducts =
+          wishlistProducts
+              .where(
+                (product) =>
+                    product.price >= minPrice.value &&
+                    product.price <= maxPrice.value,
+              )
+              .toList();
+    }
 
     // Apply sorting
     switch (currentSort.value) {
@@ -123,7 +151,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     child: Text(
                       searchQuery.value.isNotEmpty ||
                               minPrice.value > 0 ||
-                              maxPrice.value < 1000
+                              maxPrice.value < _maxWishlistPrice
                           ? '$wishlistCount/$totalCount items'
                           : '$totalCount items',
                       style: TextStyle(
@@ -272,7 +300,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   Widget _buildFilterButton() {
     return Obx(() {
-      final hasActiveFilters = minPrice.value > 0 || maxPrice.value < 1000;
+      final hasActiveFilters = minPrice.value > 0 || maxPrice.value < _maxWishlistPrice;
       return OutlinedButton.icon(
         onPressed: _showFilterOptions,
         icon: Icon(
@@ -306,7 +334,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
       final hasFilters =
           searchQuery.value.isNotEmpty ||
           minPrice.value > 0 ||
-          maxPrice.value < 1000 ||
+          maxPrice.value < _maxWishlistPrice ||
           currentSort.value != WishlistSortOption.dateAdded;
 
       if (!hasFilters) return const SizedBox.shrink();
@@ -396,22 +424,25 @@ class _WishlistScreenState extends State<WishlistScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 20),
-                Obx(
-                  () => RangeSlider(
-                    values: RangeValues(minPrice.value, maxPrice.value),
+                Obx(() {
+                  final sliderMax = _maxWishlistPrice;
+                  final clampedMin = minPrice.value.clamp(0.0, sliderMax);
+                  final clampedMax = maxPrice.value.clamp(0.0, sliderMax);
+                  return RangeSlider(
+                    values: RangeValues(clampedMin, clampedMax),
                     min: 0,
-                    max: 1000,
+                    max: sliderMax,
                     divisions: 20,
                     labels: RangeLabels(
-                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${minPrice.value.round()}',
-                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${maxPrice.value.round()}',
+                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${clampedMin.round()}',
+                      '${currencyController.getCurrencySymbol(currencyController.selectedCurrency.value)}${clampedMax.round()}',
                     ),
                     onChanged: (values) {
                       minPrice.value = values.start;
                       maxPrice.value = values.end;
                     },
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 10),
                 Obx(
                   () => Row(
@@ -433,7 +464,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                       child: OutlinedButton(
                         onPressed: () {
                           minPrice.value = 0;
-                          maxPrice.value = 1000;
+                          maxPrice.value = _maxWishlistPrice;
                         },
                         child: const Text('Reset'),
                       ),
@@ -457,7 +488,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
     searchController.clear();
     searchQuery.value = '';
     minPrice.value = 0;
-    maxPrice.value = 1000;
+    maxPrice.value = _maxWishlistPrice;
     currentSort.value = WishlistSortOption.dateAdded;
   }
 
@@ -627,6 +658,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   Widget _buildProductCard(BuildContext context, dynamic product, int index) {
+    final typedProduct = product as Product;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: Duration(milliseconds: 300 + (index * 100)),
@@ -635,7 +667,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
         return Transform.scale(
           scale: value,
           child: Dismissible(
-            key: Key(product.id.toString()),
+            key: Key(typedProduct.id.toString()),
             direction: DismissDirection.endToStart,
             background: Container(
               margin: const EdgeInsets.symmetric(vertical: 4),
@@ -664,194 +696,39 @@ class _WishlistScreenState extends State<WishlistScreen> {
             confirmDismiss: (direction) async {
               return await showDialog<bool>(
                 context: context,
-                builder:
-                    (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      title: const Text('Remove from Wishlist'),
-                      content: Text(
-                        'Are you sure you want to remove "${product.name}" from your wishlist?',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Remove'),
-                        ),
-                      ],
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text('Remove from Wishlist'),
+                  content: Text(
+                    'Are you sure you want to remove "${typedProduct.name}" from your wishlist?',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Cancel'),
                     ),
-              );
-            },
-            onDismissed: (direction) {
-              productController.toggleWishlist(product);
-            },
-            child: Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey[200]!, width: 1),
-              ),
-              child: InkWell(
-                onTap:
-                    () =>
-                        Get.toNamed('/product-details', arguments: product.id),
-                borderRadius: BorderRadius.circular(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Stack(
-                        children: [
-                          Hero(
-                            tag: 'product-${product.id}',
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(16),
-                              ),
-                              child: CachedNetworkImage(
-                                imageUrl:
-                                    product.imageList.isNotEmpty
-                                        ? product.imageList.first
-                                        : '',
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                placeholder:
-                                    (context, url) => Container(
-                                      color: Colors.grey[100],
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ),
-                                errorWidget:
-                                    (context, url, error) => Container(
-                                      color: Colors.grey[100],
-                                      child: Icon(
-                                        Icons.image_outlined,
-                                        size: 40,
-                                        color: Colors.grey[400],
-                                      ),
-                                    ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 12,
-                            right: 12,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.favorite,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
-                                padding: const EdgeInsets.all(8),
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  productController.toggleWishlist(product);
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Obx(
-                                () => Text(
-                                  currencyController.getFormattedProductPrice(
-                                    product.price,
-                                    product.currency,
-                                  ),
-                                  style: TextStyle(
-                                    color: Theme.of(context).primaryColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () => _showQuickAddToCart(product),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).primaryColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.add_shopping_cart_outlined,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Add',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      child: const Text('Remove'),
                     ),
                   ],
                 ),
-              ),
+              );
+            },
+            onDismissed: (direction) {
+              productController.toggleWishlist(typedProduct);
+            },
+            child: ProductCard(
+              product: typedProduct,
+              index: index,
             ),
           ),
         );
@@ -859,273 +736,4 @@ class _WishlistScreenState extends State<WishlistScreen> {
     );
   }
 
-  void _showQuickAddToCart(dynamic product) {
-    if (product.sizeList.isEmpty || product.colorList.isEmpty) {
-      // If no size or color options, add directly
-      _addToCartDirectly(product);
-      return;
-    }
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder:
-          (context) => _QuickAddToCartSheet(
-            product: product,
-            onAddToCart: (size, color) {
-              _addToCartWithOptions(product, size, color);
-              Navigator.pop(context);
-            },
-          ),
-    );
-  }
-
-  void _addToCartDirectly(dynamic product) {
-    final defaultSize =
-        product.sizeList.isNotEmpty ? product.sizeList.first : 'One Size';
-    final defaultColor =
-        product.colorList.isNotEmpty ? product.colorList.first : 'Default';
-
-    _addToCartWithOptions(product, defaultSize, defaultColor);
-  }
-
-  void _addToCartWithOptions(dynamic product, String size, String color) async {
-    try {
-      await cartController.addToCart(product, size, color, 1);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${product.name} added to cart'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          action: SnackBarAction(
-            label: 'View Cart',
-            onPressed: () {
-              // Navigate to cart
-              final homeController = Get.find();
-              homeController.navigateToTab(2);
-              Get.back();
-            },
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Failed to add to cart'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
-  }
-}
-
-class _QuickAddToCartSheet extends StatefulWidget {
-  final dynamic product;
-  final Function(String size, String color) onAddToCart;
-
-  const _QuickAddToCartSheet({
-    required this.product,
-    required this.onAddToCart,
-  });
-
-  @override
-  State<_QuickAddToCartSheet> createState() => _QuickAddToCartSheetState();
-}
-
-class _QuickAddToCartSheetState extends State<_QuickAddToCartSheet> {
-  String selectedSize = '';
-  String selectedColor = '';
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.product.sizeList.isNotEmpty) {
-      selectedSize = widget.product.sizeList.first;
-    }
-    if (widget.product.colorList.isNotEmpty) {
-      selectedColor = widget.product.colorList.first;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl:
-                      widget.product.imageList.isNotEmpty
-                          ? widget.product.imageList.first
-                          : '',
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.product.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    GetBuilder<CurrencyController>(
-                      builder:
-                          (currencyController) => Text(
-                            currencyController.getFormattedProductPrice(
-                              widget.product.price,
-                              widget.product.currency,
-                            ),
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (widget.product.sizeList.isNotEmpty) ...[
-            const Text(
-              'Size',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  widget.product.sizeList.map<Widget>((size) {
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedSize = size),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              selectedSize == size
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color:
-                                selectedSize == size
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.grey[300]!,
-                          ),
-                        ),
-                        child: Text(
-                          size,
-                          style: TextStyle(
-                            color:
-                                selectedSize == size
-                                    ? Colors.white
-                                    : Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 16),
-          ],
-          if (widget.product.colorList.isNotEmpty) ...[
-            const Text(
-              'Color',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  widget.product.colorList.map<Widget>((color) {
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedColor = color),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              selectedColor == color
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color:
-                                selectedColor == color
-                                    ? Theme.of(context).primaryColor
-                                    : Colors.grey[300]!,
-                          ),
-                        ),
-                        child: Text(
-                          color,
-                          style: TextStyle(
-                            color:
-                                selectedColor == color
-                                    ? Colors.white
-                                    : Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-            ),
-            const SizedBox(height: 16),
-          ],
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed:
-                  selectedSize.isNotEmpty && selectedColor.isNotEmpty
-                      ? () => widget.onAddToCart(selectedSize, selectedColor)
-                      : null,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Add to Cart',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

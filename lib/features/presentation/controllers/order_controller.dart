@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/order_model.dart';
 import '../../data/models/order_status.dart';
 import '../../data/repositories/order_repository.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
 class OrderController extends GetxController {
@@ -19,21 +19,16 @@ class OrderController extends GetxController {
   Future<void> fetchUserOrders() async {
     try {
       isLoading.value = true;
-      
-      // Check if user is authenticated before fetching
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) {
-        print('User not authenticated, skipping orders fetch');
+
+      if (!AuthService.isAuthenticated()) {
         orders.clear();
         return;
       }
-      
+
       orders.value = await _repository.getUserOrders();
     } catch (e) {
       print('Error fetching orders: $e');
-      // Only show error snackbar if user is authenticated
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser != null) {
+      if (!SnackbarUtils.isNoInternet(e) && AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Failed to fetch orders');
       }
     } finally {
@@ -51,7 +46,6 @@ class OrderController extends GetxController {
     String? loyaltyVoucherCode,
   }) async {
     try {
-      print('OrderController: Creating order with ${items.length} items');
       isLoading.value = true;
 
       await _repository.createOrder(
@@ -64,7 +58,6 @@ class OrderController extends GetxController {
         loyaltyVoucherCode: loyaltyVoucherCode,
       );
 
-      print('OrderController: Order created successfully');
       await fetchUserOrders();
       return true;
     } catch (e) {
@@ -90,10 +83,6 @@ class OrderController extends GetxController {
     String? loyaltyVoucherCode,
   }) async {
     try {
-      print('OrderController: Creating order with payment details');
-      print('Squad Transaction Ref: $squadTransactionRef');
-      print('Payment Status: $paymentStatus');
-
       isLoading.value = true;
 
       await _repository.createOrderWithPayment(
@@ -106,12 +95,11 @@ class OrderController extends GetxController {
         squadTransactionRef: squadTransactionRef,
         squadGatewayRef: squadGatewayRef,
         paymentStatus: paymentStatus,
-        escrowStatus: escrowStatus ?? 'held', // Default to held for marketplace
+        escrowStatus: escrowStatus ?? 'held',
         loyaltyVoucherCode: loyaltyVoucherCode,
       );
 
-      print('OrderController: Order with payment created successfully');
-      await fetchUserOrders(); // Refresh orders list
+      await fetchUserOrders();
       return true;
     } catch (e) {
       print('OrderController: Error creating order with payment - $e');
@@ -136,25 +124,65 @@ class OrderController extends GetxController {
         escrowStatus: escrowStatus,
       );
 
-      // Refresh orders to show updated status
       await fetchUserOrders();
-
-      print('Payment status updated for order: $orderId');
     } catch (e) {
       print('Error updating payment status: $e');
       SnackbarUtils.showError('Failed to update payment status');
     }
   }
 
+  /// Creates an order with pending payment status and returns the Order object.
+  /// Used by CheckoutController before initiating online payment so we have
+  /// the order_id to pass to the payment gateway.
+  Future<Order?> createOnlinePaymentOrder({
+    required String addressId,
+    required String paymentMethodId,
+    required double subtotal,
+    required double shippingFee,
+    required double total,
+    required List<OrderItem> items,
+    String? loyaltyVoucherCode,
+  }) async {
+    try {
+      final order = await _repository.createOrderWithPayment(
+        addressId: addressId,
+        paymentMethodId: paymentMethodId,
+        subtotal: subtotal,
+        shippingFee: shippingFee,
+        total: total,
+        items: items,
+        paymentStatus: 'pending',
+        loyaltyVoucherCode: loyaltyVoucherCode,
+      );
+      return order;
+    } catch (e) {
+      print('OrderController: Error creating online payment order: $e');
+      return null;
+    }
+  }
+
   Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
     try {
       isLoading.value = true;
-      await _repository.updateOrderStatus(orderId, status);
+      await _repository.updateOrderStatus(orderId, status.value);
       await fetchUserOrders();
     } catch (e) {
       SnackbarUtils.showError('Failed to update order status');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<bool> cancelOrder(String orderId) async {
+    try {
+      final success = await _repository.cancelOrder(orderId);
+      if (success) {
+        await fetchUserOrders();
+      }
+      return success;
+    } catch (e) {
+      print('OrderController: Error cancelling order: $e');
+      return false;
     }
   }
 }

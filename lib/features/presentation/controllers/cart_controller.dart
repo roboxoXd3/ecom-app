@@ -1,12 +1,13 @@
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../data/models/product_model.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import 'currency_controller.dart';
 
 class CartController extends GetxController {
-  final supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
   final RxList<CartItem> items = <CartItem>[].obs;
   final RxBool isLoading = false.obs;
 
@@ -20,58 +21,26 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Get or create cart for current user
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        print('User not authenticated, skipping cart fetch');
+      if (!AuthService.isAuthenticated()) {
         items.clear();
         return;
       }
-      final userId = currentUser.id;
 
-      // Try to get existing cart
-      final cart =
-          await supabase
-              .from('carts')
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle();
-
-      String cartId;
-      if (cart == null) {
-        // Create new cart if none exists
-        final newCart =
-            await supabase
-                .from('carts')
-                .insert({'user_id': userId})
-                .select()
-                .single();
-        cartId = newCart['id'];
-      } else {
-        cartId = cart['id'];
-      }
-
-      // Fetch cart items with subcategory data
-      final response = await supabase
-          .from('cart_items')
-          .select('''
-            *,
-            products:product_id (
-              *,
-              subcategories:subcategory_id (*)
-            )
-          ''')
-          .eq('cart_id', cartId);
+      final response = await _api.get('/cart/');
+      final data = response.data as Map<String, dynamic>;
+      final cartItems = data['items'] as List<dynamic>? ?? [];
 
       items.value =
-          (response as List<dynamic>)
-              .where((item) => item['products'] != null)
-              .map((item) => CartItem.fromJson(item))
+          cartItems
+              .where((item) => item['product'] != null || item['products'] != null)
+              .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
               .toList();
     } catch (e) {
       print('Error fetching cart items: $e');
-      // Only show error for actual errors, not for empty carts
-      if (!e.toString().contains('no rows')) {
+      final s = e.toString();
+      if (!SnackbarUtils.isNoInternet(e) &&
+          !s.contains('no rows') &&
+          !s.contains('404')) {
         SnackbarUtils.showError('Failed to load cart items');
       }
     } finally {
@@ -88,67 +57,24 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
+      if (!AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Please login to add items to cart');
         return;
       }
-      final userId = currentUser.id;
 
-      // Get or create cart
-      final cart =
-          await supabase
-              .from('carts')
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle();
-
-      String cartId;
-      if (cart == null) {
-        final newCart =
-            await supabase
-                .from('carts')
-                .insert({'user_id': userId})
-                .select()
-                .single();
-        cartId = newCart['id'];
-      } else {
-        cartId = cart['id'];
-      }
-
-      // Check if item already exists
-      final existingItem =
-          await supabase
-              .from('cart_items')
-              .select()
-              .eq('cart_id', cartId)
-              .eq('product_id', product.id)
-              .eq('selected_size', size)
-              .eq('selected_color', color)
-              .maybeSingle();
-
-      if (existingItem != null) {
-        // Update quantity if item exists
-        await supabase
-            .from('cart_items')
-            .update({'quantity': existingItem['quantity'] + quantity})
-            .eq('id', existingItem['id']);
-      } else {
-        // Add new item
-        await supabase.from('cart_items').insert({
-          'cart_id': cartId,
-          'product_id': product.id,
-          'quantity': quantity,
-          'selected_size': size,
-          'selected_color': color,
-        });
-      }
+      await _api.post('/cart/items/', data: {
+        'product_id': product.id,
+        'quantity': quantity,
+        'selected_size': size,
+        'selected_color': color,
+      });
 
       await fetchCartItems();
-      // SnackbarUtils.showSuccess('Added to cart');
     } catch (e) {
       print('Error adding to cart: $e');
-      SnackbarUtils.showError('Failed to add item to cart');
+      if (!SnackbarUtils.isNoInternet(e)) {
+        SnackbarUtils.showError('Failed to add item to cart');
+      }
     } finally {
       isLoading.value = false;
     }
@@ -158,86 +84,61 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
+      if (!AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Please login to manage cart');
         return;
       }
-      final userId = currentUser.id;
-      final cart =
-          await supabase
-              .from('carts')
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle();
 
-      if (cart == null) {
-        SnackbarUtils.showError('Cart not found');
-        return;
+      if (item.id != null) {
+        await _api.delete('/cart/items/${item.id}/');
       }
-
-      await supabase
-          .from('cart_items')
-          .delete()
-          .eq('cart_id', cart['id'])
-          .eq('product_id', item.product.id)
-          .eq('selected_size', item.selectedSize)
-          .eq('selected_color', item.selectedColor);
 
       await fetchCartItems();
       SnackbarUtils.showSuccess('Removed from cart');
     } catch (e) {
       print('Error removing from cart: $e');
-      // SnackbarUtils.showError('Failed to remove item from cart');
     } finally {
       isLoading.value = false;
     }
   }
 
   Future<void> updateQuantity(CartItem item, int quantity) async {
+    if (quantity == 0) {
+      await removeFromCart(item);
+      return;
+    }
+    if (quantity < 1) return;
+
+    if (!AuthService.isAuthenticated()) {
+      SnackbarUtils.showError('Please login to update cart');
+      return;
+    }
+
+    final oldQuantity = item.quantity;
+    final index = items.indexOf(item);
+
+    // Optimistic update: reflect the change in UI immediately
+    if (index != -1) {
+      items[index].quantity = quantity;
+      items.refresh();
+    }
+
     try {
-      // If quantity is 0, remove the item from cart
-      if (quantity == 0) {
-        await removeFromCart(item);
-        return;
+      if (item.id != null) {
+        await _api.patch('/cart/items/${item.id}/', data: {
+          'quantity': quantity,
+        });
       }
-      // Safety check for negative values
-      if (quantity < 1) return;
-
-      isLoading.value = true;
-
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
-        SnackbarUtils.showError('Please login to update cart');
-        return;
-      }
-      final userId = currentUser.id;
-      final cart =
-          await supabase
-              .from('carts')
-              .select()
-              .eq('user_id', userId)
-              .maybeSingle();
-
-      if (cart == null) {
-        SnackbarUtils.showError('Cart not found');
-        return;
-      }
-
-      await supabase
-          .from('cart_items')
-          .update({'quantity': quantity})
-          .eq('cart_id', cart['id'])
-          .eq('product_id', item.product.id)
-          .eq('selected_size', item.selectedSize)
-          .eq('selected_color', item.selectedColor);
-
-      await fetchCartItems();
     } catch (e) {
       print('Error updating quantity: $e');
-      SnackbarUtils.showError('Failed to update quantity');
-    } finally {
-      isLoading.value = false;
+      // Revert on failure
+      if (index != -1) {
+        items[index].quantity = oldQuantity;
+        items.refresh();
+      }
+      if (!SnackbarUtils.isNoInternet(e)) {
+        SnackbarUtils.showError('Failed to update quantity');
+      }
     }
   }
 
@@ -245,22 +146,20 @@ class CartController extends GetxController {
     try {
       isLoading.value = true;
 
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null) {
+      if (!AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Please login to clear cart');
         return;
       }
-      final userId = currentUser.id;
-      final cart =
-          await supabase.from('carts').select().eq('user_id', userId).single();
 
-      await supabase.from('cart_items').delete().eq('cart_id', cart['id']);
+      await _api.post('/cart/clear/');
 
       items.clear();
       SnackbarUtils.showSuccess('Cart cleared');
     } catch (e) {
       print('Error clearing cart: $e');
-      SnackbarUtils.showError('Failed to clear cart');
+      if (!SnackbarUtils.isNoInternet(e)) {
+        SnackbarUtils.showError('Failed to clear cart');
+      }
     } finally {
       isLoading.value = false;
     }
@@ -268,7 +167,6 @@ class CartController extends GetxController {
 
   double get total {
     if (!Get.isRegistered<CurrencyController>()) {
-      // Fallback to raw price calculation if currency controller not available
       return items.fold(
         0.0,
         (sum, item) => sum + item.product.price * item.quantity,

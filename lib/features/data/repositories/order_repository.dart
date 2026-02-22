@@ -1,9 +1,10 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/services/auth_service.dart';
 import '../models/order_model.dart';
-import '../models/order_status.dart';
 
 class OrderRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
   Future<Order> createOrder({
     required String addressId,
@@ -15,57 +16,37 @@ class OrderRepository {
     String? loyaltyVoucherCode,
   }) async {
     try {
-      print(
-        'OrderRepository: Creating order with addressId: $addressId, paymentMethodId: $paymentMethodId',
-      );
-
-      // Check if user is authenticated
-      final currentUser = _supabase.auth.currentUser;
-      if (currentUser == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User not authenticated');
       }
 
-      // Start a transaction by creating the order first
-      final orderData = {
-        'user_id': currentUser.id,
+      final data = <String, dynamic>{
         'address_id': addressId,
-        // Set payment_method_id to null for string-based payment methods
-        'payment_method_id': null,
-        'subtotal': subtotal,
-        'shipping_fee': shippingFee,
-        'total': total,
-        'status': OrderStatus.pending.value,
-        // Store the payment method type in shipping_method field temporarily
-        // In a real app, you'd want a separate payment_method_type field
         'shipping_method': paymentMethodId,
+        'notes': '',
+        'items': items
+            .map((item) => {
+                  'product_id': item.productId,
+                  'quantity': item.quantity,
+                  'selected_size': item.selectedSize,
+                  'selected_color': item.selectedColor,
+                })
+            .toList(),
       };
 
-      // Add loyalty voucher code if provided
       if (loyaltyVoucherCode != null && loyaltyVoucherCode.isNotEmpty) {
-        orderData['loyalty_voucher_code'] = loyaltyVoucherCode;
+        data['loyalty_voucher_code'] = loyaltyVoucherCode;
       }
 
-      final orderResponse =
-          await _supabase.from('orders').insert(orderData).select().single();
+      if (paymentMethodId == 'cash_on_delivery') {
+        data['payment_status'] = 'pending';
+      }
 
-      print('OrderRepository: Order created with ID: ${orderResponse['id']}');
-
-      final order = Order.fromJson(orderResponse);
-
-      // Then create all order items
-      final orderItems =
-          items
-              .map((item) => {...item.toJson(), 'order_id': order.id})
-              .toList();
-
-      print('OrderRepository: Creating ${orderItems.length} order items');
-
-      await _supabase.from('order_items').insert(orderItems);
-
-      print('OrderRepository: Order items created successfully');
-
-      // Fetch the complete order with items
-      return getOrder(order.id);
+      final response = await _api.post('/orders/', data: data);
+      return Order.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('OrderRepository: Error creating order: ${e.response?.statusCode} — ${e.response?.data}');
+      rethrow;
     } catch (e) {
       print('OrderRepository: Error creating order: $e');
       rethrow;
@@ -73,72 +54,20 @@ class OrderRepository {
   }
 
   Future<Order> getOrder(String orderId) async {
-    final orderResponse =
-        await _supabase.from('orders').select().eq('id', orderId).single();
-
-    final itemsResponse = await _supabase
-        .from('order_items')
-        .select('''
-          *,
-          products!inner(
-            id,
-            name,
-            vendor_id,
-            vendors!inner(
-              id,
-              business_name
-            )
-          )
-        ''')
-        .eq('order_id', orderId);
-
-    final items =
-        (itemsResponse as List)
-            .map((item) => OrderItem.fromJson(item))
-            .toList();
-
-    return Order.fromJson(orderResponse, items: items);
+    final response = await _api.get('/orders/$orderId/');
+    return Order.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<List<Order>> getUserOrders() async {
-    final currentUser = _supabase.auth.currentUser;
-    if (currentUser == null) {
+    if (!AuthService.isAuthenticated()) {
       throw Exception('User not authenticated');
     }
 
-    final ordersResponse = await _supabase
-        .from('orders')
-        .select()
-        .eq('user_id', currentUser.id)
-        .order('created_at', ascending: false);
-
-    final orders = <Order>[];
-    for (final orderJson in ordersResponse) {
-      final itemsResponse = await _supabase
-          .from('order_items')
-          .select('''
-            *,
-            products!inner(
-              id,
-              name,
-              vendor_id,
-              vendors!inner(
-                id,
-                business_name
-              )
-            )
-          ''')
-          .eq('order_id', orderJson['id']);
-
-      final items =
-          (itemsResponse as List)
-              .map((item) => OrderItem.fromJson(item))
-              .toList();
-
-      orders.add(Order.fromJson(orderJson, items: items));
-    }
-
-    return orders;
+    final response = await _api.get('/orders/');
+    final results = ApiClient.unwrapResults(response.data);
+    return results
+        .map((json) => Order.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Order> createOrderWithPayment({
@@ -155,57 +84,38 @@ class OrderRepository {
     String? loyaltyVoucherCode,
   }) async {
     try {
-      print('OrderRepository: Creating order with payment details');
-      print('Squad Transaction Ref: $squadTransactionRef');
-
-      // Check if user is authenticated
-      final currentUser = _supabase.auth.currentUser;
-      if (currentUser == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User not authenticated');
       }
 
-      // Create order with payment details
-      final orderData = {
-        'user_id': currentUser.id,
+      final data = <String, dynamic>{
         'address_id': addressId,
-        'payment_method_id': null,
-        'subtotal': subtotal,
-        'shipping_fee': shippingFee,
-        'total': total,
-        'status': OrderStatus.pending.value,
         'shipping_method': paymentMethodId,
-        'squad_transaction_ref': squadTransactionRef,
-        'squad_gateway_ref': squadGatewayRef,
-        'payment_status': paymentStatus,
-        'escrow_status': escrowStatus,
+        'items': items
+            .map((item) => {
+                  'product_id': item.productId,
+                  'quantity': item.quantity,
+                  'selected_size': item.selectedSize,
+                  'selected_color': item.selectedColor,
+                })
+            .toList(),
       };
 
-      // Add loyalty voucher code if provided
+      if (squadTransactionRef != null) {
+        data['squad_transaction_ref'] = squadTransactionRef;
+      }
+      if (paymentStatus != null) {
+        data['payment_status'] = paymentStatus;
+      }
       if (loyaltyVoucherCode != null && loyaltyVoucherCode.isNotEmpty) {
-        orderData['loyalty_voucher_code'] = loyaltyVoucherCode;
+        data['loyalty_voucher_code'] = loyaltyVoucherCode;
       }
 
-      final orderResponse =
-          await _supabase.from('orders').insert(orderData).select().single();
-
-      print(
-        'OrderRepository: Order with payment created with ID: ${orderResponse['id']}',
-      );
-
-      final order = Order.fromJson(orderResponse);
-
-      // Create order items
-      final orderItems =
-          items
-              .map((item) => {...item.toJson(), 'order_id': order.id})
-              .toList();
-
-      await _supabase.from('order_items').insert(orderItems);
-
-      print('OrderRepository: Order items created successfully');
-
-      // Return complete order with items
-      return getOrder(order.id);
+      final response = await _api.post('/orders/', data: data);
+      return Order.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      print('OrderRepository: Error creating order with payment: ${e.response?.statusCode} — ${e.response?.data}');
+      rethrow;
     } catch (e) {
       print('OrderRepository: Error creating order with payment: $e');
       rethrow;
@@ -219,29 +129,34 @@ class OrderRepository {
     String? escrowStatus,
   }) async {
     try {
-      final updateData = <String, dynamic>{'payment_status': paymentStatus};
-
+      final data = <String, dynamic>{'payment_status': paymentStatus};
       if (squadGatewayRef != null) {
-        updateData['squad_gateway_ref'] = squadGatewayRef;
+        data['squad_gateway_ref'] = squadGatewayRef;
       }
-
       if (escrowStatus != null) {
-        updateData['escrow_status'] = escrowStatus;
+        data['escrow_status'] = escrowStatus;
       }
 
-      await _supabase.from('orders').update(updateData).eq('id', orderId);
-
-      print('OrderRepository: Payment status updated for order: $orderId');
+      await _api.patch('/orders/$orderId/payment-status/', data: data);
     } catch (e) {
       print('OrderRepository: Error updating payment status: $e');
       rethrow;
     }
   }
 
-  Future<void> updateOrderStatus(String orderId, OrderStatus status) async {
-    await _supabase
-        .from('orders')
-        .update({'status': status.value})
-        .eq('id', orderId);
+  Future<void> updateOrderStatus(String orderId, String statusValue) async {
+    await _api.patch('/orders/$orderId/', data: {
+      'status': statusValue,
+    });
+  }
+
+  Future<bool> cancelOrder(String orderId) async {
+    try {
+      await _api.post('/orders/$orderId/cancel/');
+      return true;
+    } catch (e) {
+      print('OrderRepository: Error cancelling order: $e');
+      return false;
+    }
   }
 }

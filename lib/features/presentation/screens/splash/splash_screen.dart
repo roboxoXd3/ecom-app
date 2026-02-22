@@ -6,7 +6,11 @@ import '../auth/login_screen.dart';
 import '../onboarding/onboarding_screen.dart';
 import '../home/home_screen.dart';
 import '../../controllers/auth_controller.dart';
-
+import '../../controllers/product_controller.dart';
+import '../../controllers/category_controller.dart';
+import '../../controllers/vendor_controller.dart';
+import '../../controllers/cart_controller.dart';
+import '../../controllers/order_controller.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -23,24 +27,50 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeAndNavigate() async {
     try {
-      // Supabase is already initialized in main.dart
       final AuthController authController = Get.find<AuthController>();
+      final isLoggedIn = authController.isLoggedIn();
 
-      // Show animations for 2 seconds
-      await Future.delayed(const Duration(seconds: 2));
+      // The controllers already start fetching in onInit() via InitialBindings.
+      // We simply wait for them to finish during the splash window so the home
+      // screen opens with data already loaded — no double-fetching.
+      Future<void> waitIfLoading(RxBool isLoading) async {
+        // Poll until the in-progress fetch completes (max 8s safety cap)
+        final deadline = DateTime.now().add(const Duration(seconds: 8));
+        while (isLoading.value && DateTime.now().isBefore(deadline)) {
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+      }
 
-      // Check if user is already logged in
-      if (authController.isLoggedIn()) {
-        // User is logged in, go directly to home screen
+      final waitFutures = <Future>[
+        if (Get.isRegistered<ProductController>())
+          waitIfLoading(Get.find<ProductController>().isLoading),
+        if (Get.isRegistered<CategoryController>())
+          waitIfLoading(Get.find<CategoryController>().isLoading),
+        if (Get.isRegistered<VendorController>())
+          waitIfLoading(Get.find<VendorController>().isLoading),
+        if (isLoggedIn) ...[
+          if (Get.isRegistered<CartController>())
+            waitIfLoading(Get.find<CartController>().isLoading),
+          if (Get.isRegistered<OrderController>())
+            waitIfLoading(Get.find<OrderController>().isLoading),
+        ],
+      ];
+
+      // Wait for data + minimum splash duration simultaneously.
+      // If data loads in 1.2s, we still show splash for 2s.
+      // If data takes 3s, we skip the extra wait and navigate immediately.
+      await Future.wait([
+        Future.wait(waitFutures.map((f) => f.catchError((_) {}))),
+        Future.delayed(const Duration(seconds: 2)),
+      ]);
+
+      if (isLoggedIn) {
         Get.offAll(() => const HomeScreen());
       } else {
-        // First time or logged out user, show onboarding
         final bool hasSeenOnboarding = await _hasSeenOnboarding();
         if (hasSeenOnboarding) {
-          // User has seen onboarding before, go to login
           Get.offAll(() => const LoginScreen());
         } else {
-          // First time user, show onboarding
           Get.offAll(() => const OnboardingScreen());
         }
       }

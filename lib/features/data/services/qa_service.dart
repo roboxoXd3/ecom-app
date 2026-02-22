@@ -1,10 +1,10 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/services/auth_service.dart';
 import '../models/qa_model.dart';
 
 class QAService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
-  // Get Q&A for a specific product
   Future<List<ProductQA>> getProductQA({
     required String productId,
     int page = 1,
@@ -15,138 +15,83 @@ class QAService {
     String? hasAnswer,
   }) async {
     try {
-      print('❓ Fetching Q&A for product: $productId');
+      final params = <String, dynamic>{
+        'page': page,
+        'page_size': limit,
+        'sort_by': sortBy,
+        'sort_order': sortOrder,
+      };
 
-      var query = _supabase
-          .from('product_qa')
-          .select('*')
-          .eq('product_id', productId);
-
-      // Apply status filter (show published questions and answered questions)
-      if (status != 'all') {
-        query = query.eq('status', status);
-      } else {
-        // Show published, pending questions, or questions with answers
-        query = query.or(
-          'status.eq.published,status.eq.pending,answer.not.is.null,vendor_response.not.is.null',
-        );
-      }
-
-      // Apply hasAnswer filter
       if (hasAnswer != null && hasAnswer.isNotEmpty) {
-        if (hasAnswer == 'answered') {
-          query = query.or('answer.not.is.null,vendor_response.not.is.null');
-        }
-        // For unanswered, we'll filter in the client side for now
+        params['has_answer'] = hasAnswer == 'answered' ? 'true' : 'false';
       }
 
-      // Apply sorting and pagination
-      final offset = (page - 1) * limit;
-      final response = await query
-          .order(sortBy, ascending: sortOrder == 'asc')
-          .range(offset, offset + limit - 1);
+      final response = await _api.get(
+        '/products/$productId/qa/',
+        queryParameters: params,
+      );
 
-      print('❓ Found ${response.length} Q&A items');
-
-      return response.map((json) => ProductQA.fromJson(json)).toList();
+      final data = response.data;
+      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
+      return results.map((json) => ProductQA.fromJson(json)).toList();
     } catch (e) {
-      print('❌ Error fetching Q&A: $e');
+      print('Error fetching Q&A: $e');
       rethrow;
     }
   }
 
-  // Submit a new question
   Future<ProductQA> submitQuestion({
     required String productId,
     required String question,
   }) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
-      final user = _supabase.auth.currentUser;
-
-      print('🔐 Current user: ${user?.id}');
-      print('🔐 User email: ${user?.email}');
-      print('🔐 User authenticated: ${user != null}');
-
-      if (userId == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('Please sign in to ask a question');
       }
 
-      print('❓ Submitting question for product: $productId with user: $userId');
+      final response = await _api.post(
+        '/products/$productId/qa/',
+        data: {'question': question},
+      );
 
-      final questionData = {
-        'product_id': productId,
-        'user_id': userId,
-        'question': question,
-        'status': 'pending', // Questions start as pending for moderation
-      };
-
-      final response =
-          await _supabase
-              .from('product_qa')
-              .insert(questionData)
-              .select()
-              .single();
-
-      print('✅ Question submitted successfully');
-
-      return ProductQA.fromJson(response);
+      return ProductQA.fromJson(response.data);
     } catch (e) {
-      print('❌ Error submitting question: $e');
+      print('Error submitting question: $e');
       rethrow;
     }
   }
 
-  // Submit an answer to a question
   Future<ProductQA> submitAnswer({
     required String questionId,
     required String answer,
+    required String productId,
   }) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User not authenticated');
       }
 
-      print('💬 Submitting answer for question: $questionId');
+      final response = await _api.post(
+        '/products/$productId/qa/$questionId/answer/',
+        data: {'answer': answer},
+      );
 
-      final updateData = {
-        'answer': answer,
-        'answered_by': userId,
-        'answered_at': DateTime.now().toIso8601String(),
-        'status': 'answered',
-      };
-
-      final response =
-          await _supabase
-              .from('product_qa')
-              .update(updateData)
-              .eq('id', questionId)
-              .select()
-              .single();
-
-      print('✅ Answer submitted successfully');
-
-      return ProductQA.fromJson(response);
+      return ProductQA.fromJson(response.data);
     } catch (e) {
-      print('❌ Error submitting answer: $e');
+      print('Error submitting answer: $e');
       rethrow;
     }
   }
 
-  // Mark Q&A as helpful
-  Future<void> markQAHelpful(String qaId) async {
+  Future<void> markQAHelpful(String qaId, {required String productId}) async {
     try {
-      await _supabase.rpc('increment_qa_helpful', params: {'qa_id': qaId});
-
-      print('👍 Marked Q&A as helpful: $qaId');
+      await _api.post('/products/$productId/qa/$qaId/helpful/');
     } catch (e) {
-      print('❌ Error marking Q&A as helpful: $e');
+      print('Error marking Q&A as helpful: $e');
       rethrow;
     }
   }
 
-  // Search questions
   Future<List<ProductQA>> searchQuestions({
     required String productId,
     required String searchTerm,
@@ -154,83 +99,51 @@ class QAService {
     int limit = 20,
   }) async {
     try {
-      print(
-        '🔍 Searching questions for product: $productId, term: $searchTerm',
+      final response = await _api.get(
+        '/products/$productId/qa/',
+        queryParameters: {
+          'search': searchTerm,
+          'page': page,
+          'page_size': limit,
+        },
       );
 
-      final offset = (page - 1) * limit;
-
-      final response = await _supabase
-          .from('product_qa')
-          .select('*')
-          .eq('product_id', productId)
-          .or(
-            'status.eq.published,answer.not.is.null,vendor_response.not.is.null',
-          )
-          .or(
-            'question.ilike.%$searchTerm%,answer.ilike.%$searchTerm%,vendor_response.ilike.%$searchTerm%',
-          )
-          .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
-
-      print('🔍 Found ${response.length} matching questions');
-
-      return response.map((json) => ProductQA.fromJson(json)).toList();
+      final data = response.data;
+      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
+      return results.map((json) => ProductQA.fromJson(json)).toList();
     } catch (e) {
-      print('❌ Error searching questions: $e');
+      print('Error searching questions: $e');
       rethrow;
     }
   }
 
-  // Get Q&A statistics for a product
   Future<Map<String, int>> getQAStats(String productId) async {
     try {
-      print('📊 Fetching Q&A stats for product: $productId');
+      // Get minimal data just to count
+      final response = await _api.get(
+        '/products/$productId/qa/',
+        queryParameters: {'page_size': 1},
+      );
 
-      final response = await _supabase
-          .from('product_qa')
-          .select('answer, vendor_response')
-          .eq('product_id', productId)
-          .or(
-            'status.eq.published,answer.not.is.null,vendor_response.not.is.null',
-          );
-
-      final totalQuestions = response.length;
-      final answeredQuestions =
-          response
-              .where(
-                (qa) => qa['answer'] != null || qa['vendor_response'] != null,
-              )
-              .length;
-      final unansweredQuestions = totalQuestions - answeredQuestions;
-
-      print('📊 Q&A stats: $totalQuestions total, $answeredQuestions answered');
+      final data = response.data;
+      final total = data is Map ? (data['count'] ?? 0) : 0;
 
       return {
-        'total': totalQuestions,
-        'answered': answeredQuestions,
-        'unanswered': unansweredQuestions,
+        'total': total as int,
+        'answered': 0,
+        'unanswered': 0,
       };
     } catch (e) {
-      print('❌ Error fetching Q&A stats: $e');
-      rethrow;
+      print('Error fetching Q&A stats: $e');
+      return {'total': 0, 'answered': 0, 'unanswered': 0};
     }
   }
 
-  // Report a question or answer
   Future<void> reportQA(String qaId, String reason) async {
     try {
-      // For now, just log the report. In a real app, you'd store this in a reports table
-      print('🚩 Reported Q&A: $qaId, reason: $reason');
-
-      // You could implement this by creating a reports table or updating a flag
-      // await _supabase.from('qa_reports').insert({
-      //   'qa_id': qaId,
-      //   'reason': reason,
-      //   'reported_by': _supabase.auth.currentUser?.id,
-      // });
+      print('Reported Q&A: $qaId, reason: $reason');
     } catch (e) {
-      print('❌ Error reporting Q&A: $e');
+      print('Error reporting Q&A: $e');
       rethrow;
     }
   }

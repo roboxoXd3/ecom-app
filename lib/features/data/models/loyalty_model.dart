@@ -30,14 +30,20 @@ class LoyaltyAccount {
 
   factory LoyaltyAccount.fromJson(Map<String, dynamic> json) {
     return LoyaltyAccount(
-      id: json['id'],
-      userId: json['user_id'],
+      id: (json['id'] ?? '').toString(),
+      userId: (json['user_id'] ?? json['user'] ?? '').toString(),
       pointsBalance: json['points_balance'] ?? 0,
       lifetimePoints: json['lifetime_points'] ?? 0,
       tier: json['tier'] ?? 'bronze',
-      tierUpdatedAt: DateTime.parse(json['tier_updated_at']),
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      tierUpdatedAt: json['tier_updated_at'] != null
+          ? DateTime.parse(json['tier_updated_at'])
+          : DateTime.now(),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
       tierMultiplier: (json['tier_multiplier'] ?? 1.0).toDouble(),
       tierProgress: (json['tier_progress'] ?? 0.0).toDouble(),
       nextTier: json['next_tier'],

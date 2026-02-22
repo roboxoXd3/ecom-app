@@ -123,7 +123,13 @@ class CartTab extends StatelessWidget {
                             },
                             child: Card(
                               margin: const EdgeInsets.only(bottom: 16),
-                              child: Padding(
+                              child: InkWell(
+                                onTap: () => Get.toNamed(
+                                  '/product-details',
+                                  arguments: item.product.id,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
@@ -248,6 +254,7 @@ class CartTab extends StatelessWidget {
                                     ),
                                   ],
                                 ),
+                              ),
                               ),
                             ),
                           );

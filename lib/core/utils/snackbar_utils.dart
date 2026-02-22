@@ -1,8 +1,30 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../network/api_exception.dart';
 import '../theme/app_theme.dart';
 
 class SnackbarUtils {
+  /// Returns true when an error is a network/connectivity failure.
+  /// Use this in catch blocks to silently swallow no-internet errors —
+  /// the ApiClient interceptor already shows a single global banner.
+  static bool isNoInternet(Object e) {
+    if (e is NoInternetException) return true;
+    if (e is DioException && e.error is NoInternetException) return true;
+    if (e is DioException) {
+      return e.type == DioExceptionType.connectionError ||
+          e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout;
+    }
+    final msg = e.toString().toLowerCase();
+    return msg.contains('socketexception') ||
+        msg.contains('failed host lookup') ||
+        msg.contains('network is unreachable') ||
+        msg.contains('connection refused') ||
+        msg.contains('nointernetexception');
+  }
+
   static void showSuccess(String message) {
     Get.snackbar(
       'Success',

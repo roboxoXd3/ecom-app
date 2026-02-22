@@ -2,11 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/product_search_service.dart';
-import '../../data/services/ujunwa_ai_service.dart';
-import '../../data/services/conversation_context_service.dart';
 import '../../data/services/size_guide_service.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/network/api_client.dart';
 
 import '../../data/models/product_model.dart';
 import '../../data/models/chat_models.dart' as chat_models;
@@ -89,10 +88,6 @@ class ChatbotController extends GetxController {
   final ScrollController scrollController = ScrollController();
   final ProductSearchService _searchService = Get.find<ProductSearchService>();
 
-  // NEW: UJUNWA AI Services
-  final UjunwaAIService _ujunwaService = UjunwaAIService();
-  final ConversationContextService _contextService =
-      ConversationContextService();
   final SizeGuideService _sizeGuideService = SizeGuideService();
 
   // NEW: Image picker instance
@@ -191,7 +186,7 @@ class ChatbotController extends GetxController {
 
   Future<void> _loadUserConversations() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = AuthService.isAuthenticated() ? AuthService.getCurrentUserId() : null;
       if (userId != null) {
         final userConversations = await _chatRepository.getUserConversations(
           userId,
@@ -205,7 +200,7 @@ class ChatbotController extends GetxController {
 
   Future<void> _startNewConversationIfNeeded() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = AuthService.isAuthenticated() ? AuthService.getCurrentUserId() : null;
       if (userId != null && conversations.isEmpty) {
         currentConversation = await _chatRepository.createConversation(
           userId: userId,
@@ -225,16 +220,15 @@ class ChatbotController extends GetxController {
     if (productIds.isEmpty) return [];
     
     try {
-      print('🔍 Fetching products with IDs: ${productIds.take(5).join(", ")}${productIds.length > 5 ? "..." : ""}');
-      final response = await Supabase.instance.client
-          .from('products')
-          .select('*, vendors(*)')
-          .inFilter('id', productIds)
-          .eq('approval_status', 'approved'); // Only approved products
-      
-      final products = (response as List)
-          .map((json) => Product.fromJson(json))
-          .toList();
+      print('Fetching products with IDs: ${productIds.take(5).join(", ")}${productIds.length > 5 ? "..." : ""}');
+      final api = ApiClient.instance;
+      final products = <Product>[];
+      for (final id in productIds) {
+        try {
+          final resp = await api.get('/products/$id/');
+          products.add(Product.fromJson(resp.data));
+        } catch (_) {}
+      }
       
       print('✅ Fetched ${products.length} products (requested ${productIds.length})');
       return products;
@@ -478,106 +472,83 @@ class ChatbotController extends GetxController {
     });
   }
 
-  /// NEW: Handle UJUNWA AI responses
+  /// Handle UJUNWA AI responses via Django backend
   Future<void> _handleUjunwaResponse(String userMessage) async {
     isTyping.value = true;
 
     try {
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) return;
+      if (!AuthService.isAuthenticated()) return;
 
-      final userId = currentUser.id;
       final lowerMessage = userMessage.toLowerCase();
 
-      // Check for size guide requests first
       if (_isSizeGuideRequest(lowerMessage)) {
         isTyping.value = false;
         await showSizeGuide(query: userMessage);
         return;
       }
 
-      // Get conversation context
-      List<ConversationContext>? context;
-      if (currentConversation != null) {
-        context = await _contextService.getConversationContext(
-          conversationId: currentConversation!.id,
-          limit: 5, // Last 5 interactions for context
+      final api = ApiClient.instance;
+      final response = await api.post('/support/chat/send/', data: {
+        'message': userMessage,
+        if (currentConversation != null)
+          'conversation_id': currentConversation!.id,
+      });
+
+      final data = response.data as Map<String, dynamic>;
+      final botResponse = data['bot_response'] as Map<String, dynamic>;
+      final convId = data['conversation_id']?.toString();
+
+      if (currentConversation == null && convId != null) {
+        currentConversation = chat_models.ChatConversation(
+          id: convId,
+          title: userMessage.length > 50
+              ? '${userMessage.substring(0, 50)}...'
+              : userMessage,
+          lastMessageAt: DateTime.now(),
+          isResolved: false,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
+        conversations.add(currentConversation!);
       }
 
-      // Generate UJUNWA response
-      final ujunwaResponse = await _ujunwaService.generateResponse(
-        userMessage: userMessage,
-        userId: userId,
-        conversationId: currentConversation?.id,
-        context: context,
-      );
+      List<Product> products = [];
+      if (botResponse['products'] != null) {
+        final productList = botResponse['products'] as List;
+        for (final p in productList) {
+          try {
+            products.add(Product.fromJson(p as Map<String, dynamic>));
+          } catch (_) {}
+        }
+      }
 
-      // Create bot message
+      final botText = botResponse['message_text']?.toString() ?? '';
+      final messageType = products.isNotEmpty ? 'products' : 'text';
+
       final botMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: ujunwaResponse.text,
+        id: botResponse['id']?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
+        text: botText,
         isUser: false,
         createdAt: DateTime.now(),
-        products: ujunwaResponse.products,
-        messageType: ujunwaResponse.products.isNotEmpty ? 'products' : 'text',
-        // ujunwaResponse: ujunwaResponse, // TODO: Add structured response support
+        products: products.isNotEmpty ? products : null,
+        messageType: messageType,
       );
-      
-      // Debug: Log products in new message
-      if (ujunwaResponse.products.isNotEmpty) {
-        print('✅ New message created with ${ujunwaResponse.products.length} products');
-        print('   Product IDs: ${ujunwaResponse.products.map((p) => p.id).join(", ")}');
-      }
 
-      // Add typing delay for natural feel
-      await Future.delayed(const Duration(milliseconds: 1500));
+      await Future.delayed(const Duration(milliseconds: 500));
       isTyping.value = false;
       messages.add(botMessage);
       _scrollToBottom();
 
-      // Save bot response to database
-      if (currentConversation != null) {
-        try {
-          await _chatRepository.addMessage(
-            conversationId: currentConversation!.id,
-            senderType: 'bot',
-            messageText: ujunwaResponse.text,
-            metadata: {
-              'intent_type': ujunwaResponse.intent?.type.toString(),
-              'intent_confidence': ujunwaResponse.intent?.confidence,
-              'products_count': ujunwaResponse.products.length,
-              'product_ids': ujunwaResponse.products.map((p) => p.id).toList(), // NEW: Save product IDs for restoration
-              'suggestions': ujunwaResponse.suggestions,
-            },
-          );
-
-          // Track analytics
-          await _chatRepository.trackChatAction(
-            conversationId: currentConversation!.id,
-            userId: userId,
-            actionType: 'ujunwa_response',
-            actionData: {
-              'intent_type': ujunwaResponse.intent?.type.toString(),
-              'intent_confidence': ujunwaResponse.intent?.confidence,
-              'response_length': ujunwaResponse.text.length,
-              'products_shown': ujunwaResponse.products.length,
-            },
-          );
-        } catch (e) {
-          print('Error saving UJUNWA response: $e');
-        }
-      }
-
-      // Show suggestions if available
-      if (ujunwaResponse.suggestions.isNotEmpty) {
-        _showSuggestions(ujunwaResponse.suggestions);
+      final metadata = botResponse['metadata'] as Map<String, dynamic>?;
+      final suggestions = metadata?['suggestions'];
+      if (suggestions is List && suggestions.isNotEmpty) {
+        _showSuggestions(suggestions.cast<String>());
       }
     } catch (e) {
       print('❌ Error in UJUNWA response: $e');
       isTyping.value = false;
 
-      // Fallback to simple response
       final fallbackMessage = ChatMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         text:
@@ -618,9 +589,7 @@ class ChatbotController extends GetxController {
   void sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Check if user is logged in
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
+    if (!AuthService.isAuthenticated()) {
       Get.snackbar(
         'Login Required',
         'Please log in to use the chat feature',
@@ -629,9 +598,7 @@ class ChatbotController extends GetxController {
       );
       return;
     }
-    final userId = currentUser.id;
 
-    // Add user message to UI
     final userMessage = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: text,
@@ -642,28 +609,7 @@ class ChatbotController extends GetxController {
     messageController.clear();
     _scrollToBottom();
 
-    // Save to database
-    if (currentConversation != null) {
-      try {
-        await _chatRepository.addMessage(
-          conversationId: currentConversation!.id,
-          senderType: 'user',
-          messageText: text,
-        );
-
-        // Track analytics
-        await _chatRepository.trackChatAction(
-          conversationId: currentConversation!.id,
-          userId: userId,
-          actionType: 'message_sent',
-          actionData: {'message_type': 'user', 'message_length': text.length},
-        );
-      } catch (e) {
-        print('Error saving message: $e');
-      }
-    }
-
-    // Use UJUNWA AI for intelligent responses
+    // Django /support/chat/send/ handles saving both user & bot messages
     await _handleUjunwaResponse(text);
   }
 
@@ -681,7 +627,7 @@ class ChatbotController extends GetxController {
 
   void clearChat() async {
     messages.clear();
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final userId = AuthService.isAuthenticated() ? AuthService.getCurrentUserId() : null;
     if (userId != null) {
       try {
         await _chatRepository.clearChatHistory(userId);
@@ -938,12 +884,13 @@ class ChatbotController extends GetxController {
   }
 
   void _debugAuth() {
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    print('🔐 Debug Auth Status:');
-    print('   - User logged in: ${currentUser != null}');
-    print('   - User ID: ${currentUser?.id}');
-    print('   - User Email: ${currentUser?.email}');
-    print('   - Auth Controller found: true');
+    final isLoggedIn = AuthService.isAuthenticated();
+    print('Debug Auth Status:');
+    print('   - User logged in: $isLoggedIn');
+    if (isLoggedIn) {
+      print('   - User ID: ${AuthService.getCurrentUserId()}');
+      print('   - User: ${AuthService.getUserEmail()}');
+    }
   }
 
   /// NEW: Handle image selection and search

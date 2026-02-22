@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/network/api_client.dart';
 
 /// Product Specification Detail Model (for knowledge base)
 /// Note: ProductSpec in product_model.dart is different (grouped format)
@@ -61,90 +61,68 @@ class FAQ {
 /// Knowledge Base Service
 /// Retrieves FAQs, product specifications, and policy information for RAG context
 class KnowledgeBaseService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
-  /// Search FAQs using keyword matching
-  /// Returns relevant FAQs based on query
   Future<List<FAQ>> searchFAQs(String query) async {
     try {
       if (query.isEmpty) return [];
 
-      final lowerQuery = query.toLowerCase();
-
-      // Search in question and answer fields
-      final response = await _supabase
-          .from('faqs')
-          .select('*')
-          .or('question.ilike.%$lowerQuery%,answer.ilike.%$lowerQuery%')
-          .order('order_index')
-          .limit(5);
-
-      return (response as List).map((json) => FAQ.fromJson(json)).toList();
+      final response = await _api.get(
+        '/content/faqs/',
+        queryParameters: {'search': query, 'page_size': 5},
+      );
+      final data = response.data;
+      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
+      return results.map((json) => FAQ.fromJson(json)).toList();
     } catch (e) {
-      print('❌ Error searching FAQs: $e');
+      print('Error searching FAQs: $e');
       return [];
     }
   }
 
-  /// Get product specifications for a specific product
   Future<List<ProductSpecDetail>> getProductSpecs(String productId) async {
     try {
       if (productId.isEmpty) return [];
 
-      final response = await _supabase
-          .from('product_specifications')
-          .select('*')
-          .eq('product_id', productId)
-          .order('sort_order');
-
-      return (response as List)
-          .map((json) => ProductSpecDetail.fromJson(json))
-          .toList();
+      final response = await _api.get('/products/$productId/specifications/');
+      final data = response.data;
+      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
+      return results.map((json) => ProductSpecDetail.fromJson(json)).toList();
     } catch (e) {
-      print('❌ Error fetching product specs: $e');
+      print('Error fetching product specs: $e');
       return [];
     }
   }
 
-  /// Get support information/policies
   Future<List<Map<String, dynamic>>> getSupportInfo({
     String? type,
     int limit = 5,
   }) async {
     try {
-      var query = _supabase.from('support_info').select('*');
+      final params = <String, dynamic>{'page_size': limit};
+      if (type != null) params['type'] = type;
 
-      if (type != null) {
-        query = query.eq('type', type);
-      }
-
-      final response = await query.order('order_index').limit(limit);
-
-      return List<Map<String, dynamic>>.from(response);
+      final response = await _api.get('/content/support-info/', queryParameters: params);
+      final data = response.data;
+      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
+      return List<Map<String, dynamic>>.from(results);
     } catch (e) {
-      print('❌ Error fetching support info: $e');
+      print('Error fetching support info: $e');
       return [];
     }
   }
 
-  /// Get relevant FAQs for a product-related query
-  /// Uses keyword matching to find FAQs that might help answer the query
   Future<List<FAQ>> getRelevantFAQsForQuery(String userQuery) async {
     try {
-      // Extract key terms from query
       final queryTerms = _extractKeyTerms(userQuery);
-
       if (queryTerms.isEmpty) return [];
 
-      // Search FAQs using extracted terms
       final allFAQs = <FAQ>[];
       for (final term in queryTerms.take(3)) {
-        // Limit to 3 terms to avoid too many queries
         final faqs = await searchFAQs(term);
         allFAQs.addAll(faqs);
       }
 
-      // Remove duplicates and limit results
       final uniqueFAQs = <String, FAQ>{};
       for (final faq in allFAQs) {
         if (!uniqueFAQs.containsKey(faq.id)) {
@@ -154,48 +132,21 @@ class KnowledgeBaseService {
 
       return uniqueFAQs.values.take(5).toList();
     } catch (e) {
-      print('❌ Error getting relevant FAQs: $e');
+      print('Error getting relevant FAQs: $e');
       return [];
     }
   }
 
-  /// Extract key terms from a query for FAQ search
   List<String> _extractKeyTerms(String query) {
     final lowerQuery = query.toLowerCase();
     final terms = <String>[];
 
-    // Common e-commerce terms
     final importantTerms = [
-      'return',
-      'refund',
-      'shipping',
-      'delivery',
-      'order',
-      'track',
-      'cancel',
-      'exchange',
-      'warranty',
-      'guarantee',
-      'payment',
-      'price',
-      'discount',
-      'coupon',
-      'size',
-      'fit',
-      'measurement',
-      'quality',
-      'material',
-      'care',
-      'wash',
-      'policy',
-      'terms',
-      'privacy',
-      'account',
-      'login',
-      'password',
-      'help',
-      'support',
-      'contact',
+      'return', 'refund', 'shipping', 'delivery', 'order', 'track',
+      'cancel', 'exchange', 'warranty', 'guarantee', 'payment', 'price',
+      'discount', 'coupon', 'size', 'fit', 'measurement', 'quality',
+      'material', 'care', 'wash', 'policy', 'terms', 'privacy',
+      'account', 'login', 'password', 'help', 'support', 'contact',
     ];
 
     for (final term in importantTerms) {
@@ -204,53 +155,16 @@ class KnowledgeBaseService {
       }
     }
 
-    // Also add words longer than 4 characters that aren't common words
     final words = lowerQuery.split(' ');
     final commonWords = [
-      'the',
-      'and',
-      'for',
-      'are',
-      'but',
-      'not',
-      'you',
-      'all',
-      'can',
-      'her',
-      'was',
-      'one',
-      'our',
-      'out',
-      'day',
-      'get',
-      'has',
-      'him',
-      'his',
-      'how',
-      'its',
-      'may',
-      'new',
-      'now',
-      'old',
-      'see',
-      'two',
-      'way',
-      'who',
-      'boy',
-      'did',
-      'its',
-      'let',
-      'put',
-      'say',
-      'she',
-      'too',
-      'use',
+      'the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can',
+      'her', 'was', 'one', 'our', 'out', 'day', 'get', 'has', 'him',
+      'his', 'how', 'its', 'may', 'new', 'now', 'old', 'see', 'two',
+      'way', 'who', 'boy', 'did', 'let', 'put', 'say', 'she', 'too', 'use',
     ];
 
     for (final word in words) {
-      if (word.length > 4 &&
-          !commonWords.contains(word) &&
-          !terms.contains(word)) {
+      if (word.length > 4 && !commonWords.contains(word) && !terms.contains(word)) {
         terms.add(word);
       }
     }
@@ -258,7 +172,6 @@ class KnowledgeBaseService {
     return terms;
   }
 
-  /// Format FAQs for inclusion in AI prompt
   String formatFAQsForPrompt(List<FAQ> faqs) {
     if (faqs.isEmpty) return '';
 
@@ -274,14 +187,12 @@ class KnowledgeBaseService {
     return buffer.toString();
   }
 
-  /// Format product specs for inclusion in AI prompt
   String formatSpecsForPrompt(List<ProductSpecDetail> specs) {
     if (specs.isEmpty) return '';
 
     final buffer = StringBuffer();
     buffer.writeln('\nProduct Specifications:');
 
-    // Group specs by group name
     final groupedSpecs = <String, List<ProductSpecDetail>>{};
     for (final spec in specs) {
       final group = spec.groupName;

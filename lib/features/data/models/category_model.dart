@@ -1,3 +1,5 @@
+import 'subcategory_model.dart';
+
 class Category {
   final String id;
   final String name;
@@ -6,6 +8,7 @@ class Category {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
+  final List<Subcategory> subcategories;
 
   Category({
     required this.id,
@@ -15,9 +18,11 @@ class Category {
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
+    this.subcategories = const [],
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
+    final rawSubs = json['subcategories'] as List?;
     return Category(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -32,6 +37,10 @@ class Category {
               ? DateTime.parse(json['updated_at'].toString())
               : DateTime.now(),
       isActive: json['is_active'] ?? true,
+      subcategories: rawSubs
+              ?.map((e) => Subcategory.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -44,6 +53,7 @@ class Category {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'is_active': isActive,
+      'subcategories': subcategories.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -55,6 +65,7 @@ class Category {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    List<Subcategory>? subcategories,
   }) {
     return Category(
       id: id ?? this.id,
@@ -64,6 +75,7 @@ class Category {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      subcategories: subcategories ?? this.subcategories,
     );
   }
 }

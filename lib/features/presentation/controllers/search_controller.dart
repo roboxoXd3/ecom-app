@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/product_search_service.dart';
 
@@ -24,7 +24,6 @@ class ProductFilter {
 }
 
 class SearchController extends GetxController {
-  final supabase = Supabase.instance.client;
   final AnalyticsService _analytics = Get.find<AnalyticsService>();
   final ProductSearchService _searchService = ProductSearchService();
 
@@ -136,7 +135,7 @@ class SearchController extends GetxController {
         await _analytics.trackSearch(
           query: query,
           resultCount: searchResults.length,
-          userId: supabase.auth.currentUser?.id ?? 'anonymous',
+          userId: AuthService.isAuthenticated() ? AuthService.getCurrentUserId() : 'anonymous',
           filters: {
             'price_range': {
               'start': currentFilter.value.priceRange.start,
@@ -190,7 +189,7 @@ class SearchController extends GetxController {
         await _analytics.trackSearch(
           query: 'Image Search',
           resultCount: searchResults.length,
-          userId: supabase.auth.currentUser?.id ?? 'anonymous',
+          userId: AuthService.isAuthenticated() ? AuthService.getCurrentUserId() : 'anonymous',
           filters: {
             'search_type': 'image',
             'image_size_mb': _getFileSizeInMB(imageFile),

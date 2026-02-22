@@ -1,64 +1,54 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/api_client.dart';
 import '../models/product_model.dart';
 
 class ProductRepository {
-  final supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
   Future<List<Product>> getProducts() async {
     try {
-      final response = await supabase
-          .from('products')
-          .select('*, categories(*), subcategories(*), vendors!inner(*)')
-          .eq('in_stock', true)
-          .eq('approval_status', 'approved')
-          .eq('vendors.status', 'approved')
-          .eq('vendors.is_active', true)
-          .order('created_at');
-
-      return (response as List)
-          .map((product) => Product.fromJson(product))
+      print('ProductRepository: Fetching /products/ ...');
+      final response = await _api.get('/products/');
+      final results = ApiClient.unwrapResults(response.data);
+      final products = results
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
           .toList();
+      print('ProductRepository: Loaded ${products.length} products');
+      return products;
     } catch (e) {
-      print('Error fetching products: $e');
-      throw Exception('Failed to fetch products');
+      print('ProductRepository: Error fetching products: $e');
+      return [];
     }
   }
 
   Future<List<Product>> getNewArrivals() async {
     try {
-      final response = await supabase
-          .from('products')
-          .select('*, categories(*), subcategories(*), vendors!inner(*)')
-          .eq('is_new_arrival', true)
-          .eq('approval_status', 'approved')
-          .eq('vendors.status', 'approved')
-          .eq('vendors.is_active', true)
-          .order('created_at', ascending: false);
-
-      return (response as List).map((json) => Product.fromJson(json)).toList();
+      print('ProductRepository: Fetching /products/new-arrivals/ ...');
+      final response = await _api.get('/products/new-arrivals/');
+      final list = ApiClient.unwrapResults(response.data);
+      final products = list
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
+          .toList();
+      print('ProductRepository: Loaded ${products.length} new arrivals');
+      return products;
     } catch (e) {
-      print('Error fetching new arrivals: $e');
+      print('ProductRepository: Error fetching new arrivals: $e');
       return [];
     }
   }
 
   Future<List<Product>> getFeaturedProducts() async {
     try {
-      final response = await supabase
-          .from('products')
-          .select('*, categories(*), subcategories(*), vendors!inner(*)')
-          .eq('is_featured', true)
-          .eq('approval_status', 'approved')
-          .eq('vendors.status', 'approved')
-          .eq('vendors.is_active', true)
-          .limit(4);
-
-      return (response as List)
-          .map((product) => Product.fromJson(product))
+      print('ProductRepository: Fetching /products/featured/ ...');
+      final response = await _api.get('/products/featured/');
+      final list = ApiClient.unwrapResults(response.data);
+      final products = list
+          .map((json) => Product.fromJson(json as Map<String, dynamic>))
           .toList();
+      print('ProductRepository: Loaded ${products.length} featured products');
+      return products;
     } catch (e) {
-      print('Error fetching featured products: $e');
-      throw Exception('Failed to fetch featured products');
+      print('ProductRepository: Error fetching featured products: $e');
+      return [];
     }
   }
 }

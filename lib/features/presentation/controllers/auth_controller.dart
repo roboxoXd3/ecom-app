@@ -1,13 +1,16 @@
-import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_exception.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/home/home_screen.dart';
+import 'product_controller.dart';
 
 class AuthController extends GetxController {
-  final supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
   final RxString fullName = ''.obs;
   final RxString email = ''.obs;
@@ -16,12 +19,14 @@ class AuthController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isPasswordVisible = false.obs;
   final RxBool isConfirmPasswordVisible = false.obs;
-  final Rx<User?> currentUser = Rx<User?>(null);
   final RxString userName = ''.obs;
   final RxString userEmail = ''.obs;
 
   void togglePasswordVisibility() => isPasswordVisible.toggle();
 
+  // ---------------------------------------------------------------------------
+  // Register — POST /api/users/register/
+  // ---------------------------------------------------------------------------
   Future<void> register() async {
     if (fullName.value.isEmpty ||
         email.value.isEmpty ||
@@ -49,186 +54,112 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Register user with Supabase
-      final AuthResponse response = await supabase.auth.signUp(
-        email: email.value,
-        password: password.value,
-        data: {'full_name': fullName.value},
-      );
+      await _api.post('/users/register/', data: {
+        'email': email.value,
+        'password': password.value,
+        'first_name': fullName.value,
+      });
 
-      if (response.user != null) {
-        print('✅ Registration successful for user: ${response.user!.email}');
+      fullName.value = '';
+      email.value = '';
+      password.value = '';
+      confirmPassword.value = '';
+      isLoading.value = false;
 
-        // Clear form fields first
-        fullName.value = '';
-        email.value = '';
-        password.value = '';
-        confirmPassword.value = '';
-
-        // Set loading to false immediately
-        isLoading.value = false;
-
-        print('📧 Showing verification dialog...');
-
-        // Show a proper dialog that user must acknowledge
-        Get.dialog(
-          PopScope(
-            canPop: false, // Prevent dismissing by tapping outside or back button
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-              title: Row(
-                children: [
-                  Icon(
-                    Icons.mark_email_unread_outlined,
-                    color: Get.theme.primaryColor,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Verify Your Email',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '🎉 Account created successfully!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'We\'ve sent a verification link to your email.',
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Get.theme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Get.theme.primaryColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Get.theme.primaryColor,
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'Next Steps:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            '1. Check your email inbox\n2. Click the verification link\n3. Return here to sign in',
-                            style: TextStyle(fontSize: 13, height: 1.4),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Note: You must verify your email before signing in.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
+      Get.dialog(
+        PopScope(
+          canPop: false,
+          child: AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+            title: Row(
+              children: [
+                Icon(
+                  Icons.mark_email_unread_outlined,
+                  color: Get.theme.primaryColor,
+                  size: 24,
                 ),
-              ),
-              actions: [
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () {
-                      Get.back(); // Close dialog
-                      // Navigate to login screen
-                      Get.off(() => const LoginScreen());
-                    },
-                    style: TextButton.styleFrom(
-                      backgroundColor: Get.theme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'Got It!',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Verify Your Email',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ],
             ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Account created successfully!',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    'We\'ve sent a verification link to your email.',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    '1. Check your email inbox\n2. Click the verification link\n3. Return here to sign in',
+                    style: TextStyle(fontSize: 13, height: 1.4),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Get.back();
+                    Get.off(() => const LoginScreen());
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Get.theme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Got It!'),
+                ),
+              ),
+            ],
           ),
-          barrierDismissible: false, // Must click button to proceed
-        );
-
-        return; // Important: return here to avoid setting isLoading to false again
-      } else {
-        throw 'Registration failed - please try again';
-      }
-    } on AuthException catch (e) {
-      // Handle specific Supabase auth errors
-      String errorMessage = 'Registration failed';
-
-      if (e.message.contains('already registered')) {
-        errorMessage =
-            'An account with this email already exists. Please sign in instead.';
-      } else if (e.message.contains('weak password')) {
-        errorMessage = 'Password is too weak. Please use a stronger password.';
-      } else if (e.message.contains('invalid email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else {
-        errorMessage = 'Registration failed: ${e.message}';
-      }
-
-      SnackbarUtils.showError(errorMessage);
+        ),
+        barrierDismissible: false,
+      );
+    } on DioException catch (e) {
+      final msg = _extractErrorMessage(e, fallback: 'Registration failed');
+      SnackbarUtils.showError(msg);
     } catch (e) {
       SnackbarUtils.showError('Registration failed: ${e.toString()}');
     } finally {
-      // Only set loading to false if we haven't already done it in the success case
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
+      if (isLoading.value) isLoading.value = false;
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Login — POST /api/users/login/
+  // Django returns { session: { access_token, refresh_token, ... }, user: {...} }
+  // We save tokens and user info to local GetStorage.
+  // ---------------------------------------------------------------------------
   Future<void> login() async {
     if (email.value.isEmpty || password.value.isEmpty) {
       SnackbarUtils.showError('Please fill in all fields');
@@ -242,108 +173,102 @@ class AuthController extends GetxController {
 
     try {
       isLoading.value = true;
-      print('🔐 Attempting login with email: ${email.value}');
 
-      final AuthResponse response = await supabase.auth.signInWithPassword(
-        email: email.value,
-        password: password.value,
-      );
+      final response = await _api.post('/users/login/', data: {
+        'email': email.value,
+        'password': password.value,
+      });
 
-      print(
-        '✅ Auth response received: ${response.user != null ? 'User exists' : 'No user'}',
-      );
+      final data = response.data as Map<String, dynamic>;
+      final rawSession = data['session'];
 
-      if (response.user != null) {
-        // Check if email is verified
-        if (response.user!.emailConfirmedAt == null) {
-          SnackbarUtils.showError(
-            '📧 Email not verified!\nPlease check your email and click the verification link before signing in.',
-          );
-          return;
-        }
-
-        // Login successful
-        updateUserData();
-
-        // Clear password field for security
-        password.value = '';
-
-        SnackbarUtils.showSuccess('🎉 Welcome back! Login successful');
-
-        print('🏠 Navigating to home screen...');
-        Get.offAll(() => const HomeScreen());
-      } else {
-        throw 'Authentication failed - please check your credentials';
-      }
-    } on AuthException catch (e) {
-      // Handle specific Supabase auth errors with user-friendly messages
-      String errorMessage = '🚫 Login failed';
-
-      print('🔍 AuthException details: ${e.message}');
-
-      if (e.message.contains('Invalid login credentials') ||
-          e.message.contains('invalid credentials') ||
-          e.message.contains('Email not confirmed')) {
-        errorMessage =
-            '❌ Invalid email or password.\nPlease check your credentials and try again.';
-      } else if (e.message.contains('Email not confirmed')) {
-        errorMessage =
-            '📧 Please verify your email first.\nCheck your inbox for the verification link.';
-      } else if (e.message.contains('Too many requests')) {
-        errorMessage =
-            '⏰ Too many login attempts.\nPlease wait a few minutes and try again.';
-      } else if (e.message.contains('User not found')) {
-        errorMessage =
-            '👤 No account found with this email.\nPlease register first or check your email address.';
-      } else if (e.message.contains('network')) {
-        errorMessage =
-            '🌐 Network error.\nPlease check your internet connection and try again.';
-      } else if (e.message.contains('timeout')) {
-        errorMessage =
-            '⏱️ Connection timeout.\nPlease check your internet connection and try again.';
-      } else {
-        errorMessage = '🚫 Login failed: ${e.message}';
+      if (rawSession == null) {
+        SnackbarUtils.showError(
+          'Email not verified! Please check your email and click the verification link before signing in.',
+        );
+        isLoading.value = false;
+        return;
       }
 
-      SnackbarUtils.showError(errorMessage);
+      final session = _normalizeSession(rawSession);
+
+      final accessToken = session['access_token'] as String?;
+      final refreshToken = session['refresh_token'] as String?;
+
+      if (accessToken == null || accessToken.isEmpty) {
+        SnackbarUtils.showError('Login failed — no access token received.');
+        isLoading.value = false;
+        return;
+      }
+
+      // Extract user info from the response
+      final userData = data['user'] as Map<String, dynamic>? ?? {};
+      final userId = userData['id']?.toString() ??
+          session['user']?['id']?.toString() ?? '';
+      final userEmailStr = userData['email']?.toString() ??
+          session['user']?['email']?.toString() ?? email.value;
+
+      // Extract name from user_metadata if available
+      final sessionUser = session['user'];
+      final metadata = sessionUser is Map
+          ? sessionUser['user_metadata'] as Map<String, dynamic>?
+          : null;
+      final nameFromMeta = metadata?['full_name'] ??
+          metadata?['name'] ??
+          metadata?['first_name'];
+
+      await AuthService.saveSession(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        userId: userId,
+        email: userEmailStr,
+        fullName: nameFromMeta?.toString(),
+        userMetadata: metadata,
+      );
+
+      updateUserData();
+      password.value = '';
+      isLoading.value = false;
+
+      // Reload wishlist now that user is authenticated
+      try {
+        final productController = Get.find<ProductController>();
+        productController.loadWishlist();
+      } catch (_) {}
+
+      SnackbarUtils.showSuccess('Welcome back! Login successful');
+      Get.offAll(() => const HomeScreen());
+    } on DioException catch (e) {
+      final msg = _extractErrorMessage(e, fallback: 'Login failed');
+      SnackbarUtils.showError(msg);
     } catch (e) {
-      print('🔍 General error details: $e');
-
-      // Handle general errors with user-friendly messages
-      String errorMessage = '🚫 Login failed';
-
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
-        errorMessage =
-            '🌐 Network error.\nPlease check your internet connection and try again.';
-      } else if (e.toString().contains('timeout')) {
-        errorMessage = '⏱️ Connection timeout.\nPlease try again in a moment.';
-      } else {
-        errorMessage =
-            '🚫 Something went wrong.\nPlease try again or contact support if the problem persists.';
-      }
-
-      SnackbarUtils.showError(errorMessage);
+      SnackbarUtils.showError(
+        'Something went wrong. Please try again or contact support.',
+      );
     } finally {
       isLoading.value = false;
     }
   }
 
-  // Add method to check if user is already logged in
-  bool isLoggedIn() {
-    return supabase.auth.currentUser != null;
-  }
-
-  // Add method to handle logout
+  // ---------------------------------------------------------------------------
+  // Logout — POST /api/users/logout/
+  // ---------------------------------------------------------------------------
   Future<void> logout() async {
     try {
       isLoading.value = true;
-      await supabase.auth.signOut();
-      // Clear any local user data if needed
+
+      try {
+        await _api.post('/users/logout/');
+      } catch (_) {}
+
+      await AuthService.clearSession();
+
       fullName.value = '';
       email.value = '';
       password.value = '';
       confirmPassword.value = '';
+      userName.value = '';
+      userEmail.value = '';
     } catch (e) {
       SnackbarUtils.showError('Logout failed: ${e.toString()}');
       rethrow;
@@ -352,111 +277,125 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> forgotPassword(String email) async {
-    if (email.isEmpty) {
+  // ---------------------------------------------------------------------------
+  // Check auth state (reads local storage — no network call)
+  // ---------------------------------------------------------------------------
+  bool isLoggedIn() {
+    return AuthService.isAuthenticated();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Forgot password — POST /api/users/password/reset/
+  // ---------------------------------------------------------------------------
+  Future<void> forgotPassword(String emailAddress) async {
+    if (emailAddress.isEmpty) {
       SnackbarUtils.showError('Please enter your email address');
       return;
     }
 
-    if (!GetUtils.isEmail(email)) {
+    if (!GetUtils.isEmail(emailAddress)) {
       SnackbarUtils.showError('Please enter a valid email address');
       return;
     }
 
     try {
       isLoading.value = true;
-      print('📧 Sending password reset email to: $email');
 
-      await supabase.auth.resetPasswordForEmail(
-        email,
-        redirectTo: 'io.supabase.flutterquickstart://reset-callback/',
-      );
+      await _api.post('/users/password/reset/', data: {
+        'email': emailAddress,
+      });
 
       SnackbarUtils.showSuccess(
-        '📧 Password reset link sent!\nPlease check your email (including spam folder) and follow the instructions.',
+        'Password reset link sent! Please check your email (including spam folder).',
       );
-    } on AuthException catch (e) {
-      print('🔍 Password reset AuthException: ${e.message}');
-
-      String errorMessage = '🚫 Failed to send reset link';
-
-      if (e.message.contains('not found') || e.message.contains('no user')) {
-        errorMessage =
-            '👤 No account found with this email address.\nPlease check the email or register for a new account.';
-      } else if (e.message.contains('rate limit') ||
-          e.message.contains('too many')) {
-        errorMessage =
-            '⏰ Too many reset attempts.\nPlease wait a few minutes before trying again.';
-      } else if (e.message.contains('network')) {
-        errorMessage =
-            '🌐 Network error.\nPlease check your internet connection and try again.';
-      } else {
-        errorMessage = '🚫 Failed to send reset link: ${e.message}';
-      }
-
-      SnackbarUtils.showError(errorMessage);
+    } on DioException catch (e) {
+      final msg = _extractErrorMessage(e, fallback: 'Failed to send reset link');
+      SnackbarUtils.showError(msg);
     } catch (e) {
-      print('🔍 Password reset general error: $e');
-
-      String errorMessage = '🚫 Failed to send reset link';
-
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
-        errorMessage =
-            '🌐 Network error.\nPlease check your internet connection and try again.';
-      } else if (e.toString().contains('timeout')) {
-        errorMessage = '⏱️ Connection timeout.\nPlease try again in a moment.';
-      } else {
-        errorMessage =
-            '🚫 Something went wrong.\nPlease try again or contact support if the problem persists.';
-      }
-
-      SnackbarUtils.showError(errorMessage);
+      SnackbarUtils.showError('Failed to send reset link. Please try again.');
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Change password — POST /api/users/password/change/
+  // ---------------------------------------------------------------------------
   Future<void> updatePassword(String newPassword) async {
     try {
       isLoading.value = true;
 
-      await supabase.auth.updateUser(UserAttributes(password: newPassword));
+      await _api.post('/users/password/change/', data: {
+        'password': newPassword,
+      });
 
       SnackbarUtils.showSuccess('Password updated successfully');
       Get.offAll(() => const LoginScreen());
+    } on DioException catch (e) {
+      final msg = _extractErrorMessage(e, fallback: 'Failed to update password');
+      SnackbarUtils.showError(msg);
     } catch (e) {
-      print('Update password error: $e');
       SnackbarUtils.showError('Failed to update password: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Update local observable state from stored session
+  // ---------------------------------------------------------------------------
   void updateUserData() {
-    final user = supabase.auth.currentUser;
-    if (user != null) {
-      // Set the currentUser observable
-      currentUser.value = user;
-      userEmail.value = user.email ?? '';
-
-      print('User metadata: ${user.userMetadata}');
-      print('Full name from metadata: ${user.userMetadata?['full_name']}');
-
-      userName.value =
-          user.userMetadata?['full_name'] ??
-          user.userMetadata?['name'] ??
-          user.email?.split('@')[0] ??
-          'User';
-
-      print('Final userName value: ${userName.value}');
-      print('Current user email set to: ${userEmail.value}');
+    if (AuthService.isAuthenticated()) {
+      userEmail.value = AuthService.getUserEmail() ?? '';
+      userName.value = AuthService.getUserName();
     } else {
-      // Clear user data if no user is logged in
-      currentUser.value = null;
       userEmail.value = '';
       userName.value = '';
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  Map<String, dynamic> _normalizeSession(dynamic raw) {
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+
+    if (raw is List) {
+      final map = <String, dynamic>{};
+      for (final entry in raw) {
+        if (entry is List && entry.length >= 2) {
+          map[entry[0].toString()] = entry[1];
+        }
+      }
+      return map;
+    }
+
+    return {};
+  }
+
+  String _extractErrorMessage(DioException e, {required String fallback}) {
+    if (e.response?.data != null) {
+      try {
+        final apiError = ApiException.fromResponse(
+          e.response!.data,
+          statusCode: e.response!.statusCode,
+        );
+        if (apiError.message.isNotEmpty && apiError.message != 'An error occurred') {
+          return apiError.message;
+        }
+      } catch (_) {}
+    }
+
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
+      return 'Connection timed out. Please check your internet connection.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'No internet connection. Please try again.';
+    }
+
+    return fallback;
   }
 
   @override

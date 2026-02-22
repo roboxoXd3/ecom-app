@@ -284,50 +284,16 @@ class CategoriesTab extends StatelessWidget {
                 children: [
                   // Full Background Image
                   Positioned.fill(
-                    child: CachedNetworkImage(
-                      imageUrl: category.imageUrl ?? '',
-                      fit: BoxFit.cover,
-                      placeholder:
-                          (context, url) => Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  _getCategoryColor(index).withOpacity(0.8),
-                                  _getCategoryColor(index).withOpacity(0.6),
-                                ],
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                _getCategoryIcon(index),
-                                color: Colors.white,
-                                size: 48,
-                              ),
-                            ),
-                          ),
-                      errorWidget:
-                          (context, url, error) => Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  _getCategoryColor(index).withOpacity(0.8),
-                                  _getCategoryColor(index).withOpacity(0.6),
-                                ],
-                              ),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                _getCategoryIcon(index),
-                                color: Colors.white,
-                                size: 48,
-                              ),
-                            ),
-                          ),
-                    ),
+                    child: (category.imageUrl != null && category.imageUrl!.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: category.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (context, url) => _categoryFallback(index),
+                            errorWidget:
+                                (context, url, error) => _categoryFallback(index),
+                          )
+                        : _categoryFallback(index),
                   ),
 
                   // Gradient Overlay for text readability
@@ -429,6 +395,28 @@ class CategoriesTab extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _categoryFallback(int index) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _getCategoryColor(index).withOpacity(0.8),
+            _getCategoryColor(index).withOpacity(0.6),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          _getCategoryIcon(index),
+          color: Colors.white,
+          size: 48,
         ),
       ),
     );

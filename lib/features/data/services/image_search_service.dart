@@ -1,124 +1,73 @@
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:dio/dio.dart';
 import 'package:mime/mime.dart';
+import '../../../core/network/api_client.dart';
+import '../models/product_model.dart';
+
+class ImageSearchResult {
+  final String description;
+  final List<Product> products;
+
+  const ImageSearchResult({required this.description, required this.products});
+}
 
 class ImageSearchService {
-  static const String _openAiApiUrl =
-      'https://api.openai.com/v1/chat/completions';
+  final _api = ApiClient.instance;
 
-  /// Main method to search products by image
-  Future<String> analyzeImageForProductSearch(File imageFile) async {
+  /// Analyze an image via backend and return a description + matching products.
+  /// POST /api/ai/image-search/ (multipart)
+  Future<ImageSearchResult> analyzeImageForProductSearch(File imageFile) async {
     const maxRetries = 3;
-    int retryCount = 0;
-    
-    while (retryCount < maxRetries) {
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('🖼️ Starting image analysis for product search... (attempt ${retryCount + 1}/$maxRetries)');
+        print('🖼️ Image search via backend (attempt $attempt/$maxRetries)');
 
-        // Convert image to base64
-        final base64Image = await _convertImageToBase64(imageFile);
+        final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
+        final formData = FormData.fromMap({
+          'image': await MultipartFile.fromFile(
+            imageFile.path,
+            contentType: DioMediaType.parse(mimeType),
+          ),
+        });
 
-        // Analyze with OpenAI Vision
-        final description = await _analyzeImageWithOpenAI(base64Image);
+        final response = await _api.upload<Map<String, dynamic>>(
+          '/ai/image-search/',
+          formData: formData,
+        );
+        final data = response.data as Map<String, dynamic>;
 
-        print('🧠 Image analysis result: $description');
-        return description;
+        final description = data['description'] as String? ?? 'product search';
+        final rawProducts = data['products'] as List<dynamic>? ?? [];
+        final products = rawProducts
+            .map((p) {
+              try {
+                return Product.fromJson(p as Map<String, dynamic>);
+              } catch (_) {
+                return null;
+              }
+            })
+            .whereType<Product>()
+            .toList();
+
+        print('🧠 Image analysis result: $description (${products.length} products)');
+        return ImageSearchResult(description: description, products: products);
       } catch (e) {
-        retryCount++;
-        print('❌ Error analyzing image (attempt $retryCount/$maxRetries): $e');
-        
-        // If it's the last retry or a non-retryable error, throw or return fallback
-        if (retryCount >= maxRetries) {
-          // Return a generic fallback description for graceful degradation
-          print('⚠️ All retry attempts failed, returning generic description');
-          return 'product search'; // Generic fallback that will trigger keyword search
+        print('❌ Image search attempt $attempt/$maxRetries failed: $e');
+        if (attempt < maxRetries) {
+          await Future.delayed(Duration(milliseconds: 1000 * attempt));
         }
-        
-        // Wait before retrying (exponential backoff)
-        await Future.delayed(Duration(milliseconds: 1000 * retryCount));
       }
     }
-    
-    // Should never reach here, but return fallback just in case
-    return 'product search';
+
+    print('⚠️ All image search attempts failed, returning fallback');
+    return const ImageSearchResult(description: 'product search', products: []);
   }
 
-  /// Convert image file to base64 string
-  Future<String> _convertImageToBase64(File imageFile) async {
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
-      final base64String = base64Encode(bytes);
-
-      return 'data:$mimeType;base64,$base64String';
-    } catch (e) {
-      throw Exception('Failed to convert image to base64: $e');
-    }
-  }
-
-  /// Analyze image using OpenAI Vision API
-  Future<String> _analyzeImageWithOpenAI(String base64Image) async {
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('OpenAI API key not found in environment variables');
-    }
-
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $apiKey',
-    };
-
-    final body = jsonEncode({
-      'model': 'gpt-4o-mini', // Most cost-effective vision model
-      'messages': [
-        {
-          'role': 'user',
-          'content': [
-            {
-              'type': 'text',
-              'text':
-                  '''Analyze this image and describe what product the user is looking for. 
-              Focus on:
-              - Product type (clothing, electronics, shoes, etc.)
-              - Key features (color, style, material, brand if visible)
-              - Specific details that would help find similar products
-              
-              Provide a concise description in 1-2 sentences that would work well for product search.
-              Example: "Black leather boots with zipper closure and medium heel"
-              ''',
-            },
-            {
-              'type': 'image_url',
-              'image_url': {'url': base64Image},
-            },
-          ],
-        },
-      ],
-      'max_tokens': 100, // Keep it concise for cost efficiency
-      'temperature': 0.3, // Lower temperature for consistent results
-    });
-
-    try {
-      final response = await http.post(
-        Uri.parse(_openAiApiUrl),
-        headers: headers,
-        body: body,
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final description =
-            data['choices'][0]['message']['content'].toString().trim();
-        return description;
-      } else {
-        print('❌ OpenAI API Error: ${response.statusCode} - ${response.body}');
-        throw Exception('OpenAI API request failed: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Failed to call OpenAI API: $e');
-    }
+  /// Returns just the description string (backwards-compatible helper).
+  Future<String> analyzeImageDescription(File imageFile) async {
+    final result = await analyzeImageForProductSearch(imageFile);
+    return result.description;
   }
 
   /// Validate image file

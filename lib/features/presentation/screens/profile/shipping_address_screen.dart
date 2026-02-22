@@ -4,9 +4,11 @@ import '../../../../features/presentation/screens/profile/add_address_screen.dar
 import '../../../../features/presentation/controllers/address_controller.dart';
 
 class ShippingAddressScreen extends StatelessWidget {
-  final addressController = Get.put(AddressController());
+  final addressController = Get.find<AddressController>();
 
-  ShippingAddressScreen({super.key});
+  ShippingAddressScreen({super.key}) {
+    addressController.fetchAddresses();
+  }
 
   @override
   Widget build(BuildContext context) {

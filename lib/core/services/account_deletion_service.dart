@@ -1,6 +1,5 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../network/api_client.dart';
+import 'auth_service.dart';
 
 /// Result class for account deletion operations
 class DeleteAccountResult {
@@ -29,15 +28,11 @@ class DeleteAccountResult {
 /// Service class for handling account deletion operations
 /// Implements Google Play Store compliant account deletion
 class AccountDeletionService {
-  static final SupabaseClient _supabase = Supabase.instance.client;
+  static final _api = ApiClient.instance;
 
-  /// Check if the current user can delete their account
-  /// Returns true if user is NOT an active vendor
   static Future<DeleteAccountResult> checkDeletionEligibility() async {
     try {
-      final user = _supabase.auth.currentUser;
-
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         return DeleteAccountResult(
           success: false,
           message: 'User not authenticated. Please log in to continue.',
@@ -45,15 +40,10 @@ class AccountDeletionService {
         );
       }
 
-      // Call the is_active_vendor function
-      final response = await _supabase.rpc(
-        'is_active_vendor',
-        params: {'user_uuid': user.id},
-      );
+      final response = await _api.get('/users/check-deletion-eligibility/');
+      final data = response.data;
 
-      final bool isVendor = response as bool;
-
-      if (isVendor) {
+      if (data['is_vendor'] == true) {
         return DeleteAccountResult(
           success: false,
           message:
@@ -69,36 +59,19 @@ class AccountDeletionService {
         message: 'Your account is eligible for deletion.',
         isVendor: false,
       );
-    } on PostgrestException catch (e) {
-      print('Supabase error checking deletion eligibility: ${e.message}');
-      return DeleteAccountResult(
-        success: false,
-        message: 'Failed to check account eligibility: ${e.message}',
-        errorCode: 'database_error',
-      );
     } catch (e) {
       print('Error checking deletion eligibility: $e');
       return DeleteAccountResult(
         success: false,
-        message:
-            'An unexpected error occurred while checking account eligibility.',
+        message: 'An unexpected error occurred while checking account eligibility.',
         errorCode: 'unknown_error',
       );
     }
   }
 
-  /// Delete the current user's account
-  /// This will:
-  /// - Delete all personal information
-  /// - Anonymize order history (for legal compliance)
-  /// - Remove the user from authentication system
-  ///
-  /// Requires: User must be authenticated, not an active vendor, and password
   static Future<DeleteAccountResult> deleteAccount(String password) async {
     try {
-      final user = _supabase.auth.currentUser;
-
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         return DeleteAccountResult(
           success: false,
           message: 'User not authenticated. Please log in to continue.',
@@ -106,76 +79,30 @@ class AccountDeletionService {
         );
       }
 
-      print('🗑️ Starting account deletion for user: ${user.id}');
-
-      // Get the current session token
-      final session = _supabase.auth.currentSession;
-      if (session == null) {
-        return DeleteAccountResult(
-          success: false,
-          message: 'No active session. Please log in again.',
-          errorCode: 'no_session',
-        );
-      }
-
-      // API URL for account deletion (Railway deployment)
-      const apiUrl =
-          'https://ecomwebsite-production.up.railway.app/api/account/delete';
-
-      print('🌐 Calling deletion API: $apiUrl');
-
-      // Call the Next.js API endpoint with admin privileges
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Authorization': 'Bearer ${session.accessToken}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'password': password}),
+      final response = await _api.post(
+        '/users/delete-account/',
+        data: {'password': password},
       );
 
-      print('🗑️ API Response status: ${response.statusCode}');
-      print('🗑️ API Response body: ${response.body}');
+      final responseData = response.data as Map<String, dynamic>;
 
-      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
-
-      if (response.statusCode == 200 && responseData['success'] == true) {
-        print('✅ Account deleted successfully via API');
-
-        // Sign out the user
-        await _supabase.auth.signOut();
-        print('✅ User signed out');
-
+      if (responseData['success'] == true) {
         return DeleteAccountResult(
           success: true,
-          message:
-              responseData['message'] ??
+          message: responseData['message'] ??
               'Your account has been successfully deleted. '
-                  'All personal information has been removed.',
+              'All personal information has been removed.',
         );
       }
 
-      // Handle error responses
-      final errorCode = responseData['error'] ?? 'deletion_failed';
-      final errorMessage = responseData['message'] ?? 'Account deletion failed';
-
-      print('❌ Account deletion failed: $errorCode - $errorMessage');
-
       return DeleteAccountResult(
         success: false,
-        message: errorMessage,
-        errorCode: errorCode,
-        isVendor: errorCode == 'vendor_active',
-      );
-    } on AuthException catch (e) {
-      print('❌ Auth error during account deletion: ${e.message}');
-      return DeleteAccountResult(
-        success: false,
-        message: 'Authentication error: ${e.message}',
-        errorCode: 'auth_error',
+        message: responseData['message'] ?? 'Account deletion failed',
+        errorCode: responseData['error'] ?? 'deletion_failed',
+        isVendor: responseData['error'] == 'vendor_active',
       );
     } catch (e) {
-      print('❌ Unexpected error during account deletion: $e');
+      print('Error during account deletion: $e');
       return DeleteAccountResult(
         success: false,
         message:
@@ -186,33 +113,22 @@ class AccountDeletionService {
     }
   }
 
-  /// Verify user password before allowing deletion
-  /// This adds an extra layer of security
   static Future<bool> verifyPassword(String password) async {
     try {
-      final user = _supabase.auth.currentUser;
+      if (!AuthService.isAuthenticated()) return false;
 
-      if (user == null || user.email == null) {
-        return false;
-      }
-
-      // Try to sign in with the provided password
-      final response = await _supabase.auth.signInWithPassword(
-        email: user.email!,
-        password: password,
+      final response = await _api.post(
+        '/users/verify-password/',
+        data: {'password': password},
       );
 
-      return response.user != null;
-    } on AuthException catch (e) {
-      print('Password verification failed: ${e.message}');
-      return false;
+      return response.data['verified'] == true;
     } catch (e) {
       print('Error verifying password: $e');
       return false;
     }
   }
 
-  /// Get information about what data will be deleted and what will be retained
   static Map<String, List<String>> getDeletionInfo() {
     return {
       'deleted': [

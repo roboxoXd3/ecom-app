@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../data/models/address_model.dart';
 import '../../data/repositories/address_repository.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class AddressController extends GetxController {
   final AddressRepository _addressRepository = AddressRepository();
@@ -21,10 +22,7 @@ class AddressController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Check if user is authenticated before fetching
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) {
-        print('User not authenticated, skipping address fetch');
+      if (!AuthService.isAuthenticated()) {
         addresses.clear();
         return;
       }
@@ -33,9 +31,8 @@ class AddressController extends GetxController {
       addresses.assignAll(fetchedAddresses);
     } catch (e) {
       print('Error fetching addresses: $e');
-      // Only show error snackbar if user is authenticated
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser != null) {
+      // No-internet is already handled globally by ApiClient interceptor
+      if (!SnackbarUtils.isNoInternet(e) && AuthService.isAuthenticated()) {
         Get.snackbar(
           'Error',
           'Failed to load addresses',
@@ -160,7 +157,9 @@ class AddressController extends GetxController {
       await fetchAddresses();
       Get.snackbar('Success', 'Address deleted successfully');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete address');
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar('Error', 'Failed to delete address');
+      }
     }
   }
 
@@ -170,7 +169,9 @@ class AddressController extends GetxController {
       await fetchAddresses();
       Get.snackbar('Success', 'Default address updated');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to update default address');
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar('Error', 'Failed to update default address');
+      }
     }
   }
 }

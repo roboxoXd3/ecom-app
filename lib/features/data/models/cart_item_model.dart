@@ -1,12 +1,14 @@
 import 'product_model.dart';
 
 class CartItem {
+  final String? id;
   final Product product;
   final String selectedSize;
   final String selectedColor;
   int quantity;
 
   CartItem({
+    this.id,
     required this.product,
     required this.selectedSize,
     required this.selectedColor,
@@ -14,8 +16,10 @@ class CartItem {
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
+    final productData = json['product'] ?? json['products'];
     return CartItem(
-      product: Product.fromJson(json['products'] as Map<String, dynamic>),
+      id: json['id']?.toString(),
+      product: Product.fromJson(productData as Map<String, dynamic>),
       selectedSize: json['selected_size'] ?? '',
       selectedColor: json['selected_color'] ?? '',
       quantity: json['quantity'] ?? 1,
