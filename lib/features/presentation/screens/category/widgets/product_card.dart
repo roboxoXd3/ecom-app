@@ -3,271 +3,279 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../data/models/product_model.dart';
-
 import '../../../../../core/theme/app_theme.dart';
 import '../../vendor/vendor_profile_screen.dart';
 import '../../../controllers/currency_controller.dart';
+import '../../../controllers/product_controller.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
   final int index;
+  final bool showWishlistButton;
+  final bool showVendor;
 
-  const ProductCard({super.key, required this.product, required this.index});
+  const ProductCard({
+    super.key,
+    required this.product,
+    required this.index,
+    this.showWishlistButton = true,
+    this.showVendor = true,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final CurrencyController currencyController =
-        Get.find<CurrencyController>();
+    final currencyController = Get.find<CurrencyController>();
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        color: AppTheme.getSurface(context),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
+            color: AppTheme.getBorder(context).withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Material(
-          color: Colors.white,
-          child: InkWell(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              Get.toNamed('/product-details', arguments: product.id);
-            },
-            borderRadius: BorderRadius.circular(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product Image
-                Expanded(
-                  flex: 6, // Increased image space
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed('/product-details', arguments: product.id);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 6,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
                       ),
+                      child: _buildProductImage(context),
                     ),
-                    child: Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                          child: _buildProductImage(),
-                        ),
-                        // Wishlist Button
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              icon: Icon(
-                                Icons.favorite_border_rounded,
-                                color: Colors.grey[600],
-                                size: 14,
-                              ),
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                // Add to wishlist functionality
-                              },
-                            ),
-                          ),
-                        ),
-                        // Sale Badge (if on sale)
-                        if (product.isOnSale)
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'SALE',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 7,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                    if (showWishlistButton) _buildWishlistButton(context),
+                    if (product.isOnSale) _buildSaleBadge(),
+                  ],
                 ),
-                // Product Details - Compact Layout
-                Container(
-                  height: 85, // Increased height to accommodate vendor info
+              ),
+              Expanded(
+                flex: 4,
+                child: Padding(
                   padding: const EdgeInsets.all(10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Product Name - Single line only
                       Text(
                         product.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.1,
+                          color: AppTheme.getTextPrimary(context),
+                          height: 1.2,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      // Vendor info - NEW
-                      Row(
-                        children: [
-                          Text(
-                            'Sold by ',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                if (product.vendor != null) {
-                                  Get.to(
-                                    () => VendorProfileScreen(
-                                      vendor: product.vendor!,
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                product.vendor?.businessName ?? 'Be Smart',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w500,
-                                  decoration: TextDecoration.underline,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Rating and Price Row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Rating
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.star_rounded,
-                                size: 12,
-                                color: AppTheme.ratingStars,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                product.rating.toStringAsFixed(1),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Price (with currency conversion)
-                          Flexible(
-                            child: Obx(
-                              () => Text(
-                                currencyController.getFormattedProductPrice(
-                                  product.price,
-                                  product.currency,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      if (showVendor) _buildVendorRow(context),
+                      _buildPriceRow(context, currencyController),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProductImage() {
-    String imageUrl = '';
+  Widget _buildWishlistButton(BuildContext context) {
+    final productController = Get.find<ProductController>();
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: Obx(() {
+        final isInWishlist = productController.wishlistProductIds.contains(product.id);
+        return GestureDetector(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            productController.toggleWishlist(product);
+          },
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: AppTheme.getSurface(context).withValues(alpha: 0.92),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.getBorder(context).withValues(alpha: 0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              isInWishlist ? Icons.favorite : Icons.favorite_border_rounded,
+              color: isInWishlist ? Colors.red : AppTheme.getTextSecondary(context),
+              size: 15,
+            ),
+          ),
+        );
+      }),
+    );
+  }
 
-    // Get the best available image URL
+  Widget _buildSaleBadge() {
+    return Positioned(
+      top: 8,
+      left: 8,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: const Text(
+          'SALE',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 8,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVendorRow(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          'Sold by ',
+          style: TextStyle(
+            fontSize: 10,
+            color: AppTheme.getTextSecondary(context),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              if (product.vendor != null) {
+                Get.to(() => VendorProfileScreen(vendor: product.vendor!));
+              }
+            },
+            child: Text(
+              product.vendor?.businessName ?? 'Be Smart',
+              style: TextStyle(
+                fontSize: 10,
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.underline,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceRow(BuildContext context, CurrencyController currencyController) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.star_rounded, size: 12, color: AppTheme.ratingStars),
+            const SizedBox(width: 2),
+            Text(
+              product.rating.toStringAsFixed(1),
+              style: TextStyle(
+                fontSize: 10,
+                color: AppTheme.getTextSecondary(context),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Obx(() {
+            final showSale = product.isOnSale &&
+                product.salePrice != null &&
+                product.salePrice! < product.price;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showSale) ...[
+                  Flexible(
+                    child: Text(
+                      currencyController.getFormattedProductPrice(
+                        product.price,
+                        product.currency,
+                      ),
+                      style: TextStyle(
+                        fontSize: 10,
+                        decoration: TextDecoration.lineThrough,
+                        color: AppTheme.getTextSecondary(context),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
+                Flexible(
+                  child: Text(
+                    currencyController.getFormattedProductPrice(
+                      showSale ? product.salePrice! : product.price,
+                      product.currency,
+                    ),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.primaryColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductImage(BuildContext context) {
+    String imageUrl = '';
     if (product.primaryImage.isNotEmpty) {
       imageUrl = product.primaryImage;
     } else if (product.imageList.isNotEmpty) {
       imageUrl = product.imageList.first;
     }
 
-    // If no valid image URL, show placeholder
     if (imageUrl.isEmpty) {
       return Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.grey[200]!, Colors.grey[100]!],
-          ),
-        ),
-        child: Center(
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Icon(
-              Icons.image_outlined,
-              color: Colors.grey[500],
-              size: 24,
-            ),
-          ),
+        color: AppTheme.getBorder(context).withValues(alpha: 0.08),
+        child: Icon(
+          Icons.image_outlined,
+          color: AppTheme.getTextSecondary(context),
+          size: 32,
         ),
       );
     }
@@ -277,56 +285,27 @@ class ProductCard extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      placeholder:
-          (context, url) => Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.grey[200]!, Colors.grey[100]!],
-              ),
-            ),
-            child: Center(
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  Icons.image_outlined,
-                  color: Colors.grey[500],
-                  size: 24,
-                ),
-              ),
+      placeholder: (context, url) => Container(
+        color: AppTheme.getBorder(context).withValues(alpha: 0.08),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppTheme.getTextSecondary(context),
             ),
           ),
-      errorWidget:
-          (context, url, error) => Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.grey[200]!, Colors.grey[100]!],
-              ),
-            ),
-            child: Center(
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: Icon(
-                  Icons.broken_image_outlined,
-                  color: Colors.grey[500],
-                  size: 28,
-                ),
-              ),
-            ),
-          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: AppTheme.getBorder(context).withValues(alpha: 0.08),
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: AppTheme.getTextSecondary(context),
+          size: 28,
+        ),
+      ),
     );
   }
 }

@@ -1,24 +1,20 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dio/dio.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/services/auth_service.dart';
 import '../models/vendor_model.dart';
 import '../models/product_model.dart';
 import '../models/vendor_follow_model.dart';
 import '../models/vendor_review_model.dart';
 
 class VendorRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
-  /// Get all approved vendors
   Future<List<Vendor>> getApprovedVendors() async {
     try {
-      final response = await _supabase
-          .from('vendors')
-          .select('*')
-          .eq('status', 'approved')
-          .eq('is_active', true)
-          .order('business_name');
-
-      return (response as List)
-          .map((vendor) => Vendor.fromJson(vendor))
+      final response = await _api.get('/vendors/');
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error fetching approved vendors: $e');
@@ -26,19 +22,12 @@ class VendorRepository {
     }
   }
 
-  /// Get featured vendors
   Future<List<Vendor>> getFeaturedVendors() async {
     try {
-      final response = await _supabase
-          .from('vendors')
-          .select('*')
-          .eq('status', 'approved')
-          .eq('is_active', true)
-          .eq('is_featured', true)
-          .order('business_name');
-
-      return (response as List)
-          .map((vendor) => Vendor.fromJson(vendor))
+      final response = await _api.get('/vendors/featured/');
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error fetching featured vendors: $e');
@@ -46,21 +35,13 @@ class VendorRepository {
     }
   }
 
-  /// Get vendor by ID
   Future<Vendor?> getVendorById(String vendorId) async {
     try {
-      final response =
-          await _supabase
-              .from('vendors')
-              .select('*')
-              .eq('id', vendorId)
-              .eq('status', 'approved')
-              .eq('is_active', true)
-              .maybeSingle();
-
-      if (response != null) {
-        return Vendor.fromJson(response);
-      }
+      final response = await _api.get('/vendors/$vendorId/');
+      return Vendor.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      print('Error fetching vendor by ID: $e');
       return null;
     } catch (e) {
       print('Error fetching vendor by ID: $e');
@@ -68,19 +49,14 @@ class VendorRepository {
     }
   }
 
-  /// Search vendors by business name
   Future<List<Vendor>> searchVendors(String query) async {
     try {
-      final response = await _supabase
-          .from('vendors')
-          .select('*')
-          .eq('status', 'approved')
-          .eq('is_active', true)
-          .ilike('business_name', '%$query%')
-          .order('business_name');
-
-      return (response as List)
-          .map((vendor) => Vendor.fromJson(vendor))
+      final response = await _api.get('/vendors/search/', queryParameters: {
+        'q': query,
+      });
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error searching vendors: $e');
@@ -88,7 +64,6 @@ class VendorRepository {
     }
   }
 
-  /// Register as vendor (for authenticated users)
   Future<Vendor?> registerAsVendor({
     required String businessName,
     required String businessEmail,
@@ -97,49 +72,34 @@ class VendorRepository {
     String? businessAddress,
   }) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User must be authenticated to register as vendor');
       }
 
-      final response =
-          await _supabase
-              .from('vendors')
-              .insert({
-                'user_id': user.id,
-                'business_name': businessName,
-                'business_email': businessEmail,
-                'business_description': businessDescription,
-                'business_phone': businessPhone,
-                'business_address': businessAddress,
-                'status': 'pending', // Will require admin approval
-              })
-              .select()
-              .single();
+      final response = await _api.post('/vendors/', data: {
+        'business_name': businessName,
+        'business_email': businessEmail,
+        if (businessDescription != null)
+          'business_description': businessDescription,
+        if (businessPhone != null) 'business_phone': businessPhone,
+        if (businessAddress != null) 'business_address': businessAddress,
+      });
 
-      return Vendor.fromJson(response);
+      return Vendor.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       print('Error registering as vendor: $e');
       rethrow;
     }
   }
 
-  /// Get current user's vendor profile
   Future<Vendor?> getCurrentUserVendor() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return null;
-
-      final response =
-          await _supabase
-              .from('vendors')
-              .select('*')
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-      if (response != null) {
-        return Vendor.fromJson(response);
-      }
+      if (!AuthService.isAuthenticated()) return null;
+      final response = await _api.get('/vendors/me/');
+      return Vendor.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      print('Error fetching current user vendor: $e');
       return null;
     } catch (e) {
       print('Error fetching current user vendor: $e');
@@ -147,13 +107,11 @@ class VendorRepository {
     }
   }
 
-  /// Check if current user is a vendor
   Future<bool> isCurrentUserVendor() async {
     final vendor = await getCurrentUserVendor();
     return vendor != null && vendor.isApproved;
   }
 
-  /// Update vendor profile
   Future<Vendor?> updateVendor({
     required String vendorId,
     String? businessName,
@@ -165,7 +123,6 @@ class VendorRepository {
   }) async {
     try {
       final updateData = <String, dynamic>{};
-
       if (businessName != null) updateData['business_name'] = businessName;
       if (businessDescription != null) {
         updateData['business_description'] = businessDescription;
@@ -179,72 +136,33 @@ class VendorRepository {
 
       if (updateData.isEmpty) return null;
 
-      final response =
-          await _supabase
-              .from('vendors')
-              .update(updateData)
-              .eq('id', vendorId)
-              .select()
-              .single();
-
-      return Vendor.fromJson(response);
+      final response = await _api.patch('/vendors/$vendorId/', data: updateData);
+      return Vendor.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
       print('Error updating vendor: $e');
       rethrow;
     }
   }
 
-  /// Get all products from a specific vendor
   Future<List<Product>> getVendorProducts(String vendorId) async {
     try {
-      print('🔍 Fetching products for vendor: $vendorId');
-      final response = await _supabase
-          .from('products')
-          .select('*, vendors(*), categories(*)')
-          .eq('vendor_id', vendorId)
-          .eq('in_stock', true)
-          .eq('approval_status', 'approved')
-          .order('created_at', ascending: false);
-
-      print('📦 Raw response type: ${response.runtimeType}');
-      print('📦 Raw response length: ${response.length}');
-
-      final products = <Product>[];
-      for (int i = 0; i < response.length; i++) {
-        try {
-          final product = Product.fromJson(response[i]);
-          products.add(product);
-          print('✅ Successfully parsed product ${i + 1}: ${product.name}');
-        } catch (e) {
-          print('❌ Error parsing product ${i + 1}: $e');
-          print('Product data: ${response[i]}');
-        }
-      }
-
-      print(
-        '📦 Successfully parsed ${products.length} products for vendor $vendorId',
-      );
-      return products;
+      final response = await _api.get('/vendors/$vendorId/products/');
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((p) => Product.fromJson(p as Map<String, dynamic>))
+          .toList();
     } catch (e) {
-      print('❌ Error fetching vendor products: $e');
-      print('Vendor ID: $vendorId');
+      print('Error fetching vendor products: $e');
       return [];
     }
   }
 
-  /// Follow a vendor
   Future<bool> followVendor(String vendorId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User must be authenticated to follow vendors');
       }
-
-      await _supabase.from('vendor_follows').insert({
-        'user_id': user.id,
-        'vendor_id': vendorId,
-      });
-
+      await _api.post('/vendors/$vendorId/follow/');
       return true;
     } catch (e) {
       print('Error following vendor: $e');
@@ -252,20 +170,12 @@ class VendorRepository {
     }
   }
 
-  /// Unfollow a vendor
   Future<bool> unfollowVendor(String vendorId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User must be authenticated to unfollow vendors');
       }
-
-      await _supabase
-          .from('vendor_follows')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('vendor_id', vendorId);
-
+      await _api.delete('/vendors/$vendorId/follow/');
       return true;
     } catch (e) {
       print('Error unfollowing vendor: $e');
@@ -273,45 +183,25 @@ class VendorRepository {
     }
   }
 
-  /// Check if current user is following a vendor
   Future<bool> isFollowingVendor(String vendorId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return false;
-
-      final response =
-          await _supabase
-              .from('vendor_follows')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('vendor_id', vendorId)
-              .maybeSingle();
-
-      return response != null;
+      if (!AuthService.isAuthenticated()) return false;
+      final response = await _api.get('/vendors/$vendorId/follow/');
+      final data = response.data as Map<String, dynamic>;
+      return data['is_following'] == true;
     } catch (e) {
       print('Error checking follow status: $e');
       return false;
     }
   }
 
-  /// Get all vendors that current user is following
   Future<List<Vendor>> getFollowedVendors() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return [];
-
-      final response = await _supabase
-          .from('vendor_follows')
-          .select('vendor_id, vendors(*)')
-          .eq('user_id', user.id)
-          .order('created_at', ascending: false);
-
-      return (response as List)
-          .where((follow) => follow['vendors'] != null)
-          .map(
-            (follow) =>
-                Vendor.fromJson(follow['vendors'] as Map<String, dynamic>),
-          )
+      if (!AuthService.isAuthenticated()) return [];
+      final response = await _api.get('/vendors/following/');
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error fetching followed vendors: $e');
@@ -319,32 +209,27 @@ class VendorRepository {
     }
   }
 
-  /// Get follower count for a vendor
   Future<int> getVendorFollowerCount(String vendorId) async {
     try {
-      final response = await _supabase
-          .from('vendor_follows')
-          .select('id')
-          .eq('vendor_id', vendorId);
-
-      return (response as List).length;
+      final response = await _api.get('/vendors/$vendorId/followers/');
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+        return data['count'] ?? data['follower_count'] ?? 0;
+      }
+      if (data is List) return data.length;
+      return 0;
     } catch (e) {
       print('Error getting vendor follower count: $e');
       return 0;
     }
   }
 
-  /// Get users following a vendor (for vendor dashboard)
   Future<List<VendorFollow>> getVendorFollowers(String vendorId) async {
     try {
-      final response = await _supabase
-          .from('vendor_follows')
-          .select('*')
-          .eq('vendor_id', vendorId)
-          .order('created_at', ascending: false);
-
-      return (response as List)
-          .map((follow) => VendorFollow.fromJson(follow))
+      final response = await _api.get('/vendors/$vendorId/followers/');
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((f) => VendorFollow.fromJson(f as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error fetching vendor followers: $e');
@@ -352,37 +237,19 @@ class VendorRepository {
     }
   }
 
-  // NEW: Vendor Review Functionality
-
-  /// Add a review for a vendor
   Future<bool> addVendorReview({
     required String vendorId,
     required double rating,
     String? reviewText,
   }) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         throw Exception('User must be authenticated to add reviews');
       }
-
-      // Get user profile info for the review
-      final userProfile =
-          await _supabase
-              .from('profiles')
-              .select('full_name, avatar_url')
-              .eq('id', user.id)
-              .maybeSingle();
-
-      await _supabase.from('vendor_reviews').insert({
-        'vendor_id': vendorId,
-        'user_id': user.id,
-        'user_name': userProfile?['full_name'] ?? 'Anonymous User',
-        'user_avatar': userProfile?['avatar_url'],
+      await _api.post('/vendors/$vendorId/reviews/', data: {
         'rating': rating,
-        'review_text': reviewText,
+        if (reviewText != null) 'review_text': reviewText,
       });
-
       return true;
     } catch (e) {
       print('Error adding vendor review: $e');
@@ -390,22 +257,16 @@ class VendorRepository {
     }
   }
 
-  /// Update a vendor review
   Future<bool> updateVendorReview({
     required String reviewId,
     required double rating,
     String? reviewText,
   }) async {
     try {
-      await _supabase
-          .from('vendor_reviews')
-          .update({
-            'rating': rating,
-            'review_text': reviewText,
-            'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', reviewId);
-
+      await _api.patch('/vendors/reviews/$reviewId/', data: {
+        'rating': rating,
+        if (reviewText != null) 'review_text': reviewText,
+      });
       return true;
     } catch (e) {
       print('Error updating vendor review: $e');
@@ -413,11 +274,9 @@ class VendorRepository {
     }
   }
 
-  /// Delete a vendor review
   Future<bool> deleteVendorReview(String reviewId) async {
     try {
-      await _supabase.from('vendor_reviews').delete().eq('id', reviewId);
-
+      await _api.delete('/vendors/reviews/$reviewId/');
       return true;
     } catch (e) {
       print('Error deleting vendor review: $e');
@@ -425,21 +284,16 @@ class VendorRepository {
     }
   }
 
-  /// Get reviews for a vendor
   Future<List<VendorReview>> getVendorReviews(
     String vendorId, {
     int limit = 20,
   }) async {
     try {
-      final response = await _supabase
-          .from('vendor_reviews')
-          .select('*')
-          .eq('vendor_id', vendorId)
-          .order('created_at', ascending: false)
-          .limit(limit);
-
-      return (response as List)
-          .map((review) => VendorReview.fromJson(review))
+      final response = await _api.get('/vendors/$vendorId/reviews/',
+          queryParameters: {'limit': limit});
+      final results = ApiClient.unwrapResults(response.data);
+      return results
+          .map((r) => VendorReview.fromJson(r as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error fetching vendor reviews: $e');
@@ -447,23 +301,14 @@ class VendorRepository {
     }
   }
 
-  /// Get user's review for a specific vendor
   Future<VendorReview?> getUserReviewForVendor(String vendorId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return null;
-
-      final response =
-          await _supabase
-              .from('vendor_reviews')
-              .select('*')
-              .eq('vendor_id', vendorId)
-              .eq('user_id', user.id)
-              .maybeSingle();
-
-      if (response != null) {
-        return VendorReview.fromJson(response);
-      }
+      if (!AuthService.isAuthenticated()) return null;
+      final response = await _api.get('/vendors/$vendorId/my-review/');
+      return VendorReview.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      print('Error fetching user vendor review: $e');
       return null;
     } catch (e) {
       print('Error fetching user vendor review: $e');
@@ -471,7 +316,6 @@ class VendorRepository {
     }
   }
 
-  /// Check if user has reviewed a vendor
   Future<bool> hasUserReviewedVendor(String vendorId) async {
     final review = await getUserReviewForVendor(vendorId);
     return review != null;

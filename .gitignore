@@ -12,6 +12,17 @@
 .swiftpm/
 migrate_working_dir/
 assets/.env
+.env
+
+# Android signing — never commit keys or passwords
+android/key.properties
+android/upload-keystore.jks
+android/app/upload-keystore.jks
+*.jks
+*.keystore
+
+# Android build artifacts
+android/app/.cxx/
 # IntelliJ related
 *.iml
 *.ipr

@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../controllers/payment_webview_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 
+
 class SquadPaymentWebView extends StatelessWidget {
   final String checkoutUrl;
   final String transactionRef;
@@ -34,7 +35,13 @@ class SquadPaymentWebView extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => _showCancelDialog(context, controller),
+          onPressed: () {
+            if (controller.hasError.value) {
+              controller.cancelPayment();
+            } else {
+              _showCancelDialog(context, controller);
+            }
+          },
         ),
         actions: [
           Obx(
@@ -105,18 +112,13 @@ class SquadPaymentWebView extends StatelessWidget {
             ),
           ),
 
-          // WebView
+          // WebView or error view
           Expanded(
             child: Obx(() {
               if (controller.hasError.value) {
                 return _buildErrorView(controller);
               }
-
-              return SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: WebViewWidget(controller: controller.webViewController),
-              );
+              return WebViewWidget(controller: controller.webViewController);
             }),
           ),
 
@@ -148,63 +150,54 @@ class SquadPaymentWebView extends StatelessWidget {
   }
 
   Widget _buildErrorView(PaymentWebViewController controller) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Payment Page Error',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 20),
+          Text(
+            'Unable to load payment page',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            controller.errorMessage.value,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: controller.refreshPage,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              controller.errorMessage.value,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            child: const Text('Retry'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: () => controller.cancelPayment(),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            const SizedBox(height: 24),
-            Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => Get.back(),
-                      child: const Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: controller.refreshPage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: controller.retryWithFallback,
-                  child: Text(
-                    'Try Alternative Method',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+            child: const Text('Go Back'),
+          ),
+        ],
       ),
     );
   }

@@ -1,45 +1,58 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/services/auth_service.dart';
 
 class WishlistRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final _api = ApiClient.instance;
 
   Future<List<String>> getWishlistProductIds() async {
-    final currentUser = _supabase.auth.currentUser;
-    if (currentUser == null) {
-      return []; // Return empty list if not authenticated
+    if (!AuthService.isAuthenticated()) return [];
+
+    try {
+      final response = await _api.get('/wishlist/');
+      final results = ApiClient.unwrapResults(response.data);
+
+      return results
+          .map((item) {
+            final m = item as Map<String, dynamic>;
+            return (m['product_id'] ?? m['product']?['id'] ?? '').toString();
+          })
+          .where((id) => id.isNotEmpty)
+          .toList();
+    } catch (e) {
+      print('Error fetching wishlist: $e');
+      return [];
     }
-
-    final response = await _supabase
-        .from('wishlist')
-        .select('product_id')
-        .eq('user_id', currentUser.id);
-
-    return (response as List)
-        .map((item) => item['product_id'] as String)
-        .toList();
   }
 
   Future<void> addToWishlist(String productId) async {
-    final currentUser = _supabase.auth.currentUser;
-    if (currentUser == null) {
+    if (!AuthService.isAuthenticated()) {
       throw Exception('User not authenticated');
     }
 
-    await _supabase.from('wishlist').insert({
+    await _api.post('/wishlist/', data: {
       'product_id': productId,
-      'user_id': currentUser.id,
     });
   }
 
   Future<void> removeFromWishlist(String productId) async {
-    final currentUser = _supabase.auth.currentUser;
-    if (currentUser == null) {
+    if (!AuthService.isAuthenticated()) {
       throw Exception('User not authenticated');
     }
 
-    await _supabase.from('wishlist').delete().match({
-      'product_id': productId,
-      'user_id': currentUser.id,
-    });
+    // The Django API uses DELETE /api/wishlist/{wishlist_item_id}/
+    // First find the wishlist item by product_id, then delete by its id
+    final response = await _api.get('/wishlist/');
+    final results = ApiClient.unwrapResults(response.data);
+
+    for (final item in results) {
+      final m = item as Map<String, dynamic>;
+      final itemProductId =
+          (m['product_id'] ?? m['product']?['id'] ?? '').toString();
+      if (itemProductId == productId) {
+        final wishlistItemId = m['id'].toString();
+        await _api.delete('/wishlist/$wishlistItemId/');
+        return;
+      }
+    }
   }
 }

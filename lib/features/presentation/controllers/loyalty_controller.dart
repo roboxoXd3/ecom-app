@@ -35,6 +35,7 @@ class LoyaltyController extends GetxController {
     await refreshBalance();
     await loadRewards();
     await loadVouchers();
+    await loadBadges();
   }
 
   /// Refresh loyalty balance

@@ -167,6 +167,7 @@ class QAController extends GetxController {
       final updatedQA = await _qaService.submitAnswer(
         questionId: questionId,
         answer: answer,
+        productId: _currentProductId!,
       );
 
       // Update the question in the list
@@ -198,7 +199,7 @@ class QAController extends GetxController {
   // Mark Q&A as helpful
   Future<void> markQAHelpful(String qaId) async {
     try {
-      await _qaService.markQAHelpful(qaId);
+      await _qaService.markQAHelpful(qaId, productId: _currentProductId!);
 
       // Update the local Q&A
       final qaIndex = questions.indexWhere((q) => q.id == qaId);

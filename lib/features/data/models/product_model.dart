@@ -376,7 +376,7 @@ class Product {
     // NEW PDP PARAMETERS
     this.subtitle,
     this.mrp,
-    this.currency = 'INR',
+    this.currency = 'NGN',
     this.ordersCount,
     this.offers = const [],
     this.highlights = const [],
@@ -470,7 +470,7 @@ class Product {
       // NEW PDP FIELDS FROM DATABASE
       subtitle: json['subtitle'],
       mrp: json['mrp']?.toDouble(),
-      currency: json['currency'] ?? 'INR',
+      currency: json['currency'] ?? 'NGN',
       ordersCount: json['orders_count'],
 
       // Handle related data from separate tables/queries
@@ -759,16 +759,16 @@ class Product {
     if (images.isEmpty) return [];
 
     try {
-      // Try to parse as JSON array first
+      List<String> result;
       if (images.startsWith('[') && images.endsWith(']')) {
         final List<dynamic> jsonList = json.decode(images);
-        return jsonList.map((e) => e.toString()).toList();
+        result = jsonList.map((e) => e.toString().trim()).toList();
+      } else {
+        result = images.split(',').map((e) => e.trim()).toList();
       }
-      // Fallback to comma-separated parsing
-      return images.split(',').map((e) => e.trim()).toList();
+      return result.where((url) => url.isNotEmpty).toList();
     } catch (e) {
-      // If JSON parsing fails, fallback to comma-separated
-      return images.split(',').map((e) => e.trim()).toList();
+      return images.split(',').map((e) => e.trim()).where((url) => url.isNotEmpty).toList();
     }
   }
 

@@ -1,11 +1,18 @@
 import 'order_status.dart';
 
+double _toDouble(dynamic v) =>
+    v == null ? 0.0 : double.tryParse(v.toString()) ?? 0.0;
+
+int _toInt(dynamic v) =>
+    v == null ? 0 : int.tryParse(v.toString()) ?? 0;
+
 class Order {
   final String id;
+  final String? orderNumber;
   final String userId;
   final String addressId;
   final String? paymentMethodId;
-  final String? shippingMethod; // Used to store payment method type
+  final String? shippingMethod;
   final double subtotal;
   final double shippingFee;
   final double total;
@@ -13,7 +20,6 @@ class Order {
   final DateTime createdAt;
   final List<OrderItem> items;
 
-  // Squad payment integration fields
   final String? squadTransactionRef;
   final String? squadGatewayRef;
   final String? paymentStatus;
@@ -22,6 +28,7 @@ class Order {
 
   Order({
     required this.id,
+    this.orderNumber,
     required this.userId,
     required this.addressId,
     this.paymentMethodId,
@@ -39,19 +46,31 @@ class Order {
     this.escrowReleaseDate,
   });
 
+  String get displayOrderNumber => orderNumber ?? '#${id.substring(0, 8).toUpperCase()}';
+
   factory Order.fromJson(Map<String, dynamic> json, {List<OrderItem>? items}) {
+    List<OrderItem> orderItems = items ?? [];
+    if (orderItems.isEmpty && json['items'] is List) {
+      orderItems = (json['items'] as List)
+          .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    }
+
     return Order(
-      id: json['id'],
-      userId: json['user_id'],
-      addressId: json['address_id'],
-      paymentMethodId: json['payment_method_id'],
-      shippingMethod: json['shipping_method'],
-      subtotal: json['subtotal'].toDouble(),
-      shippingFee: json['shipping_fee'].toDouble(),
-      total: json['total'].toDouble(),
-      status: OrderStatus.fromString(json['status']),
-      createdAt: DateTime.parse(json['created_at']),
-      items: items ?? [],
+      id: json['id']?.toString() ?? '',
+      orderNumber: json['order_number']?.toString(),
+      userId: json['user_id']?.toString() ?? json['user']?.toString() ?? '',
+      addressId: json['address_id']?.toString() ?? json['address']?.toString() ?? '',
+      paymentMethodId: json['payment_method_id']?.toString(),
+      shippingMethod: json['shipping_method']?.toString(),
+      subtotal: _toDouble(json['subtotal']),
+      shippingFee: _toDouble(json['shipping_fee']),
+      total: _toDouble(json['total']),
+      status: OrderStatus.fromString(json['status'] ?? 'pending'),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      items: orderItems,
       squadTransactionRef: json['squad_transaction_ref'],
       squadGatewayRef: json['squad_gateway_ref'],
       paymentStatus: json['payment_status'],
@@ -131,8 +150,8 @@ class OrderItem {
   final String selectedColor;
   final DateTime createdAt;
 
-  // Product and vendor information
   final String? productName;
+  final String? productImage;
   final String? vendorId;
   final String? vendorName;
 
@@ -146,38 +165,52 @@ class OrderItem {
     required this.selectedColor,
     required this.createdAt,
     this.productName,
+    this.productImage,
     this.vendorId,
     this.vendorName,
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
-    // Extract product and vendor information if available
     String? productName;
+    String? productImage;
     String? vendorId;
     String? vendorName;
 
-    if (json['products'] != null) {
-      final product = json['products'];
-      productName = product['name'];
-      vendorId = product['vendor_id'];
-
-      if (product['vendors'] != null) {
-        vendorName = product['vendors']['business_name'];
+    final product = json['product'] ?? json['products'];
+    if (product is Map<String, dynamic>) {
+      productName = product['name']?.toString();
+      vendorId = product['vendor_id']?.toString();
+      final images = product['images'];
+      if (images is String && images.isNotEmpty) {
+        productImage = images.split(',').first.trim();
+      } else if (images is List && images.isNotEmpty) {
+        productImage = images.first.toString();
+      }
+      final vendor = product['vendor'] ?? product['vendors'];
+      if (vendor is Map<String, dynamic>) {
+        vendorName = vendor['business_name']?.toString();
       }
     }
 
+    final productId = json['product_id']?.toString()
+        ?? (product is Map<String, dynamic> ? product['id']?.toString() : null)
+        ?? '';
+
     return OrderItem(
-      id: json['id'],
-      orderId: json['order_id'],
-      productId: json['product_id'],
-      quantity: json['quantity'],
-      price: json['price'].toDouble(),
-      selectedSize: json['selected_size'],
-      selectedColor: json['selected_color'],
-      createdAt: DateTime.parse(json['created_at']),
-      productName: productName,
+      id: json['id']?.toString() ?? '',
+      orderId: json['order_id']?.toString() ?? '',
+      productId: productId,
+      quantity: _toInt(json['quantity'] ?? 1),
+      price: _toDouble(json['price']),
+      selectedSize: json['selected_size'] ?? '',
+      selectedColor: json['selected_color'] ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      productName: productName ?? json['product_name']?.toString(),
+      productImage: productImage,
       vendorId: vendorId,
-      vendorName: vendorName,
+      vendorName: vendorName ?? json['vendor_name']?.toString(),
     );
   }
 

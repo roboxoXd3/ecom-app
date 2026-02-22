@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/models/review_model.dart';
 import '../../controllers/reviews_controller.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/services/auth_service.dart';
 
 class RatingsReviews extends StatefulWidget {
   final Product product;
@@ -588,7 +588,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
 
   Widget _buildWriteReviewSection() {
     return Obx(() {
-      final currentUser = Supabase.instance.client.auth.currentUser;
+      final isLoggedIn = AuthService.isAuthenticated();
 
       return Container(
         padding: const EdgeInsets.all(16),
@@ -615,8 +615,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
             ),
             const SizedBox(height: 12),
 
-            if (currentUser == null) ...[
-              // Not logged in
+            if (!isLoggedIn) ...[
               Text(
                 'Please sign in to write a review',
                 style: TextStyle(color: AppTheme.getTextSecondary(context)),

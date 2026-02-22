@@ -20,7 +20,7 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
 
-    // ✅ ADD THIS LINE - Refresh user data when profile tab is accessed
+    // Refresh user data when profile tab is accessed
     authController.updateUserData();
 
     return Scaffold(

@@ -2,7 +2,7 @@ import 'product_model.dart';
 
 class ChatConversation {
   final String id;
-  final String userId;
+  final String? userId;
   final String title;
   final DateTime lastMessageAt;
   final bool isResolved;
@@ -11,7 +11,7 @@ class ChatConversation {
 
   ChatConversation({
     required this.id,
-    required this.userId,
+    this.userId,
     required this.title,
     required this.lastMessageAt,
     required this.isResolved,
@@ -20,14 +20,21 @@ class ChatConversation {
   });
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {
+    final userField = json['user_id'] ?? json['user'];
     return ChatConversation(
-      id: json['id'],
-      userId: json['user_id'],
-      title: json['title'],
-      lastMessageAt: DateTime.parse(json['last_message_at']),
+      id: json['id']?.toString() ?? '',
+      userId: userField?.toString(),
+      title: json['title']?.toString() ?? 'Conversation',
+      lastMessageAt: json['last_message_at'] != null
+          ? DateTime.parse(json['last_message_at'])
+          : DateTime.now(),
       isResolved: json['is_resolved'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'])
+          : DateTime.now(),
     );
   }
 
@@ -67,14 +74,18 @@ class ChatMessage {
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     return ChatMessage(
-      id: json['id'],
-      conversationId: json['conversation_id'],
-      senderType: json['sender_type'],
-      messageText: json['message_text'],
-      messageType: json['message_type'] ?? 'text',
-      metadata: json['metadata'],
+      id: json['id']?.toString() ?? '',
+      conversationId: json['conversation_id']?.toString() ?? '',
+      senderType: json['sender_type']?.toString() ?? 'bot',
+      messageText: json['message_text']?.toString() ?? '',
+      messageType: json['message_type']?.toString() ?? 'text',
+      metadata: json['metadata'] is Map<String, dynamic>
+          ? json['metadata']
+          : null,
       isRead: json['is_read'] ?? false,
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
     );
   }
 
@@ -216,12 +227,16 @@ class ChatAnalytics {
 
   factory ChatAnalytics.fromJson(Map<String, dynamic> json) {
     return ChatAnalytics(
-      id: json['id'],
-      conversationId: json['conversation_id'],
-      userId: json['user_id'],
-      actionType: json['action_type'],
-      actionData: json['action_data'],
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id']?.toString() ?? '',
+      conversationId: json['conversation_id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? json['user']?.toString() ?? '',
+      actionType: json['action_type']?.toString() ?? '',
+      actionData: json['action_data'] is Map<String, dynamic>
+          ? json['action_data']
+          : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
     );
   }
 

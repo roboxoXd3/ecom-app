@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../../data/models/vendor_model.dart';
 import '../../data/models/product_model.dart';
 import '../../data/repositories/vendor_repository.dart';
+import '../../../core/utils/snackbar_utils.dart';
 
 class VendorController extends GetxController {
   final VendorRepository _vendorRepository = VendorRepository();
@@ -13,6 +14,8 @@ class VendorController extends GetxController {
   final RxList<Product> vendorProducts = <Product>[].obs;
   final Rx<Vendor?> currentUserVendor = Rx<Vendor?>(null);
   final RxBool isLoading = false.obs;
+  // Dedicated flag for the vendor list fetch only (used by home screen)
+  final RxBool isVendorsLoading = false.obs;
   final RxBool isCurrentUserVendor = false.obs;
   final RxMap<String, bool> followStatus = <String, bool>{}.obs;
   final RxMap<String, int> followerCounts = <String, int>{}.obs;
@@ -20,7 +23,6 @@ class VendorController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchVendors();
     fetchFeaturedVendors();
     checkCurrentUserVendorStatus();
     fetchFollowedVendors();
@@ -29,7 +31,7 @@ class VendorController extends GetxController {
   /// Fetch all approved vendors
   Future<void> fetchVendors() async {
     try {
-      isLoading.value = true;
+      isVendorsLoading.value = true;
       final fetchedVendors = await _vendorRepository.getApprovedVendors();
       vendors.value = fetchedVendors;
       print('📦 VendorController: Fetched ${fetchedVendors.length} vendors');
@@ -38,14 +40,8 @@ class VendorController extends GetxController {
       }
     } catch (e) {
       print('❌ Error fetching vendors: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to fetch vendors',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
     } finally {
-      isLoading.value = false;
+      isVendorsLoading.value = false;
     }
   }
 
@@ -113,12 +109,14 @@ class VendorController extends GetxController {
       return false;
     } catch (e) {
       print('Error registering as vendor: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to register as vendor: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-      );
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar(
+          'Error',
+          'Failed to register as vendor: ${e.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+      }
       return false;
     } finally {
       isLoading.value = false;
@@ -189,12 +187,14 @@ class VendorController extends GetxController {
       return false;
     } catch (e) {
       print('Error updating vendor profile: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to update vendor profile',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar(
+          'Error',
+          'Failed to update vendor profile',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
       return false;
     } finally {
       isLoading.value = false;
@@ -223,12 +223,14 @@ class VendorController extends GetxController {
     } catch (e) {
       print('❌ VendorController: Error fetching vendor products: $e');
       vendorProducts.clear();
-      Get.snackbar(
-        'Error',
-        'Failed to load vendor products',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar(
+          'Error',
+          'Failed to load vendor products',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
     } finally {
       isLoading.value = false;
     }
@@ -257,12 +259,14 @@ class VendorController extends GetxController {
       }
     } catch (e) {
       print('Error following vendor: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to follow vendor',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar(
+          'Error',
+          'Failed to follow vendor',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
     }
   }
 
@@ -289,12 +293,14 @@ class VendorController extends GetxController {
       }
     } catch (e) {
       print('Error unfollowing vendor: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to unfollow vendor',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 2),
-      );
+      if (!SnackbarUtils.isNoInternet(e)) {
+        Get.snackbar(
+          'Error',
+          'Failed to unfollow vendor',
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
     }
   }
 

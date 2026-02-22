@@ -63,10 +63,10 @@ class SizeChartModel {
     );
   }
 
-  /// Helper method to extract category name from Supabase nested join structure
+  /// Helper method to extract category name from nested join structure
   /// Handles both nested (categories!foreign_key(name)) and flat structures
   static String _extractCategoryName(Map<String, dynamic> template) {
-    // Try nested structure first (Supabase join: categories!foreign_key(name))
+    // Try nested structure first (join: categories!foreign_key(name))
     if (template['categories'] != null) {
       final categories = template['categories'];
       if (categories is Map<String, dynamic>) {
@@ -143,6 +143,41 @@ class SizeChartModel {
           (customData['entries'] as List<dynamic>? ?? [])
               .map((entry) => SizeChartEntry.fromMap(entry))
               .toList(),
+    );
+  }
+
+  /// Factory constructor for Django API response.
+  /// Handles both flat structure and nested template_data structure.
+  factory SizeChartModel.fromApiResponse(Map<String, dynamic> data) {
+    List<SizeChartEntry> entries = [];
+
+    if (data['entries'] is List) {
+      entries = (data['entries'] as List)
+          .map((e) => SizeChartEntry.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } else if (data['template_data'] is Map &&
+        data['template_data']['entries'] is List) {
+      entries = (data['template_data']['entries'] as List)
+          .map((e) => SizeChartEntry.fromMap(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    return SizeChartModel(
+      id: data['id']?.toString() ?? '',
+      name: data['name']?.toString() ?? '',
+      category: data['category']?.toString() ??
+          _extractCategoryName(data),
+      subcategory: data['subcategory']?.toString() ?? '',
+      measurementTypes: List<String>.from(data['measurement_types'] ?? []),
+      measurementInstructions:
+          data['measurement_instructions']?.toString() ?? '',
+      sizeRecommendations: Map<String, String>.from(
+        data['size_recommendations'] ?? {},
+      ),
+      chartType: data['chart_type']?.toString() ?? 'standard',
+      isActive: data['is_active'] ?? true,
+      categoryId: data['category_id']?.toString(),
+      entries: entries,
     );
   }
 

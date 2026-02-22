@@ -1,9 +1,7 @@
 import 'dart:io';
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../data/models/order_model.dart';
 import '../../data/services/squad_payment_service.dart';
 import '../screens/payment/squad_payment_webview.dart';
@@ -13,7 +11,9 @@ import 'cart_controller.dart';
 import 'auth_controller.dart';
 import 'currency_controller.dart';
 import 'address_controller.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/services/auth_service.dart';
 
 class CheckoutController extends GetxController {
   final OrderController _orderController = Get.find<OrderController>();
@@ -26,6 +26,7 @@ class CheckoutController extends GetxController {
   final RxString selectedAddressId = ''.obs;
   final RxString selectedPaymentMethod = 'cash_on_delivery'.obs;
   final RxString currentTransactionRef = ''.obs;
+  final RxString currentOrderId = ''.obs;
 
   // Loyalty voucher fields
   final RxString voucherCode = ''.obs;
@@ -142,7 +143,6 @@ class CheckoutController extends GetxController {
     return canProceed;
   }
 
-  // Validate and apply voucher
   Future<void> applyVoucher(String code) async {
     if (code.trim().isEmpty) {
       SnackbarUtils.showError('Please enter a voucher code');
@@ -152,54 +152,40 @@ class CheckoutController extends GetxController {
     try {
       isValidatingVoucher.value = true;
 
-      // Get user ID
-      final authController = Get.find<AuthController>();
-      final user = authController.supabase.auth.currentUser;
-      if (user == null) {
+      if (!AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Please login to apply voucher');
         return;
       }
 
-      // Call REST API to validate voucher
-      final apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:3000';
-      final response = await http.post(
-        Uri.parse('$apiUrl/api/loyalty/validate-voucher'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'userId': user.id,
-          'voucherCode': code.toUpperCase(),
-          'orderAmount': subtotal,
-        }),
+      final api = ApiClient.instance;
+      final response = await api.post(
+        '/loyalty/validate-voucher/',
+        data: {'voucher_code': code.toUpperCase(), 'order_subtotal': subtotal},
       );
 
-      final data = jsonDecode(response.body);
+      final data = response.data as Map<String, dynamic>;
 
-      if (response.statusCode == 200 && data['valid'] == true) {
+      if (data['valid'] == true) {
         voucherCode.value = code.toUpperCase();
         voucherApplied.value = true;
-        voucherType.value = data['discount_type'];
+        voucherType.value = (data['discount_type'] ?? '').toString();
         voucherValue.value =
-            (data['discount_value'] is int)
-                ? (data['discount_value'] as int).toDouble()
-                : data['discount_value'].toDouble();
+            (data['discount_value'] ?? data['discount_amount'] ?? 0).toDouble();
 
-        // Calculate discount - use server-calculated amount
-        if (data['discount_type'] == 'discount_percentage') {
-          voucherDiscount.value =
-              (data['discount_amount'] is int)
-                  ? (data['discount_amount'] as int).toDouble()
-                  : data['discount_amount'].toDouble();
-        } else {
-          voucherDiscount.value =
-              (data['discount_value'] is int)
-                  ? (data['discount_value'] as int).toDouble()
-                  : data['discount_value'].toDouble();
-        }
+        voucherDiscount.value =
+            (data['discount_amount'] ?? data['discount_value'] ?? 0).toDouble();
 
         SnackbarUtils.showSuccess('Voucher applied successfully!');
       } else {
-        throw Exception(data['error'] ?? 'Invalid voucher');
+        throw Exception(data['error'] ?? data['detail'] ?? 'Invalid voucher');
       }
+    } on DioException catch (e) {
+      final detail =
+          e.response?.data?['detail']?.toString() ??
+          e.response?.data?['error']?.toString() ??
+          'Invalid or expired voucher code';
+      SnackbarUtils.showError(detail);
+      clearVoucher();
     } catch (e) {
       print('Voucher validation error: $e');
       SnackbarUtils.showError(
@@ -317,21 +303,15 @@ class CheckoutController extends GetxController {
     }
   }
 
-  // Debug method to check auth status
   void debugAuthStatus() {
     if (Get.isRegistered<AuthController>()) {
       final authController = Get.find<AuthController>();
       print('=== AUTH DEBUG ===');
-      print('AuthController registered: ${Get.isRegistered<AuthController>()}');
+      print('AuthController registered: true');
       print('userEmail.value: "${authController.userEmail.value}"');
-      print('currentUser.value: ${authController.currentUser.value}');
-      print('currentUser email: ${authController.currentUser.value?.email}');
-      print(
-        'Supabase currentUser: ${authController.supabase.auth.currentUser}',
-      );
-      print(
-        'Supabase user email: ${authController.supabase.auth.currentUser?.email}',
-      );
+      print('userEmail: ${authController.userEmail.value}');
+      print('isAuthenticated: ${AuthService.isAuthenticated()}');
+      print('isLoggedIn: ${authController.isLoggedIn()}');
       print('==================');
     } else {
       print('AuthController NOT registered!');
@@ -393,7 +373,6 @@ class CheckoutController extends GetxController {
 
   Future<void> _initiateSquadPayment() async {
     try {
-      // Validate network connectivity first
       if (!await _checkNetworkConnectivity()) {
         SnackbarUtils.showError(
           'No internet connection. Please check your network and try again.',
@@ -401,81 +380,80 @@ class CheckoutController extends GetxController {
         return;
       }
 
-      // Get user email for payment
-      if (!Get.isRegistered<AuthController>()) {
-        SnackbarUtils.showError(
-          'Authentication system not ready. Please restart the app.',
-        );
-        return;
-      }
-
       final authController = Get.find<AuthController>();
-
-      // Try multiple ways to get user email
-      String? userEmail = authController.userEmail.value;
-      if (userEmail.isEmpty) {
-        userEmail = authController.currentUser.value?.email;
-      }
-      if (userEmail == null || userEmail.isEmpty) {
-        // Fallback to Supabase auth directly
-        userEmail = authController.supabase.auth.currentUser?.email;
-      }
+      String? userEmail =
+          authController.userEmail.value.isNotEmpty
+              ? authController.userEmail.value
+              : AuthService.getUserEmail();
 
       if (userEmail == null || userEmail.isEmpty) {
         SnackbarUtils.showError('User email not found. Please login again.');
-        print(
-          'Debug: AuthController userEmail: ${authController.userEmail.value}',
-        );
-        print(
-          'Debug: CurrentUser email: ${authController.currentUser.value?.email}',
-        );
-        print(
-          'Debug: Supabase user: ${authController.supabase.auth.currentUser?.email}',
-        );
         return;
       }
 
-      // Generate transaction reference
+      isProcessingOrder.value = true;
+
+      // Step 1: Create the order first to get an order_id.
+      // Django requires order_id when initiating payment.
+      final orderItems =
+          _cartController.items
+              .map(
+                (cartItem) => OrderItem(
+                  id: '',
+                  orderId: '',
+                  productId: cartItem.product.id,
+                  quantity: cartItem.quantity,
+                  price: cartItem.product.price,
+                  selectedSize: cartItem.selectedSize,
+                  selectedColor: cartItem.selectedColor,
+                  createdAt: DateTime.now(),
+                ),
+              )
+              .toList();
+
+      String? createdOrderId;
+      try {
+        final order = await _orderController.createOnlinePaymentOrder(
+          addressId: selectedAddressId.value,
+          paymentMethodId: selectedPaymentMethod.value,
+          subtotal: subtotal,
+          shippingFee: shippingFee,
+          total: total,
+          items: orderItems,
+          loyaltyVoucherCode: voucherApplied.value ? voucherCode.value : null,
+        );
+        createdOrderId = order?.id;
+        if (createdOrderId == null) {
+          SnackbarUtils.showError('Failed to create order. Please try again.');
+          return;
+        }
+        currentOrderId.value = createdOrderId;
+      } catch (e) {
+        SnackbarUtils.showError('Failed to create order. Please try again.');
+        return;
+      } finally {
+        isProcessingOrder.value = false;
+      }
+
+      // Step 2: Initiate payment via Django, passing the order_id.
       currentTransactionRef.value =
           SquadPaymentService.generateTransactionRef();
 
-      // Prepare payment data
-      final paymentChannels = _getPaymentChannels();
-      final callbackUrl =
-          'https://ecomadmin-production.up.railway.app/api/payments/webhook';
-      final redirectUrl =
-          'https://ecomadmin-production.up.railway.app/api/payments/success';
+      print('Initiating Squad payment for order: $createdOrderId');
+      print('Amount: $total | Email: $userEmail');
 
-      print('Initiating Squad payment...');
-      print('Amount: $total');
-      print('Email: $userEmail');
-      print('Transaction Ref: ${currentTransactionRef.value}');
-
-      // Initiate payment with Squad
       final paymentResponse = await SquadPaymentService.initiatePayment(
         amount: total,
         email: userEmail,
         transactionRef: currentTransactionRef.value,
-        currency:
-            _currencyController.selectedCurrency.value, // Use selected currency
-        callbackUrl: callbackUrl,
-        redirectUrl: redirectUrl,
-        paymentChannels: paymentChannels,
-        metadata: {
-          'order_type': 'ecommerce',
-          'customer_id':
-              authController.currentUser.value?.id ??
-              authController.supabase.auth.currentUser?.id,
-          'cart_items': _cartController.items.length,
-          'selected_address': selectedAddressId.value,
-        },
+        currency: _currencyController.selectedCurrency.value,
+        metadata: {'order_id': createdOrderId},
       );
 
       if (paymentResponse.success && paymentResponse.checkoutUrl != null) {
-        // Hide loader before navigating
         isShowingPaymentLoader.value = false;
 
-        // Navigate to payment WebView
+        // Step 3: Open WebView for user to complete payment.
         Get.to(
           () => SquadPaymentWebView(
             checkoutUrl: paymentResponse.checkoutUrl!,
@@ -488,19 +466,16 @@ class CheckoutController extends GetxController {
       }
     } catch (e) {
       print('Squad payment initiation error: $e');
-
-      // Hide loader on error
       isShowingPaymentLoader.value = false;
 
-      // Provide specific error handling and fallback options
       if (e is SquadPaymentException) {
         if (e.statusCode == 408 || e.message.contains('timeout')) {
           SnackbarUtils.showError(
-            'Payment request timed out. Please check your connection and try again.',
+            'Payment request timed out. Please try again.',
           );
         } else if (e.statusCode >= 500) {
           SnackbarUtils.showError(
-            'Payment service temporarily unavailable. Please try again in a few minutes.',
+            'Payment service temporarily unavailable. Please try again later.',
           );
         } else {
           SnackbarUtils.showError('Payment Error: ${e.message}');
@@ -511,12 +486,9 @@ class CheckoutController extends GetxController {
           'Network connection failed. Please check your internet and try again.',
         );
       } else {
-        SnackbarUtils.showError(
-          'Failed to start payment process. Please try again.',
-        );
+        SnackbarUtils.showError('Failed to start payment. Please try again.');
       }
 
-      // Offer alternative payment method
       _showPaymentFailureDialog();
     }
   }
@@ -561,19 +533,6 @@ class CheckoutController extends GetxController {
     }
   }
 
-  List<String> _getPaymentChannels() {
-    switch (selectedPaymentMethod.value) {
-      case 'credit_card':
-        return ['card'];
-      case 'upi':
-        return ['transfer'];
-      case 'net_banking':
-        return ['bank'];
-      default:
-        return ['card', 'bank', 'ussd', 'transfer'];
-    }
-  }
-
   Future<void> _handlePaymentResult(PaymentResult result) async {
     print('Payment result: $result');
 
@@ -597,23 +556,38 @@ class CheckoutController extends GetxController {
     try {
       isProcessingOrder.value = true;
 
-      // Verify payment one more time
+      // Verify payment via Django
       final verification = await SquadPaymentService.verifyPayment(
         currentTransactionRef.value,
       );
 
       if (verification.isSuccessful) {
-        // Create order with payment details
-        final success = await _createOrderWithPaymentDetails(verification);
-
-        if (success) {
-          SnackbarUtils.showSuccess('Payment successful! Order confirmed.');
-          Get.offAllNamed('/order-confirmation');
-        } else {
-          SnackbarUtils.showError(
-            'Payment successful but order creation failed. Please contact support.',
+        // Order was already created before payment — just update its status
+        if (currentOrderId.value.isNotEmpty) {
+          await _orderController.updatePaymentStatus(
+            orderId: currentOrderId.value,
+            paymentStatus: 'paid',
+            squadGatewayRef: verification.gatewayRef,
+            escrowStatus: 'held',
           );
         }
+
+        // Clear cart and refresh orders
+        await _cartController.clearCart();
+        await _orderController.fetchUserOrders();
+
+        // Refresh vouchers if one was used
+        if (voucherApplied.value) {
+          try {
+            final loyaltyController = Get.find<LoyaltyController>();
+            await loyaltyController.loadVouchers();
+          } catch (e) {
+            print('CheckoutController: Error refreshing vouchers: $e');
+          }
+        }
+
+        SnackbarUtils.showSuccess('Payment successful! Order confirmed.');
+        Get.offAllNamed('/order-confirmation');
       } else {
         SnackbarUtils.showWarning(
           'Payment verification failed. Please check your orders or contact support.',
@@ -629,68 +603,8 @@ class CheckoutController extends GetxController {
     }
   }
 
-  Future<bool> _createOrderWithPaymentDetails(
-    SquadPaymentVerification verification,
-  ) async {
-    try {
-      // Convert cart items to order items
-      final orderItems =
-          _cartController.items
-              .map(
-                (cartItem) => OrderItem(
-                  id: '', // Will be generated by database
-                  orderId: '', // Will be set by repository
-                  productId: cartItem.product.id,
-                  quantity: cartItem.quantity,
-                  price: cartItem.product.price,
-                  selectedSize: cartItem.selectedSize,
-                  selectedColor: cartItem.selectedColor,
-                  createdAt: DateTime.now(),
-                ),
-              )
-              .toList();
-
-      // Create order with Squad payment details
-      final success = await _orderController.createOrderWithPayment(
-        addressId: selectedAddressId.value,
-        paymentMethodId: selectedPaymentMethod.value,
-        subtotal: subtotal,
-        shippingFee: shippingFee,
-        total: total,
-        items: orderItems,
-        squadTransactionRef: currentTransactionRef.value,
-        squadGatewayRef: verification.gatewayRef,
-        paymentStatus: 'completed',
-        loyaltyVoucherCode: voucherApplied.value ? voucherCode.value : null,
-      );
-
-      if (success) {
-        // Clear cart after successful order
-        await _cartController.clearCart();
-
-        // Refresh vouchers if one was used
-        if (voucherApplied.value) {
-          try {
-            final loyaltyController = Get.find<LoyaltyController>();
-            await loyaltyController.loadVouchers();
-            print('CheckoutController: Vouchers refreshed after Squad payment');
-          } catch (e) {
-            print('CheckoutController: Error refreshing vouchers: $e');
-            // Don't fail order if voucher refresh fails
-          }
-        }
-
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      print('Error creating order with payment details: $e');
-      return false;
-    }
-  }
-
   void _handleFailedPayment() {
+    _cancelCurrentOrder();
     SnackbarUtils.showError(
       'Payment failed. Please try again or use a different payment method.',
     );
@@ -698,11 +612,23 @@ class CheckoutController extends GetxController {
   }
 
   void _handleCancelledPayment() {
-    SnackbarUtils.showInfo(
-      'Payment cancelled. Your cart items are still saved.',
+    _cancelCurrentOrder();
+    SnackbarUtils.showWarning(
+      'Payment was cancelled. You can try again when you\'re ready.',
     );
     currentTransactionRef.value = '';
-    // Webview controller already handles navigation back to checkout
+  }
+
+  Future<void> _cancelCurrentOrder() async {
+    final orderId = currentOrderId.value;
+    if (orderId.isEmpty) return;
+    try {
+      await _orderController.cancelOrder(orderId);
+    } catch (e) {
+      print('Error cancelling order after payment failure: $e');
+    } finally {
+      currentOrderId.value = '';
+    }
   }
 
   void _handlePendingPayment() {
@@ -733,6 +659,8 @@ class CheckoutController extends GetxController {
     selectedAddressId.value = '';
     selectedPaymentMethod.value = 'cash_on_delivery';
     isProcessingOrder.value = false;
+    currentTransactionRef.value = '';
+    currentOrderId.value = '';
     clearVoucher();
   }
 }

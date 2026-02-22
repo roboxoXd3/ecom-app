@@ -4,6 +4,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../controllers/vendor_controller.dart';
 import '../../../data/models/vendor_model.dart';
 import 'vendor_profile_screen.dart';
+import 'vendors_list_screen.dart';
 
 class FollowedVendorsScreen extends StatelessWidget {
   const FollowedVendorsScreen({super.key});
@@ -46,7 +47,7 @@ class FollowedVendorsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: () => Get.back(),
+                  onPressed: () => Get.off(() => const VendorsListScreen()),
                   child: const Text('Explore Vendors'),
                 ),
               ],
