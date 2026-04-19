@@ -25,7 +25,6 @@ dependencies:
   flutter_launcher_icons: ^0.14.2
   lottie: ^3.3.1
   timeago: ^3.7.0
-  flutter_dotenv: ^5.2.1
   shared_preferences: ^2.3.4
   get_storage: ^2.1.1
   fl_chart: ^0.70.0
@@ -74,7 +73,6 @@ flutter:
     - assets/images/logo.png
     - assets/images/placeholder.jpg
     - assets/lottie/
-    - assets/.env
 
 flutter_launcher_icons:
   android: "launcher_icon"

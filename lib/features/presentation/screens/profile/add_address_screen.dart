@@ -216,6 +216,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   labelText: 'Phone Number',
                   border: OutlineInputBorder(),
                 ),
+                
                 keyboardType: TextInputType.phone,
                 validator:
                     (value) =>

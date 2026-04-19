@@ -26,7 +26,7 @@ class HelpSupportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ...supportController.faqs.map((faq) {
-              return _buildFaqItem(faq.question, faq.answer);
+              return _buildFaqItem(faq.title ?? '', faq.subtitle ?? '');
             }),
           ],
         );
@@ -35,17 +35,30 @@ class HelpSupportScreen extends StatelessWidget {
   }
 
   Widget _buildFaqItem(String question, String answer) {
+    final bool hasAnswer = answer.trim().isNotEmpty;
+
     return ExpansionTile(
+      enabled: hasAnswer,
+      trailing:
+          hasAnswer
+              ? const Icon(Icons.expand_more)
+              : const SizedBox.shrink(),
       title: Text(
         question,
-        style: const TextStyle(fontWeight: FontWeight.w500),
+        style: const TextStyle(fontWeight: FontWeight.w500,color: Colors.black),
       ),
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(answer, style: TextStyle(color: Colors.grey[600])),
-        ),
-      ],
+      children:
+          hasAnswer
+              ? [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    answer,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ),
+              ]
+              : [],
     );
   }
 }

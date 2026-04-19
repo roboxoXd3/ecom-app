@@ -38,3 +38,7 @@
 
 # Keep model classes (adjust package name as needed)
 -keep class com.besmart.ecom.features.data.models.** { *; } 
+
+# Play Core (FIX for R8 missing classes)
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**

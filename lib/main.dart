@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'core/theme/app_theme.dart';
 import 'core/bindings/initial_bindings.dart';
 import 'features/presentation/screens/splash/splash_screen.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_storage/get_storage.dart';
 import 'core/routes/app_routes.dart';
 import 'core/network/api_client.dart';
@@ -31,10 +30,6 @@ void main() async {
     await GetStorage.init();
     print('GetStorage initialized');
 
-    // Load environment variables
-    await dotenv.load(fileName: "assets/.env");
-    print('Environment variables loaded');
-    print('API_BASE_URL: ${dotenv.env['API_BASE_URL']}');
 
     // Initialize Django API client
     ApiClient.instance.init();

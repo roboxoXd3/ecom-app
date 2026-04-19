@@ -15,13 +15,13 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.besmartmall.app"
+    namespace = "com.smartmall.app"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId = "com.besmartmall.app"
-        minSdk = 21
+        applicationId = "com.smartmall.app"
+        minSdk = 23
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -35,10 +35,12 @@ android {
 
         // Release signing
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
         }
     }
 
@@ -83,9 +85,6 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.core:core-ktx:1.12.0")
-
-    // Required for Flutter + R8
-    implementation("com.google.android.play:core:1.10.3")
 }
 
 configurations.all {

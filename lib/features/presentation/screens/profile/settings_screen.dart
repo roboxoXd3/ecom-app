@@ -32,75 +32,74 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
 
           // App Settings Section
-          _buildSectionHeader('App Settings'),
-          Obx(
-            () => ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  currencyController.getCurrencySymbol(
-                    currencyController.selectedCurrency.value,
-                  ),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ),
-              title: const Text('Currency'),
-              subtitle: Text(
-                '${currencyController.selectedCurrency.value} - ${currencyController.getCurrencyName(currencyController.selectedCurrency.value)}',
-              ),
-              trailing:
-                  currencyController.isLoading.value
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppTheme.primaryColor.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Text(
-                              'Quick Access',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      ),
-              onTap:
-                  currencyController.isLoading.value
-                      ? null
-                      : () {
-                        _showCurrencySelector(context, currencyController);
-                      },
-            ),
-          ),
-
-          const Divider(),
+          // _buildSectionHeader('App Settings'),
+          // Obx(
+          //   () => ListTile(
+          //     leading: Container(
+          //       padding: const EdgeInsets.all(8),
+          //       decoration: BoxDecoration(
+          //         color: AppTheme.primaryColor.withOpacity(0.1),
+          //         borderRadius: BorderRadius.circular(8),
+          //       ),
+          //       child: Text(
+          //         currencyController.getCurrencySymbol(
+          //           currencyController.selectedCurrency.value,
+          //         ),
+          //         style: TextStyle(
+          //           fontSize: 18,
+          //           fontWeight: FontWeight.bold,
+          //           color: AppTheme.primaryColor,
+          //         ),
+          //       ),
+          //     ),
+          //     title: const Text('Currency'),
+          //     subtitle: Text(
+          //       '${currencyController.selectedCurrency.value} - ${currencyController.getCurrencyName(currencyController.selectedCurrency.value)}',
+          //     ),
+          //     trailing:
+          //         currencyController.isLoading.value
+          //             ? const SizedBox(
+          //               width: 20,
+          //               height: 20,
+          //               child: CircularProgressIndicator(strokeWidth: 2),
+          //             )
+          //             : Row(
+          //               mainAxisSize: MainAxisSize.min,
+          //               children: [
+          //                 Container(
+          //                   padding: const EdgeInsets.symmetric(
+          //                     horizontal: 8,
+          //                     vertical: 4,
+          //                   ),
+          //                   decoration: BoxDecoration(
+          //                     color: AppTheme.primaryColor.withOpacity(0.1),
+          //                     borderRadius: BorderRadius.circular(12),
+          //                     border: Border.all(
+          //                       color: AppTheme.primaryColor.withOpacity(0.3),
+          //                     ),
+          //                   ),
+          //                   child: Text(
+          //                     'Quick Access',
+          //                     style: TextStyle(
+          //                       fontSize: 10,
+          //                       color: AppTheme.primaryColor,
+          //                       fontWeight: FontWeight.w600,
+          //                     ),
+          //                   ),
+          //                 ),
+          //                 const SizedBox(width: 8),
+          //                 const Icon(Icons.chevron_right),
+          //               ],
+          //             ),
+          //     onTap:
+          //         currencyController.isLoading.value
+          //             ? null
+          //             : () {
+          //               _showCurrencySelector(context, currencyController);
+          //             },
+          //   ),
+          // ),
+          // const Divider(),
 
           // About Section
           _buildSectionHeader('About'),

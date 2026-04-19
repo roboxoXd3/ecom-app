@@ -4,7 +4,7 @@ import '../../data/repositories/support_repository.dart';
 
 class SupportController extends GetxController {
   final SupportRepository _repository = SupportRepository();
-  final RxList<FAQ> faqs = <FAQ>[].obs;
+  final RxList<FAQ>   faqs = <FAQ>[].obs;
   final RxList<SupportInfo> quickHelp = <SupportInfo>[].obs;
   final RxList<SupportInfo> contactOptions = <SupportInfo>[].obs;
   final RxBool isLoading = false.obs;
@@ -26,13 +26,13 @@ class SupportController extends GetxController {
   }
 
   Future<void> fetchFAQs() async {
-    try {
-      final results = await _repository.getFAQs();
-      faqs.assignAll(results);
-    } catch (e) {
-      print('Error fetching FAQs: $e');
-    }
+  try {
+    final results = await _repository.getFAQs();
+    faqs.assignAll(results);
+  } catch (e) {
+    print('Error fetching FAQs: $e');
   }
+}
 
   Future<void> searchFAQs(String query) async {
     try {

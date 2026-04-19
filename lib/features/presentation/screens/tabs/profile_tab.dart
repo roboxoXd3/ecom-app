@@ -82,11 +82,11 @@ class ProfileTab extends StatelessWidget {
             title: 'Shipping Address',
             onTap: () => Get.to(() => ShippingAddressScreen()),
           ),
-          _buildProfileOption(
-            icon: Icons.payment,
-            title: 'Payment Methods',
-            onTap: () => Get.to(() => PaymentMethodsScreen()),
-          ),
+          // _buildProfileOption(
+          //   icon: Icons.payment,
+          //   title: 'Payment Methods',
+          //   onTap: () => Get.to(() => PaymentMethodsScreen()),
+          // ),
           _buildProfileOption(
             icon: Icons.storefront,
             title: 'Browse Vendors',
@@ -97,11 +97,11 @@ class ProfileTab extends StatelessWidget {
             title: 'Followed Vendors',
             onTap: () => Get.to(() => const FollowedVendorsScreen()),
           ),
-          _buildProfileOption(
-            icon: Icons.card_giftcard,
-            title: 'Loyalty & Rewards',
-            onTap: () => Get.toNamed(AppRoutes.loyaltyHome),
-          ),
+          // _buildProfileOption(
+          //   icon: Icons.card_giftcard,
+          //   title: 'Loyalty & Rewards',
+          //   onTap: () => Get.toNamed(AppRoutes.loyaltyHome),
+          // ),
           _buildProfileOption(
             icon: Icons.help,
             title: 'Help & Support',

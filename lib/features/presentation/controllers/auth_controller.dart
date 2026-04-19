@@ -54,11 +54,14 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _api.post('/users/register/', data: {
-        'email': email.value,
-        'password': password.value,
-        'first_name': fullName.value,
-      });
+      await _api.post(
+        '/users/register/',
+        data: {
+          'email': email.value,
+          'password': password.value,
+          'first_name': fullName.value,
+        },
+      );
 
       fullName.value = '';
       email.value = '';
@@ -85,10 +88,7 @@ class AuthController extends GetxController {
                 const Expanded(
                   child: Text(
                     'Verify Your Email',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -100,10 +100,7 @@ class AuthController extends GetxController {
                 children: const [
                   Text(
                     'Account created successfully!',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: 12),
                   Text(
@@ -119,7 +116,8 @@ class AuthController extends GetxController {
               ),
             ),
             actions: [
-              SizedBox(
+              Container(
+                margin: const EdgeInsets.fromLTRB(0, 20, 0, 0),
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () {
@@ -174,10 +172,10 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      final response = await _api.post('/users/login/', data: {
-        'email': email.value,
-        'password': password.value,
-      });
+      final response = await _api.post(
+        '/users/login/',
+        data: {'email': email.value, 'password': password.value},
+      );
 
       final data = response.data as Map<String, dynamic>;
       final rawSession = data['session'];
@@ -203,17 +201,23 @@ class AuthController extends GetxController {
 
       // Extract user info from the response
       final userData = data['user'] as Map<String, dynamic>? ?? {};
-      final userId = userData['id']?.toString() ??
-          session['user']?['id']?.toString() ?? '';
-      final userEmailStr = userData['email']?.toString() ??
-          session['user']?['email']?.toString() ?? email.value;
+      final userId =
+          userData['id']?.toString() ??
+          session['user']?['id']?.toString() ??
+          '';
+      final userEmailStr =
+          userData['email']?.toString() ??
+          session['user']?['email']?.toString() ??
+          email.value;
 
       // Extract name from user_metadata if available
       final sessionUser = session['user'];
-      final metadata = sessionUser is Map
-          ? sessionUser['user_metadata'] as Map<String, dynamic>?
-          : null;
-      final nameFromMeta = metadata?['full_name'] ??
+      final metadata =
+          sessionUser is Map
+              ? sessionUser['user_metadata'] as Map<String, dynamic>?
+              : null;
+      final nameFromMeta =
+          metadata?['full_name'] ??
           metadata?['name'] ??
           metadata?['first_name'];
 
@@ -301,15 +305,16 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _api.post('/users/password/reset/', data: {
-        'email': emailAddress,
-      });
+      await _api.post('/users/password/reset/', data: {'email': emailAddress});
 
       SnackbarUtils.showSuccess(
         'Password reset link sent! Please check your email (including spam folder).',
       );
     } on DioException catch (e) {
-      final msg = _extractErrorMessage(e, fallback: 'Failed to send reset link');
+      final msg = _extractErrorMessage(
+        e,
+        fallback: 'Failed to send reset link',
+      );
       SnackbarUtils.showError(msg);
     } catch (e) {
       SnackbarUtils.showError('Failed to send reset link. Please try again.');
@@ -325,14 +330,18 @@ class AuthController extends GetxController {
     try {
       isLoading.value = true;
 
-      await _api.post('/users/password/change/', data: {
-        'password': newPassword,
-      });
+      await _api.post(
+        '/users/password/change/',
+        data: {'password': newPassword},
+      );
 
       SnackbarUtils.showSuccess('Password updated successfully');
       Get.offAll(() => const LoginScreen());
     } on DioException catch (e) {
-      final msg = _extractErrorMessage(e, fallback: 'Failed to update password');
+      final msg = _extractErrorMessage(
+        e,
+        fallback: 'Failed to update password',
+      );
       SnackbarUtils.showError(msg);
     } catch (e) {
       SnackbarUtils.showError('Failed to update password: ${e.toString()}');
@@ -381,7 +390,8 @@ class AuthController extends GetxController {
           e.response!.data,
           statusCode: e.response!.statusCode,
         );
-        if (apiError.message.isNotEmpty && apiError.message != 'An error occurred') {
+        if (apiError.message.isNotEmpty &&
+            apiError.message != 'An error occurred') {
           return apiError.message;
         }
       } catch (_) {}

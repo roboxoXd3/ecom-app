@@ -83,7 +83,7 @@ if [ "$DEVICES" -gt 0 ]; then
             echo ""
             echo "🚀 Step 4: Launching app..."
             echo "--------------------------------------"
-            adb shell am start -n com.besmartmall.app/.MainActivity
+            adb shell am start -n com.smartmall.app/.MainActivity
             
             echo ""
             echo -e "${GREEN}✅ App launched!${NC}"

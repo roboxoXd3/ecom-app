@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' hide Response, FormData;
@@ -67,14 +68,9 @@ class ApiClient {
           // Detect connectivity/network errors before anything else
           final isNetworkError =
               error.type == DioExceptionType.connectionError ||
-              error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.receiveTimeout ||
-              error.type == DioExceptionType.sendTimeout ||
+              error.error is SocketException ||
               (error.message != null &&
-                  (error.message!.contains('SocketException') ||
-                      error.message!.contains('Connection refused') ||
-                      error.message!.contains('Network is unreachable') ||
-                      error.message!.contains('Failed host lookup')));
+                  error.message!.contains('Failed host lookup'));
 
           if (isNetworkError) {
             _showNoInternetBanner();

@@ -44,24 +44,24 @@ class CheckoutController extends GetxController {
       'icon': Icons.money,
       'description': 'Pay when your order is delivered',
     },
-    {
-      'id': 'credit_card',
-      'name': 'Credit/Debit Card',
-      'icon': Icons.credit_card,
-      'description': 'Secure online payment',
-    },
-    {
-      'id': 'upi',
-      'name': 'UPI Payment',
-      'icon': Icons.account_balance_wallet,
-      'description': 'Pay using UPI apps',
-    },
-    {
-      'id': 'net_banking',
-      'name': 'Net Banking',
-      'icon': Icons.account_balance,
-      'description': 'Pay using your bank account',
-    },
+    // {
+    //   'id': 'credit_card',
+    //   'name': 'Credit/Debit Card',
+    //   'icon': Icons.credit_card,
+    //   'description': 'Secure online payment',
+    // },
+    // {
+    //   'id': 'upi',
+    //   'name': 'UPI Payment',
+    //   'icon': Icons.account_balance_wallet,
+    //   'description': 'Pay using UPI apps',
+    // },
+    // {
+    //   'id': 'net_banking',
+    //   'name': 'Net Banking',
+    //   'icon': Icons.account_balance,
+    //   'description': 'Pay using your bank account',
+    // },
   ];
 
   void setSelectedAddress(String addressId) {

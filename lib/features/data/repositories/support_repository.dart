@@ -5,16 +5,16 @@ class SupportRepository {
   final _api = ApiClient.instance;
 
   Future<List<FAQ>> getFAQs() async {
-    try {
-      final response = await _api.get('/content/faqs/');
-      final data = response.data;
-      final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
-      return results.map((json) => FAQ.fromJson(json)).toList();
-    } catch (e) {
-      print('Error fetching FAQs: $e');
-      return [];
-    }
+  try {
+    final response = await _api.get('/content/faqs/');
+    final List data = response.data;
+
+    return data.map((json) => FAQ.fromJson(json)).toList();
+  } catch (e) {
+    print('Error fetching FAQs: $e');
+    return [];
   }
+}
 
   Future<List<FAQ>> searchFAQs(String query) async {
     try {

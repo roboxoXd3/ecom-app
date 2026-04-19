@@ -37,8 +37,8 @@ class CurrencyController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadSavedCurrency();
-    loadCurrencyData();
+    // _loadSavedCurrency();
+    // loadCurrencyData();
   }
 
   // Load saved currency preference

@@ -154,7 +154,6 @@ class CartController extends GetxController {
       await _api.post('/cart/clear/');
 
       items.clear();
-      SnackbarUtils.showSuccess('Cart cleared');
     } catch (e) {
       print('Error clearing cart: $e');
       if (!SnackbarUtils.isNoInternet(e)) {

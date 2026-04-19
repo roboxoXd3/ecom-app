@@ -1,34 +1,54 @@
 import 'package:flutter/widgets.dart';
-
 class FAQ {
-  final String id;
-  final String question;
-  final String answer;
-  final String category;
-  final int orderIndex;
-  final DateTime createdAt;
+  String? id;
+  String? title;
+  String? subtitle;
+  String? type;
+  String? icon;
+  String? actionType;
+  String? actionValue;
+  int? orderIndex;
+  DateTime? createdAt;
 
   FAQ({
-    required this.id,
-    required this.question,
-    required this.answer,
-    required this.category,
-    required this.orderIndex,
-    required this.createdAt,
+    this.id,
+    this.title,
+    this.subtitle,
+    this.type,
+    this.icon,
+    this.actionType,
+    this.actionValue,
+    this.orderIndex,
+    this.createdAt,
   });
 
-  factory FAQ.fromJson(Map<String, dynamic> json) {
-    return FAQ(
-      id: json['id'],
-      question: json['question'],
-      answer: json['answer'],
-      category: json['category'],
-      orderIndex: json['order_index'],
-      createdAt: DateTime.parse(json['created_at']),
-    );
+  FAQ.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    title = json['title'];
+    subtitle = json['subtitle'];
+    type = json['type'];
+    icon = json['icon'];
+    actionType = json['action_type'];
+    actionValue = json['action_value'];
+    orderIndex = json['order_index'];
+    createdAt =
+        json['created_at'] != null ? DateTime.parse(json['created_at']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = {};
+    data['id'] = id;
+    data['title'] = title;
+    data['subtitle'] = subtitle;
+    data['type'] = type;
+    data['icon'] = icon;
+    data['action_type'] = actionType;
+    data['action_value'] = actionValue;
+    data['order_index'] = orderIndex;
+    data['created_at'] = createdAt?.toIso8601String();
+    return data;
   }
 }
-
 class SupportInfo {
   final String id;
   final String title;

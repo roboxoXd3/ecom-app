@@ -137,25 +137,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   // Method to handle adding a new address
   Future<void> _handleAddNewAddress() async {
     print('CheckoutScreen: Opening add address screen...');
-    
+
     final result = await Get.to(() => const AddAddressScreen());
-    
+
     print('CheckoutScreen: Returned from add address with result: $result');
-    
+
     // Always refresh addresses when returning, regardless of result
     await addressController.fetchAddresses();
-    
+
     // Handle different return types
     if (result is String) {
       // New address ID returned - select it directly
-      print('CheckoutScreen: New address created with ID: $result, selecting it...');
+      print(
+        'CheckoutScreen: New address created with ID: $result, selecting it...',
+      );
       await Future.delayed(const Duration(milliseconds: 100));
       checkoutController.setSelectedAddress(result);
       _scrollToSelectedAddress(result);
       checkoutController.update();
     } else if (result == true) {
       // Old boolean success - use existing logic
-      print('CheckoutScreen: Address added successfully (legacy), refreshing state...');
+      print(
+        'CheckoutScreen: Address added successfully (legacy), refreshing state...',
+      );
       await Future.delayed(const Duration(milliseconds: 100));
       checkoutController.refreshAddressSelection();
       checkoutController.update();
@@ -463,14 +467,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             () => IconButton(
               icon: Icon(
                 Icons.add_location_alt,
-                color: addressController.isLoading.value
-                    ? AppTheme.getTextSecondary(context).withOpacity(0.5)
-                    : AppTheme.getTextPrimary(context),
+                color:
+                    addressController.isLoading.value
+                        ? AppTheme.getTextSecondary(context).withOpacity(0.5)
+                        : AppTheme.getTextPrimary(context),
               ),
               tooltip: 'Add New Address',
-              onPressed: addressController.isLoading.value
-                  ? null
-                  : _handleAddNewAddress,
+              onPressed:
+                  addressController.isLoading.value
+                      ? null
+                      : _handleAddNewAddress,
             ),
           ),
         ],
@@ -915,17 +921,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: AppTheme.getTextPrimary(context),
+                                            color: AppTheme.getTextPrimary(
+                                              context,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 16),
-                                    ...cartController.items.asMap().entries.map((entry) {
+                                    ...cartController.items.asMap().entries.map((
+                                      entry,
+                                    ) {
                                       final index = entry.key;
                                       final item = entry.value;
-                                      final isLast = index == cartController.items.length - 1;
-                                      
+                                      final isLast =
+                                          index ==
+                                          cartController.items.length - 1;
+
                                       return Column(
                                         children: [
                                           Material(
@@ -933,96 +945,178 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                             child: InkWell(
                                               onTap: () {
                                                 // Navigate to product details page
-                                                Get.toNamed('/product-details', arguments: item.product.id);
+                                                Get.toNamed(
+                                                  '/product-details',
+                                                  arguments: item.product.id,
+                                                );
                                               },
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               child: Padding(
-                                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                    ),
                                                 child: Row(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     // Product Image
                                                     Container(
                                                       width: 70,
                                                       height: 70,
                                                       decoration: BoxDecoration(
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        color: AppTheme.getSurface(context),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        color:
+                                                            AppTheme.getSurface(
+                                                              context,
+                                                            ),
                                                       ),
                                                       child: ClipRRect(
-                                                        borderRadius: BorderRadius.circular(8),
-                                                        child: item.product.imageList.isNotEmpty
-                                                            ? CachedNetworkImage(
-                                                                imageUrl: item.product.imageList.first,
-                                                                fit: BoxFit.cover,
-                                                                placeholder: (context, url) => Container(
-                                                                  color: AppTheme.getSurface(context),
-                                                                  child: const Center(
-                                                                    child: SizedBox(
-                                                                      width: 20,
-                                                                      height: 20,
-                                                                      child: CircularProgressIndicator(
-                                                                        strokeWidth: 2,
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              8,
+                                                            ),
+                                                        child:
+                                                            item
+                                                                    .product
+                                                                    .imageList
+                                                                    .isNotEmpty
+                                                                ? CachedNetworkImage(
+                                                                  imageUrl:
+                                                                      item
+                                                                          .product
+                                                                          .imageList
+                                                                          .first,
+                                                                  fit:
+                                                                      BoxFit
+                                                                          .cover,
+                                                                  placeholder:
+                                                                      (
+                                                                        context,
+                                                                        url,
+                                                                      ) => Container(
+                                                                        color: AppTheme.getSurface(
+                                                                          context,
+                                                                        ),
+                                                                        child: const Center(
+                                                                          child: SizedBox(
+                                                                            width:
+                                                                                20,
+                                                                            height:
+                                                                                20,
+                                                                            child: CircularProgressIndicator(
+                                                                              strokeWidth:
+                                                                                  2,
+                                                                            ),
+                                                                          ),
+                                                                        ),
                                                                       ),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                errorWidget: (context, url, error) => Container(
-                                                                  color: AppTheme.getSurface(context),
+                                                                  errorWidget:
+                                                                      (
+                                                                        context,
+                                                                        url,
+                                                                        error,
+                                                                      ) => Container(
+                                                                        color: AppTheme.getSurface(
+                                                                          context,
+                                                                        ),
+                                                                        child: Icon(
+                                                                          Icons
+                                                                              .image,
+                                                                          color: AppTheme.getTextSecondary(
+                                                                            context,
+                                                                          ),
+                                                                          size:
+                                                                              24,
+                                                                        ),
+                                                                      ),
+                                                                )
+                                                                : Container(
+                                                                  color:
+                                                                      AppTheme.getSurface(
+                                                                        context,
+                                                                      ),
                                                                   child: Icon(
                                                                     Icons.image,
-                                                                    color: AppTheme.getTextSecondary(context),
+                                                                    color:
+                                                                        AppTheme.getTextSecondary(
+                                                                          context,
+                                                                        ),
                                                                     size: 24,
                                                                   ),
                                                                 ),
-                                                              )
-                                                            : Container(
-                                                                color: AppTheme.getSurface(context),
-                                                                child: Icon(
-                                                                  Icons.image,
-                                                                  color: AppTheme.getTextSecondary(context),
-                                                                  size: 24,
-                                                                ),
-                                                              ),
                                                       ),
                                                     ),
                                                     const SizedBox(width: 12),
                                                     // Product Details
                                                     Expanded(
                                                       child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
                                                         children: [
                                                           Text(
                                                             item.product.name,
                                                             style: TextStyle(
                                                               fontSize: 15,
-                                                              fontWeight: FontWeight.w600,
-                                                              color: AppTheme.getTextPrimary(context),
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              color:
+                                                                  AppTheme.getTextPrimary(
+                                                                    context,
+                                                                  ),
                                                             ),
                                                             maxLines: 2,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                           ),
-                                                          const SizedBox(height: 4),
+                                                          const SizedBox(
+                                                            height: 4,
+                                                          ),
                                                           Text(
                                                             'Qty: ${item.quantity} • Size: ${item.selectedSize} • Color: ${item.selectedColor}',
                                                             style: TextStyle(
                                                               fontSize: 13,
-                                                              color: AppTheme.getTextSecondary(context),
+                                                              color:
+                                                                  AppTheme.getTextSecondary(
+                                                                    context,
+                                                                  ),
                                                             ),
                                                           ),
-                                                          const SizedBox(height: 6),
+                                                          const SizedBox(
+                                                            height: 6,
+                                                          ),
                                                           Obx(() {
-                                                            final itemTotal = currencyController.convertPrice(
-                                                                  item.product.price,
-                                                                  item.product.currency,
-                                                                ) *
+                                                            final itemTotal =
+                                                                currencyController
+                                                                    .convertPrice(
+                                                                      item
+                                                                          .product
+                                                                          .price,
+                                                                      item
+                                                                          .product
+                                                                          .currency,
+                                                                    ) *
                                                                 item.quantity;
                                                             return Text(
-                                                              currencyController.formatPrice(itemTotal),
+                                                              currencyController
+                                                                  .formatPrice(
+                                                                    itemTotal,
+                                                                  ),
                                                               style: TextStyle(
                                                                 fontSize: 15,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: AppTheme.primaryColor,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                                color:
+                                                                    AppTheme
+                                                                        .primaryColor,
                                                               ),
                                                             );
                                                           }),
@@ -1032,7 +1126,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                     // Arrow indicator
                                                     Icon(
                                                       Icons.chevron_right,
-                                                      color: AppTheme.getTextSecondary(context),
+                                                      color:
+                                                          AppTheme.getTextSecondary(
+                                                            context,
+                                                          ),
                                                       size: 20,
                                                     ),
                                                   ],
@@ -1043,7 +1140,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           if (!isLast)
                                             Divider(
                                               height: 24,
-                                              color: AppTheme.getBorder(context).withOpacity(0.5),
+                                              color: AppTheme.getBorder(
+                                                context,
+                                              ).withOpacity(0.5),
                                             ),
                                         ],
                                       );
@@ -1271,6 +1370,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               return const SizedBox.shrink();
             }
 
+            final isCOD =
+                checkoutController.selectedPaymentMethod.value ==
+                'cash_on_delivery';
+
             return Container(
               color: Colors.black54,
               child: Center(
@@ -1295,8 +1398,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
+
+                        /// 🔹 TITLE
                         Text(
-                          'Connecting to Payment Gateway',
+                          isCOD
+                              ? 'Placing Your Order'
+                              : 'Connecting to Payment Gateway',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -1304,27 +1411,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 12),
+
+                        /// 🔹 DESCRIPTION
                         Text(
-                          'Please wait while we securely process\nyour payment request...',
+                          isCOD
+                              ? 'Please wait while we confirm your order.\nYour payment will be collected on delivery.'
+                              : 'Please wait while we securely process\nyour payment request...',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.getTextSecondary(context),
                           ),
                           textAlign: TextAlign.center,
                         ),
+
                         const SizedBox(height: 16),
+
+                        /// 🔹 FOOTER
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.security,
+                              isCOD ? Icons.local_shipping : Icons.security,
                               size: 16,
                               color: AppTheme.primaryColor,
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Secure Payment by Squad',
+                              isCOD
+                                  ? 'Cash on Delivery'
+                                  : 'Secure Payment by Squad',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.primaryColor,
