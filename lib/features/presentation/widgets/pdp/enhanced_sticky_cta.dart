@@ -1,3 +1,5 @@
+import 'package:ecom_app/features/presentation/controllers/auth_controller.dart';
+import 'package:ecom_app/features/presentation/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../data/models/product_model.dart';
@@ -1161,6 +1163,13 @@ class EnhancedStickyCTA extends StatelessWidget {
     EnhancedProductController enhancedController,
     CartController cartController,
   ) async {
+         final AuthController authController = Get.find<AuthController>();
+            final isLoggedIn = authController.isLoggedIn();
+            if(!isLoggedIn) {
+                Get.to(() => const LoginScreen());
+                return;
+
+            }
     final selectedSize = enhancedController.selectedSize.value;
     final selectedColor = enhancedController.selectedColor.value;
 
@@ -1219,6 +1228,13 @@ class EnhancedStickyCTA extends StatelessWidget {
     CartController cartController,
   ) async {
     try {
+       final AuthController authController = Get.find<AuthController>();
+            final isLoggedIn = authController.isLoggedIn();
+            if(!isLoggedIn) {
+                Get.to(() => const LoginScreen());
+                return;
+
+            }
       // Store cart item count before adding
       final cartItemCountBefore = cartController.items.length;
       

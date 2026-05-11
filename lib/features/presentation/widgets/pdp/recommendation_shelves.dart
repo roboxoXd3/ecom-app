@@ -1,3 +1,5 @@
+import 'package:ecom_app/features/presentation/controllers/auth_controller.dart';
+import 'package:ecom_app/features/presentation/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
@@ -46,6 +48,7 @@ class RecommendationShelves extends StatelessWidget {
             recommendations!.youMightAlsoLike,
             context,
           ),
+          SizedBox(height: 100)
       ],
     );
   }
@@ -185,7 +188,7 @@ class RecommendationShelves extends StatelessWidget {
           children: [
             // Product Image
             Expanded(
-              flex: isGrid ? 3 : 2,
+              flex: 2,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -215,7 +218,7 @@ class RecommendationShelves extends StatelessWidget {
 
             // Product Info
             Expanded(
-              flex: isGrid ? 2 : 3,
+              flex: 4,
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
@@ -259,12 +262,12 @@ class RecommendationShelves extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Spacer(),
 
                     // Price (with currency conversion)
                     GetBuilder<CurrencyController>(
                       builder:
-                          (currencyController) => Row(
+                          (currencyController) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 currencyController.getFormattedProductPrice(
@@ -304,7 +307,12 @@ class RecommendationShelves extends StatelessWidget {
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: () {
-                            // Quick add to cart
+                              final AuthController authController = Get.find<AuthController>();
+            final isLoggedIn = authController.isLoggedIn();
+            if(!isLoggedIn) {
+                Get.to(() => const LoginScreen());
+
+            }
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -319,10 +327,12 @@ class RecommendationShelves extends StatelessWidget {
                           ),
                         ),
                       ),
+
                   ],
                 ),
               ),
             ),
+
           ],
         ),
       ),

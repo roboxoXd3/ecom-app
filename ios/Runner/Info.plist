@@ -2,53 +2,78 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
-
 	<key>CFBundleDisplayName</key>
 	<string>Be Smart</string>
-
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
-
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-
 	<key>CFBundleName</key>
 	<string>Be Smart</string>
-
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
-
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
-
 	<key>CFBundleSignature</key>
 	<string>????</string>
-
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
-
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>We use your camera to let you scan or capture images for product search and uploads.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We use your location to provide accurate delivery tracking and improve your experience even when the app is not in use.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We use your location to help you find accurate delivery addresses and nearby services while using the app.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photos so you can upload images for product search and profile updates.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
-
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-
+	<key>UIStatusBarHidden</key>
+	<false/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -56,37 +81,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-
-	<key>UIStatusBarHidden</key>
-	<false/>
-
-	<!-- WebView ATS configuration -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
-	</dict>
-
-	<!-- Location Permissions -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs location access to help you find accurate shipping addresses</string>
-
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs location access to help you find accurate shipping addresses</string>
-
-	<!-- Camera Permission -->
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to search for products using photos</string>
-
-	<!-- Photo Library Permission -->
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photo library access to search for products using images</string>
-
 </dict>
 </plist>

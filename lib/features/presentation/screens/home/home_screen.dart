@@ -1,3 +1,5 @@
+import 'package:ecom_app/features/presentation/controllers/auth_controller.dart';
+import 'package:ecom_app/features/presentation/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/home_controller.dart';
@@ -33,8 +35,28 @@ class HomeScreen extends StatelessWidget {
       bottomNavigationBar: Obx(
         () => NavigationBar(
           selectedIndex: homeController.currentIndex.value,
-          onDestinationSelected:
-              (index) => homeController.currentIndex.value = index,
+          onDestinationSelected: (index) {
+            final AuthController authController = Get.find<AuthController>();
+            final isLoggedIn = authController.isLoggedIn();
+            if (index == 3) {
+              if (!isLoggedIn) {
+                Get.to(() => const LoginScreen());
+                homeController.currentIndex.value = 0;
+              } else {
+                homeController.currentIndex.value = index;
+              }
+            } else if (index == 2) {
+              if (!isLoggedIn) {
+                Get.to(() => const LoginScreen());
+                homeController.currentIndex.value = 0;
+              } else {
+                homeController.currentIndex.value = index;
+              }
+            }else {
+              homeController.currentIndex.value = index;
+
+            }
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),

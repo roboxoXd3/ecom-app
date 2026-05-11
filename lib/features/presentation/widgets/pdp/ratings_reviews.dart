@@ -587,125 +587,123 @@ class _RatingsReviewsState extends State<RatingsReviews> {
   }
 
   Widget _buildWriteReviewSection() {
-    return Obx(() {
-      final isLoggedIn = AuthService.isAuthenticated();
+    final isLoggedIn = AuthService.isAuthenticated();
 
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: AppTheme.getBorder(context)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppTheme.getBorder(context)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.rate_review, color: AppTheme.primaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'Write a Review',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.getTextPrimary(context),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (!isLoggedIn) ...[
+            Text(
+              'Please sign in to write a review',
+              style: TextStyle(color: AppTheme.getTextSecondary(context)),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => Get.toNamed('/login'),
+              child: const Text('Sign In'),
+            ),
+          ] else if (!reviewsController.canUserReview.value) ...[
+            // Cannot review (hasn't purchased)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.rate_review, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.lock_outline,
+                      color: Colors.orange[600],
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Verified Purchase Required',
+                      style: TextStyle(
+                        color: Colors.orange[600],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  'Write a Review',
+                  'Only customers who have purchased and received this product can write reviews.',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.getTextPrimary(context),
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 14,
                   ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () {
+                    // Navigate to product purchase or show more info
+                    SnackbarUtils.showInfo(
+                      'Purchase this product to write a review',
+                    );
+                  },
+                  child: const Text('Purchase Product'),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-
-            if (!isLoggedIn) ...[
-              Text(
-                'Please sign in to write a review',
-                style: TextStyle(color: AppTheme.getTextSecondary(context)),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: () => Get.toNamed('/login'),
-                child: const Text('Sign In'),
-              ),
-            ] else if (!reviewsController.canUserReview.value) ...[
-              // Cannot review (hasn't purchased)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.lock_outline,
-                        color: Colors.orange[600],
-                        size: 20,
+          ] else ...[
+            // Can review
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.verified, color: Colors.green[600], size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Verified Purchase',
+                      style: TextStyle(
+                        color: Colors.green[600],
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Verified Purchase Required',
-                        style: TextStyle(
-                          color: Colors.orange[600],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Only customers who have purchased and received this product can write reviews.',
-                    style: TextStyle(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: 14,
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You can write a review for this product.',
+                  style: TextStyle(
+                    color: AppTheme.getTextSecondary(context),
+                    fontSize: 14,
                   ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: () {
-                      // Navigate to product purchase or show more info
-                      SnackbarUtils.showInfo(
-                        'Purchase this product to write a review',
-                      );
-                    },
-                    child: const Text('Purchase Product'),
-                  ),
-                ],
-              ),
-            ] else ...[
-              // Can review
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.verified, color: Colors.green[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Verified Purchase',
-                        style: TextStyle(
-                          color: Colors.green[600],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'You can write a review for this product.',
-                    style: TextStyle(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showWriteReviewDialog(),
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Write Review'),
-                  ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () => _showWriteReviewDialog(),
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Write Review'),
+                ),
+              ],
+            ),
           ],
-        ),
-      );
-    });
+        ],
+      ),
+    );
   }
 
   void _showWriteReviewDialog() {

@@ -22,12 +22,26 @@ class LoginScreen extends StatelessWidget {
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+               if (Navigator.canPop(context))...[
+                SizedBox(height: 20),
+                FadeInLeft(
+                  duration: const Duration(milliseconds: 500),
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.back();
+                    },
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                )],
                 // Add space for top padding
-                SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.08),
 
                 // Welcome Text
                 FadeInDown(
