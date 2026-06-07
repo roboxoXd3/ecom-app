@@ -602,6 +602,7 @@ class _QASectionState extends State<QASection> {
                                       );
 
                                   if (success) {
+                                    if (!context.mounted) return;
                                     Navigator.pop(context);
                                     SnackbarUtils.showSuccess(
                                       'Answer submitted successfully!',

@@ -437,7 +437,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                     );
 
                                     // Navigate back immediately with the address ID
-                                    if (mounted && Navigator.canPop(context)) {
+                                    if (context.mounted &&
+                                        Navigator.canPop(context)) {
                                       debugPrint(
                                         'AddAddressScreen: Navigating back with result: $addressIdToReturn',
                                       );

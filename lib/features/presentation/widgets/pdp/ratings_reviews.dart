@@ -819,6 +819,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                                       );
 
                                   if (success) {
+                                    if (!context.mounted) return;
                                     Navigator.pop(context);
                                     SnackbarUtils.showSuccess(
                                       'Review submitted successfully!',
