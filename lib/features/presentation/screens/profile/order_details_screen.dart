@@ -139,7 +139,7 @@ class OrderDetailsScreen extends StatelessWidget {
                     _buildDetailRow(
                       'Shipping Address',
                       address != null
-                          ? '${address.addressLine1}, ${address.city}, ${address.state} ${address.zip}'
+                          ? address.summaryLine
                           : 'Address not found',
                     ),
                     ..._buildVendorRows(order.items),

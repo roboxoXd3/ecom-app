@@ -369,8 +369,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        'Please ensure all address fields are filled. Try using the search or current location.',
+                                        "Couldn't read the full address. Please tap a suggestion from the dropdown, or tap 'Use Current Location'.",
                                       ),
+                                      duration: Duration(seconds: 4),
                                     ),
                                   );
                                   return;

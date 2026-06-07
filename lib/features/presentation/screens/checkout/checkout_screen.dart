@@ -670,7 +670,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                       const SizedBox(height: 8),
                                                       // Address text
                                                       Text(
-                                                        '${address.addressLine1}${address.addressLine2 != null ? ", ${address.addressLine2}" : ""}',
+                                                        address.streetDisplay,
                                                         style: TextStyle(
                                                           fontSize: 14,
                                                           color:
@@ -686,7 +686,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                       ),
                                                       const SizedBox(height: 4),
                                                       Text(
-                                                        '${address.city}, ${address.state} ${address.zip}, ${address.country}',
+                                                        address.regionDisplay(),
                                                         style: TextStyle(
                                                           fontSize: 14,
                                                           color:
