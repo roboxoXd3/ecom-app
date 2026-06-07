@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../models/size_chart_model.dart';
 import '../repositories/size_chart_repository.dart';
@@ -26,7 +28,7 @@ class SizeGuideService {
 
       return await _getGeneralSizeGuide();
     } catch (e) {
-      print('Error in getSizeGuideInfo: $e');
+      debugPrint('Error in getSizeGuideInfo: $e');
       return _getFallbackSizeGuide();
     }
   }
@@ -59,7 +61,7 @@ class SizeGuideService {
         );
       }
     } catch (e) {
-      print('Error getting product size guide: $e');
+      debugPrint('Error getting product size guide: $e');
       return _getFallbackSizeGuide();
     }
   }
@@ -83,7 +85,7 @@ class SizeGuideService {
         hasSpecificChart: sizeChart != null,
       );
     } catch (e) {
-      print('Error getting category size guide: $e');
+      debugPrint('Error getting category size guide: $e');
       return _getFallbackSizeGuide();
     }
   }
@@ -116,7 +118,7 @@ class SizeGuideService {
 
       return _getKeywordBasedSizeGuide(lowerQuery);
     } catch (e) {
-      print('Error getting query-based size guide: $e');
+      debugPrint('Error getting query-based size guide: $e');
       return _getFallbackSizeGuide();
     }
   }
@@ -147,7 +149,7 @@ class SizeGuideService {
         hasSpecificChart: false,
       );
     } catch (e) {
-      print('Error getting general size guide: $e');
+      debugPrint('Error getting general size guide: $e');
       return _getFallbackSizeGuide();
     }
   }

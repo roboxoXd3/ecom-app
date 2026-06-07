@@ -82,15 +82,15 @@ class ColorSizeSelection extends StatelessWidget {
                     onSelected: (selected) {
                       if (selected) {
                         // Select this size
-                        print('DEBUG: Size selected: "$size"');
+                        debugPrint('DEBUG: Size selected: "$size"');
                         enhancedController.updateSelectedSize(size);
-                        print(
+                        debugPrint(
                           'DEBUG: EnhancedController size after update: "${enhancedController.selectedSize.value}"',
                         );
                       } else {
                         // Deselect - but we don't want to allow deselection for required sizes
                         // So we'll ignore the deselect action
-                        print('DEBUG: Size deselect ignored for: "$size"');
+                        debugPrint('DEBUG: Size deselect ignored for: "$size"');
                       }
                     },
                   );

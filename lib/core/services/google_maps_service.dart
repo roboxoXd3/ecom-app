@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:geocoding/geocoding.dart';
@@ -33,7 +35,7 @@ class GoogleMapsService {
         }
       }
     } catch (e) {
-      print('Error getting place predictions: $e');
+      debugPrint('Error getting place predictions: $e');
     }
     return [];
   }
@@ -56,7 +58,7 @@ class GoogleMapsService {
         }
       }
     } catch (e) {
-      print('Error getting place details: $e');
+      debugPrint('Error getting place details: $e');
     }
     return null;
   }
@@ -100,7 +102,7 @@ class GoogleMapsService {
 
       return LocationResult.success(position);
     } catch (e) {
-      print('Error getting current location: $e');
+      debugPrint('Error getting current location: $e');
       return LocationResult.error(
         'Unable to get current location. Please try again or enter your address manually.',
       );
@@ -128,7 +130,7 @@ class GoogleMapsService {
         );
       }
     } catch (e) {
-      print('Error reverse geocoding: $e');
+      debugPrint('Error reverse geocoding: $e');
     }
     return null;
   }

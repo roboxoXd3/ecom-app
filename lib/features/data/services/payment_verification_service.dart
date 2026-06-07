@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:async';
 import 'package:get/get.dart';
 import 'squad_payment_service.dart';
@@ -28,13 +30,13 @@ class PaymentVerificationService {
   /// Add a transaction to pending verification queue
   static void addPendingVerification(String transactionRef) {
     _pendingVerifications.add(transactionRef);
-    print('Added $transactionRef to pending verification queue');
+    debugPrint('Added $transactionRef to pending verification queue');
   }
 
   /// Remove a transaction from pending verification queue
   static void removePendingVerification(String transactionRef) {
     _pendingVerifications.remove(transactionRef);
-    print('Removed $transactionRef from pending verification queue');
+    debugPrint('Removed $transactionRef from pending verification queue');
   }
 
   /// Verify a specific payment
@@ -42,7 +44,7 @@ class PaymentVerificationService {
     String transactionRef,
   ) async {
     try {
-      print('Verifying payment for transaction: $transactionRef');
+      debugPrint('Verifying payment for transaction: $transactionRef');
 
       final verification = await SquadPaymentService.verifyPayment(
         transactionRef,
@@ -62,7 +64,7 @@ class PaymentVerificationService {
         return PaymentVerificationResult.pending(verification);
       }
     } catch (e) {
-      print('Error verifying payment $transactionRef: $e');
+      debugPrint('Error verifying payment $transactionRef: $e');
       return PaymentVerificationResult.error(e.toString());
     }
   }
@@ -71,7 +73,7 @@ class PaymentVerificationService {
   static Future<void> _verifyPendingPayments() async {
     if (_pendingVerifications.isEmpty) return;
 
-    print('Verifying ${_pendingVerifications.length} pending payments...');
+    debugPrint('Verifying ${_pendingVerifications.length} pending payments...');
 
     final pendingList = _pendingVerifications.toList();
 
@@ -81,7 +83,7 @@ class PaymentVerificationService {
         // Small delay between verifications to avoid rate limiting
         await Future.delayed(const Duration(milliseconds: 500));
       } catch (e) {
-        print('Error in periodic verification for $transactionRef: $e');
+        debugPrint('Error in periodic verification for $transactionRef: $e');
       }
     }
   }
@@ -108,7 +110,7 @@ class PaymentVerificationService {
           escrowStatus: 'held', // Hold in escrow until delivery
         );
 
-        print('Payment verified and order updated: ${order.id}');
+        debugPrint('Payment verified and order updated: ${order.id}');
 
         // Show success notification if app is active
         if (Get.isRegistered<OrderController>()) {
@@ -117,10 +119,10 @@ class PaymentVerificationService {
           );
         }
       } else {
-        print('Order not found for transaction: $transactionRef');
+        debugPrint('Order not found for transaction: $transactionRef');
       }
     } catch (e) {
-      print('Error handling successful payment: $e');
+      debugPrint('Error handling successful payment: $e');
     }
   }
 
@@ -144,7 +146,7 @@ class PaymentVerificationService {
           squadGatewayRef: verification.gatewayRef,
         );
 
-        print('Payment failed for order: ${order.id}');
+        debugPrint('Payment failed for order: ${order.id}');
 
         // Show failure notification if app is active
         if (Get.isRegistered<OrderController>()) {
@@ -154,7 +156,7 @@ class PaymentVerificationService {
         }
       }
     } catch (e) {
-      print('Error handling failed payment: $e');
+      debugPrint('Error handling failed payment: $e');
     }
   }
 
@@ -167,32 +169,32 @@ class PaymentVerificationService {
       final status = webhookData['transaction_status'] as String?;
 
       if (transactionRef == null || status == null) {
-        print('Invalid webhook data: missing transaction_ref or status');
+        debugPrint('Invalid webhook data: missing transaction_ref or status');
         return;
       }
 
-      print(
+      debugPrint(
         'Received webhook for transaction: $transactionRef, status: $status',
       );
 
       // Verify the payment to get complete details
       await verifyPayment(transactionRef);
     } catch (e) {
-      print('Error handling webhook notification: $e');
+      debugPrint('Error handling webhook notification: $e');
     }
   }
 
   /// Initialize the service
   static void initialize() {
     startPeriodicVerification();
-    print('Payment verification service initialized');
+    debugPrint('Payment verification service initialized');
   }
 
   /// Dispose the service
   static void dispose() {
     stopPeriodicVerification();
     _pendingVerifications.clear();
-    print('Payment verification service disposed');
+    debugPrint('Payment verification service disposed');
   }
 }
 

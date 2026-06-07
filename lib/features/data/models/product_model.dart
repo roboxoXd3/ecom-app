@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'vendor_model.dart';
 import 'subcategory_model.dart';
@@ -257,7 +259,7 @@ class ProductRecommendations {
       }
       return [];
     } catch (e) {
-      print('Error parsing string list: $e');
+      debugPrint('Error parsing string list: $e');
       return [];
     }
   }
@@ -617,9 +619,9 @@ class Product {
 
       return [];
     } catch (e) {
-      print('Error parsing specifications: $e');
-      print('Specifications data type: ${specificationsData.runtimeType}');
-      print('Specifications data: $specificationsData');
+      debugPrint('Error parsing specifications: $e');
+      debugPrint('Specifications data type: ${specificationsData.runtimeType}');
+      debugPrint('Specifications data: $specificationsData');
       return [];
     }
   }
@@ -653,7 +655,7 @@ class Product {
 
       return [];
     } catch (e) {
-      print('Error parsing color options: $e');
+      debugPrint('Error parsing color options: $e');
       return [];
     }
   }
@@ -677,7 +679,7 @@ class Product {
       }
       return [];
     } catch (e) {
-      print('Error parsing string list: $e');
+      debugPrint('Error parsing string list: $e');
       return [];
     }
   }
@@ -694,7 +696,7 @@ class Product {
         (key, value) => MapEntry(key, List<String>.from(value ?? [])),
       );
     } catch (e) {
-      print('Error parsing color images: $e');
+      debugPrint('Error parsing color images: $e');
       return null;
     }
   }

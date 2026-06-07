@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
       //   }
       // }
     } catch (e) {
-      print('Error in splash screen: $e');
+      debugPrint('Error in splash screen: $e');
       Get.dialog(
         AlertDialog(
           title: const Text('Error'),

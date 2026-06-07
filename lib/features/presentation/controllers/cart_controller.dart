@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/cart_item_model.dart';
 import '../../data/models/product_model.dart';
@@ -36,7 +38,7 @@ class CartController extends GetxController {
               .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
               .toList();
     } catch (e) {
-      print('Error fetching cart items: $e');
+      debugPrint('Error fetching cart items: $e');
       final s = e.toString();
       if (!SnackbarUtils.isNoInternet(e) &&
           !s.contains('no rows') &&
@@ -71,7 +73,7 @@ class CartController extends GetxController {
 
       await fetchCartItems();
     } catch (e) {
-      print('Error adding to cart: $e');
+      debugPrint('Error adding to cart: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         SnackbarUtils.showError('Failed to add item to cart');
       }
@@ -96,7 +98,7 @@ class CartController extends GetxController {
       await fetchCartItems();
       SnackbarUtils.showSuccess('Removed from cart');
     } catch (e) {
-      print('Error removing from cart: $e');
+      debugPrint('Error removing from cart: $e');
     } finally {
       isLoading.value = false;
     }
@@ -130,7 +132,7 @@ class CartController extends GetxController {
         });
       }
     } catch (e) {
-      print('Error updating quantity: $e');
+      debugPrint('Error updating quantity: $e');
       // Revert on failure
       if (index != -1) {
         items[index].quantity = oldQuantity;
@@ -155,7 +157,7 @@ class CartController extends GetxController {
 
       items.clear();
     } catch (e) {
-      print('Error clearing cart: $e');
+      debugPrint('Error clearing cart: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         SnackbarUtils.showError('Failed to clear cart');
       }

@@ -77,23 +77,23 @@ class CheckoutController extends GetxController {
 
   // Method to refresh address selection - useful when returning from add address screen
   void refreshAddressSelection() {
-    print('CheckoutController: Refreshing address selection...');
+    debugPrint('CheckoutController: Refreshing address selection...');
     if (Get.isRegistered<AddressController>()) {
       final addressController = Get.find<AddressController>();
       final addresses = addressController.addresses;
 
-      print('CheckoutController: Found ${addresses.length} addresses');
+      debugPrint('CheckoutController: Found ${addresses.length} addresses');
 
       if (addresses.isNotEmpty) {
         final currentSelectedId = selectedAddressId.value;
-        print('CheckoutController: Current selected ID: "$currentSelectedId"');
+        debugPrint('CheckoutController: Current selected ID: "$currentSelectedId"');
 
         // Check if current address still exists
         final currentExists =
             currentSelectedId.isNotEmpty &&
             addresses.any((addr) => addr.id == currentSelectedId);
 
-        print('CheckoutController: Current address exists: $currentExists');
+        debugPrint('CheckoutController: Current address exists: $currentExists');
 
         // Always prioritize default address if it exists
         final defaultAddress = addresses.firstWhere(
@@ -101,7 +101,7 @@ class CheckoutController extends GetxController {
           orElse: () => addresses.first,
         );
 
-        print(
+        debugPrint(
           'CheckoutController: Default address ID: "${defaultAddress.id}", isDefault: ${defaultAddress.isDefault}',
         );
 
@@ -113,20 +113,20 @@ class CheckoutController extends GetxController {
             !currentExists ||
             (defaultAddress.isDefault &&
                 defaultAddress.id != currentSelectedId)) {
-          print(
+          debugPrint(
             'CheckoutController: Setting new selected address: "${defaultAddress.id}"',
           );
           setSelectedAddress(defaultAddress.id);
         } else {
-          print('CheckoutController: Keeping current address selection');
+          debugPrint('CheckoutController: Keeping current address selection');
           debugCheckoutState();
         }
       } else {
-        print('CheckoutController: No addresses available');
+        debugPrint('CheckoutController: No addresses available');
         selectedAddressId.value = '';
       }
     } else {
-      print('CheckoutController: AddressController not registered');
+      debugPrint('CheckoutController: AddressController not registered');
     }
   }
 
@@ -137,7 +137,7 @@ class CheckoutController extends GetxController {
   bool get canProceedToPayment {
     final canProceed =
         selectedAddressId.value.isNotEmpty && _cartController.items.isNotEmpty;
-    print(
+    debugPrint(
       'CheckoutController: canProceedToPayment getter called - result: $canProceed',
     );
     return canProceed;
@@ -187,7 +187,7 @@ class CheckoutController extends GetxController {
       SnackbarUtils.showError(detail);
       clearVoucher();
     } catch (e) {
-      print('Voucher validation error: $e');
+      debugPrint('Voucher validation error: $e');
       SnackbarUtils.showError(
         e.toString().contains('Exception: ')
             ? e.toString().replaceAll('Exception: ', '')
@@ -209,24 +209,24 @@ class CheckoutController extends GetxController {
 
   // Debug method to check checkout state
   void debugCheckoutState() {
-    print('=== CHECKOUT DEBUG ===');
-    print('selectedAddressId: "${selectedAddressId.value}"');
-    print('cart items count: ${_cartController.items.length}');
-    print('canProceedToPayment: $canProceedToPayment');
-    print('isProcessingOrder: ${isProcessingOrder.value}');
-    print('======================');
+    debugPrint('=== CHECKOUT DEBUG ===');
+    debugPrint('selectedAddressId: "${selectedAddressId.value}"');
+    debugPrint('cart items count: ${_cartController.items.length}');
+    debugPrint('canProceedToPayment: $canProceedToPayment');
+    debugPrint('isProcessingOrder: ${isProcessingOrder.value}');
+    debugPrint('======================');
   }
 
   Future<bool> processOrder() async {
-    print('CheckoutController: Starting processOrder');
-    print('CheckoutController: canProceedToPayment = $canProceedToPayment');
-    print('CheckoutController: selectedAddressId = ${selectedAddressId.value}');
-    print(
+    debugPrint('CheckoutController: Starting processOrder');
+    debugPrint('CheckoutController: canProceedToPayment = $canProceedToPayment');
+    debugPrint('CheckoutController: selectedAddressId = ${selectedAddressId.value}');
+    debugPrint(
       'CheckoutController: cart items count = ${_cartController.items.length}',
     );
 
     if (!canProceedToPayment) {
-      print('CheckoutController: Cannot proceed to payment');
+      debugPrint('CheckoutController: Cannot proceed to payment');
       SnackbarUtils.showError(
         'Please select an address and ensure cart is not empty',
       );
@@ -235,7 +235,7 @@ class CheckoutController extends GetxController {
 
     try {
       isProcessingOrder.value = true;
-      print('CheckoutController: Processing order...');
+      debugPrint('CheckoutController: Processing order...');
 
       // Convert cart items to order items
       final orderItems =
@@ -254,8 +254,8 @@ class CheckoutController extends GetxController {
               )
               .toList();
 
-      print('CheckoutController: Created ${orderItems.length} order items');
-      print('CheckoutController: Order total = $total');
+      debugPrint('CheckoutController: Created ${orderItems.length} order items');
+      debugPrint('CheckoutController: Order total = $total');
 
       // Create the order
       final success = await _orderController.createOrder(
@@ -268,53 +268,53 @@ class CheckoutController extends GetxController {
         loyaltyVoucherCode: voucherApplied.value ? voucherCode.value : null,
       );
 
-      print('CheckoutController: Order creation success = $success');
+      debugPrint('CheckoutController: Order creation success = $success');
 
       if (success) {
-        print('CheckoutController: Clearing cart...');
+        debugPrint('CheckoutController: Clearing cart...');
         // Clear the cart after successful order creation
         await _cartController.clearCart();
-        print('CheckoutController: Cart cleared successfully');
+        debugPrint('CheckoutController: Cart cleared successfully');
 
         // Refresh vouchers if one was used
         if (voucherApplied.value) {
           try {
             final loyaltyController = Get.find<LoyaltyController>();
             await loyaltyController.loadVouchers();
-            print('CheckoutController: Vouchers refreshed after order');
+            debugPrint('CheckoutController: Vouchers refreshed after order');
           } catch (e) {
-            print('CheckoutController: Error refreshing vouchers: $e');
+            debugPrint('CheckoutController: Error refreshing vouchers: $e');
             // Don't fail order if voucher refresh fails
           }
         }
 
         return true;
       } else {
-        print('CheckoutController: Order creation failed');
+        debugPrint('CheckoutController: Order creation failed');
         return false;
       }
     } catch (e) {
-      print('CheckoutController: Error processing order: $e');
+      debugPrint('CheckoutController: Error processing order: $e');
       SnackbarUtils.showError('Failed to process order. Please try again.');
       return false;
     } finally {
       isProcessingOrder.value = false;
-      print('CheckoutController: processOrder completed');
+      debugPrint('CheckoutController: processOrder completed');
     }
   }
 
   void debugAuthStatus() {
     if (Get.isRegistered<AuthController>()) {
       final authController = Get.find<AuthController>();
-      print('=== AUTH DEBUG ===');
-      print('AuthController registered: true');
-      print('userEmail.value: "${authController.userEmail.value}"');
-      print('userEmail: ${authController.userEmail.value}');
-      print('isAuthenticated: ${AuthService.isAuthenticated()}');
-      print('isLoggedIn: ${authController.isLoggedIn()}');
-      print('==================');
+      debugPrint('=== AUTH DEBUG ===');
+      debugPrint('AuthController registered: true');
+      debugPrint('userEmail.value: "${authController.userEmail.value}"');
+      debugPrint('userEmail: ${authController.userEmail.value}');
+      debugPrint('isAuthenticated: ${AuthService.isAuthenticated()}');
+      debugPrint('isLoggedIn: ${authController.isLoggedIn()}');
+      debugPrint('==================');
     } else {
-      print('AuthController NOT registered!');
+      debugPrint('AuthController NOT registered!');
     }
   }
 
@@ -347,7 +347,7 @@ class CheckoutController extends GetxController {
       // Handle online payments through Squad
       await _initiateSquadPayment();
     } catch (e) {
-      print('Error initiating payment: $e');
+      debugPrint('Error initiating payment: $e');
       SnackbarUtils.showError('Failed to initiate payment. Please try again.');
     } finally {
       isInitiatingPayment.value = false;
@@ -439,8 +439,8 @@ class CheckoutController extends GetxController {
       currentTransactionRef.value =
           SquadPaymentService.generateTransactionRef();
 
-      print('Initiating Squad payment for order: $createdOrderId');
-      print('Amount: $total | Email: $userEmail');
+      debugPrint('Initiating Squad payment for order: $createdOrderId');
+      debugPrint('Amount: $total | Email: $userEmail');
 
       final paymentResponse = await SquadPaymentService.initiatePayment(
         amount: total,
@@ -465,7 +465,7 @@ class CheckoutController extends GetxController {
         throw Exception(paymentResponse.message);
       }
     } catch (e) {
-      print('Squad payment initiation error: $e');
+      debugPrint('Squad payment initiation error: $e');
       isShowingPaymentLoader.value = false;
 
       if (e is SquadPaymentException) {
@@ -528,13 +528,13 @@ class CheckoutController extends GetxController {
       final result = await InternetAddress.lookup('google.com');
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (e) {
-      print('Network connectivity check failed: $e');
+      debugPrint('Network connectivity check failed: $e');
       return false;
     }
   }
 
   Future<void> _handlePaymentResult(PaymentResult result) async {
-    print('Payment result: $result');
+    debugPrint('Payment result: $result');
 
     switch (result) {
       case PaymentResult.success:
@@ -582,7 +582,7 @@ class CheckoutController extends GetxController {
             final loyaltyController = Get.find<LoyaltyController>();
             await loyaltyController.loadVouchers();
           } catch (e) {
-            print('CheckoutController: Error refreshing vouchers: $e');
+            debugPrint('CheckoutController: Error refreshing vouchers: $e');
           }
         }
 
@@ -594,7 +594,7 @@ class CheckoutController extends GetxController {
         );
       }
     } catch (e) {
-      print('Error processing successful payment: $e');
+      debugPrint('Error processing successful payment: $e');
       SnackbarUtils.showError(
         'Payment completed but verification failed. Please check your orders.',
       );
@@ -625,7 +625,7 @@ class CheckoutController extends GetxController {
     try {
       await _orderController.cancelOrder(orderId);
     } catch (e) {
-      print('Error cancelling order after payment failure: $e');
+      debugPrint('Error cancelling order after payment failure: $e');
     } finally {
       currentOrderId.value = '';
     }

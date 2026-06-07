@@ -16,11 +16,11 @@ class SearchResultsScreen extends StatelessWidget {
   final CurrencyController _currencyController = Get.find<CurrencyController>();
 
   SearchResultsScreen({super.key, required this.query}) {
-    print('🟢 [SEARCH_RESULTS_SCREEN] Screen initialized with query: "$query"');
-    print(
+    debugPrint('🟢 [SEARCH_RESULTS_SCREEN] Screen initialized with query: "$query"');
+    debugPrint(
       '🟢 [SEARCH_RESULTS_SCREEN] Current searchResults count: ${_searchController.searchResults.length}',
     );
-    print(
+    debugPrint(
       '🟢 [SEARCH_RESULTS_SCREEN] Current originalResults count: ${_searchController.originalResults.length}',
     );
   }
@@ -28,20 +28,20 @@ class SearchResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Log when build is called
-    print('🟢 [SEARCH_RESULTS_SCREEN] build() called for query: "$query"');
-    print(
+    debugPrint('🟢 [SEARCH_RESULTS_SCREEN] build() called for query: "$query"');
+    debugPrint(
       '🟢 [SEARCH_RESULTS_SCREEN] isLoading: ${_searchController.isLoading.value}',
     );
-    print(
+    debugPrint(
       '🟢 [SEARCH_RESULTS_SCREEN] searchResults.length: ${_searchController.searchResults.length}',
     );
 
     // Log all products being displayed
     if (_searchController.searchResults.isNotEmpty) {
-      print('🟢 [SEARCH_RESULTS_SCREEN] Products to display:');
+      debugPrint('🟢 [SEARCH_RESULTS_SCREEN] Products to display:');
       for (int i = 0; i < _searchController.searchResults.length; i++) {
         final product = _searchController.searchResults[i];
-        print(
+        debugPrint(
           '🟢 [SEARCH_RESULTS_SCREEN]   [$i] ID: ${product.id}, Name: "${product.name}", Price: ${product.price}',
         );
       }
@@ -134,7 +134,7 @@ class SearchResultsScreen extends StatelessWidget {
         }
 
         final resultsCount = _searchController.searchResults.length;
-        print(
+        debugPrint(
           '🟢 [SEARCH_RESULTS_SCREEN] Building ListView with $resultsCount products for query: "$query"',
         );
 
@@ -144,12 +144,12 @@ class SearchResultsScreen extends StatelessWidget {
           itemBuilder: (context, index) {
             final product = _searchController.searchResults[index];
             if (index == 0) {
-              print(
+              debugPrint(
                 '🟢 [SEARCH_RESULTS_SCREEN] Rendering first product: "${product.name}" (ID: ${product.id})',
               );
             }
             if (index == resultsCount - 1) {
-              print(
+              debugPrint(
                 '🟢 [SEARCH_RESULTS_SCREEN] Rendering last product: "${product.name}" (ID: ${product.id})',
               );
             }

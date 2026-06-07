@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../models/support_models.dart';
 
@@ -11,7 +13,7 @@ class SupportRepository {
 
     return data.map((json) => FAQ.fromJson(json)).toList();
   } catch (e) {
-    print('Error fetching FAQs: $e');
+    debugPrint('Error fetching FAQs: $e');
     return [];
   }
 }
@@ -26,7 +28,7 @@ class SupportRepository {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => FAQ.fromJson(json)).toList();
     } catch (e) {
-      print('Error searching FAQs: $e');
+      debugPrint('Error searching FAQs: $e');
       return [];
     }
   }
@@ -41,7 +43,7 @@ class SupportRepository {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => SupportInfo.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching quick help: $e');
+      debugPrint('Error fetching quick help: $e');
       return [];
     }
   }
@@ -56,7 +58,7 @@ class SupportRepository {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => SupportInfo.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching contact options: $e');
+      debugPrint('Error fetching contact options: $e');
       return [];
     }
   }

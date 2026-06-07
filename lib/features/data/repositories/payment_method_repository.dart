@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/payment_method_model.dart';
@@ -38,7 +40,7 @@ class PaymentMethodRepository {
 
       return PaymentMethod.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      print('Error adding payment method: $e');
+      debugPrint('Error adding payment method: $e');
       rethrow;
     }
   }

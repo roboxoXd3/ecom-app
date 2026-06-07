@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 
 /// Product Specification Detail Model (for knowledge base)
@@ -75,7 +77,7 @@ class KnowledgeBaseService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => FAQ.fromJson(json)).toList();
     } catch (e) {
-      print('Error searching FAQs: $e');
+      debugPrint('Error searching FAQs: $e');
       return [];
     }
   }
@@ -89,7 +91,7 @@ class KnowledgeBaseService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => ProductSpecDetail.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching product specs: $e');
+      debugPrint('Error fetching product specs: $e');
       return [];
     }
   }
@@ -107,7 +109,7 @@ class KnowledgeBaseService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return List<Map<String, dynamic>>.from(results);
     } catch (e) {
-      print('Error fetching support info: $e');
+      debugPrint('Error fetching support info: $e');
       return [];
     }
   }
@@ -132,7 +134,7 @@ class KnowledgeBaseService {
 
       return uniqueFAQs.values.take(5).toList();
     } catch (e) {
-      print('Error getting relevant FAQs: $e');
+      debugPrint('Error getting relevant FAQs: $e');
       return [];
     }
   }

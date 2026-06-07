@@ -64,10 +64,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
         }
       }
 
-      print(
+      debugPrint(
         'Adding card: ${_detectCardType(cardNumber)} ending in ${cardNumber.substring(cardNumber.length - 4)}',
       );
-      print('Expiry: $expiryMonth/$expiryYear');
+      debugPrint('Expiry: $expiryMonth/$expiryYear');
 
       paymentMethodController.addPaymentMethod(
         type: 'card',

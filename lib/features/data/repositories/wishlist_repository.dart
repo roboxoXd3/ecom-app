@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 
@@ -19,7 +21,7 @@ class WishlistRepository {
           .where((id) => id.isNotEmpty)
           .toList();
     } catch (e) {
-      print('Error fetching wishlist: $e');
+      debugPrint('Error fetching wishlist: $e');
       return [];
     }
   }

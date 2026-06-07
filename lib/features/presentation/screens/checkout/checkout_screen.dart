@@ -46,17 +46,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Auto-select address when addresses are loaded or updated
     // Store the worker reference so we can dispose it later
     _addressWorker = ever(addressController.addresses, (addresses) {
-      print('CheckoutScreen: Address list updated, count: ${addresses.length}');
+      debugPrint('CheckoutScreen: Address list updated, count: ${addresses.length}');
       if (addresses.isNotEmpty) {
         final currentSelectedId = checkoutController.selectedAddressId.value;
-        print('CheckoutScreen: Current selected ID: "$currentSelectedId"');
+        debugPrint('CheckoutScreen: Current selected ID: "$currentSelectedId"');
 
         // Check if currently selected address still exists
         final currentSelectedExists =
             currentSelectedId.isNotEmpty &&
             addresses.any((addr) => addr.id == currentSelectedId);
 
-        print('CheckoutScreen: Current address exists: $currentSelectedExists');
+        debugPrint('CheckoutScreen: Current address exists: $currentSelectedExists');
 
         // Auto-select logic:
         // 1. If no address is selected, select default or first
@@ -67,7 +67,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             (addr) => addr.isDefault,
             orElse: () => addresses.first,
           );
-          print(
+          debugPrint(
             'CheckoutScreen: Auto-selecting address: "${defaultAddress.id}" (isDefault: ${defaultAddress.isDefault})',
           );
           checkoutController.setSelectedAddress(defaultAddress.id);
@@ -83,19 +83,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           // and it's actually marked as default, switch to it
           if (defaultAddress.isDefault &&
               defaultAddress.id != currentSelectedId) {
-            print(
+            debugPrint(
               'CheckoutScreen: Switching to new default address: "${defaultAddress.id}"',
             );
             checkoutController.setSelectedAddress(defaultAddress.id);
             _scrollToSelectedAddress(defaultAddress.id);
           } else {
-            print(
+            debugPrint(
               'CheckoutScreen: Keeping current selection: "$currentSelectedId"',
             );
           }
         }
       } else {
-        print('CheckoutScreen: No addresses available');
+        debugPrint('CheckoutScreen: No addresses available');
         checkoutController.selectedAddressId.value = '';
       }
     });
@@ -136,11 +136,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   // Method to handle adding a new address
   Future<void> _handleAddNewAddress() async {
-    print('CheckoutScreen: Opening add address screen...');
+    debugPrint('CheckoutScreen: Opening add address screen...');
 
     final result = await Get.to(() => const AddAddressScreen());
 
-    print('CheckoutScreen: Returned from add address with result: $result');
+    debugPrint('CheckoutScreen: Returned from add address with result: $result');
 
     // Always refresh addresses when returning, regardless of result
     await addressController.fetchAddresses();
@@ -148,7 +148,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Handle different return types
     if (result is String) {
       // New address ID returned - select it directly
-      print(
+      debugPrint(
         'CheckoutScreen: New address created with ID: $result, selecting it...',
       );
       await Future.delayed(const Duration(milliseconds: 100));
@@ -157,14 +157,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       checkoutController.update();
     } else if (result == true) {
       // Old boolean success - use existing logic
-      print(
+      debugPrint(
         'CheckoutScreen: Address added successfully (legacy), refreshing state...',
       );
       await Future.delayed(const Duration(milliseconds: 100));
       checkoutController.refreshAddressSelection();
       checkoutController.update();
     } else {
-      print('CheckoutScreen: Address addition was not successful or cancelled');
+      debugPrint('CheckoutScreen: Address addition was not successful or cancelled');
       // Still refresh the selection in case there were changes
       checkoutController.refreshAddressSelection();
     }
@@ -1331,7 +1331,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       final canProceed =
                           selectedAddressId.isNotEmpty && cartItems > 0;
 
-                      print(
+                      debugPrint(
                         'CheckoutScreen: Button Obx rebuild - addressId: "$selectedAddressId", cartItems: $cartItems, canProceed: $canProceed',
                       );
 

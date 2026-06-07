@@ -173,13 +173,13 @@ class ApiClient {
   Future<bool> _refreshToken() async {
     final refreshToken = AuthService.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
-      print('🔑 Token refresh: No refresh token — forcing re-login');
+      debugPrint('🔑 Token refresh: No refresh token — forcing re-login');
       await _forceReLogin();
       return false;
     }
 
     try {
-      print('🔑 Token refresh: Attempting refresh...');
+      debugPrint('🔑 Token refresh: Attempting refresh...');
       final response = await Dio(
         BaseOptions(
           baseUrl: ApiConfig.fullBaseUrl,
@@ -193,11 +193,11 @@ class ApiClient {
         if (data['refresh_token'] != null) {
           await AuthService.updateRefreshToken(data['refresh_token']);
         }
-        print('🔑 Token refresh: Success');
+        debugPrint('🔑 Token refresh: Success');
         return true;
       }
     } catch (e) {
-      print('🔑 Token refresh: Failed — forcing re-login');
+      debugPrint('🔑 Token refresh: Failed — forcing re-login');
       await _forceReLogin();
     }
     return false;

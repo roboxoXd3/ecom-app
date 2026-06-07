@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Review {
   final String id;
   final String productId;
@@ -35,7 +37,7 @@ class Review {
       }
       return [];
     } catch (e) {
-      print('Error parsing string list: $e');
+      debugPrint('Error parsing string list: $e');
       return [];
     }
   }

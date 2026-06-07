@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 
 import 'cart_controller.dart';
@@ -13,12 +15,12 @@ class HomeController extends GetxController {
 
     // Handle direct navigation to cart tab
     ever(currentIndex, (index) {
-      print('Tab index changed to: $index'); // Debug print
+      debugPrint('Tab index changed to: $index'); // Debug print
     });
   }
 
   void navigateToTab(int index) {
-    print('Navigating to tab: $index'); // Debug print
+    debugPrint('Navigating to tab: $index'); // Debug print
     currentIndex.value = index;
   }
 

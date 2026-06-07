@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../../core/services/analytics_service.dart';
 
@@ -32,7 +34,7 @@ class AnalyticsController extends GetxController {
       earliestDate.value = dateRange['earliest'];
       latestDate.value = dateRange['latest'];
     } catch (e) {
-      print('Error loading date range: $e');
+      debugPrint('Error loading date range: $e');
     }
   }
 
@@ -47,7 +49,7 @@ class AnalyticsController extends GetxController {
       );
       searchTrends.value = await _analyticsService.getSearchesByDate();
     } catch (e) {
-      print('Error loading analytics: $e');
+      debugPrint('Error loading analytics: $e');
     } finally {
       isLoading.value = false;
     }

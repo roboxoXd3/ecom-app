@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/qa_model.dart';
@@ -35,7 +37,7 @@ class QAService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => ProductQA.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching Q&A: $e');
+      debugPrint('Error fetching Q&A: $e');
       rethrow;
     }
   }
@@ -56,7 +58,7 @@ class QAService {
 
       return ProductQA.fromJson(response.data);
     } catch (e) {
-      print('Error submitting question: $e');
+      debugPrint('Error submitting question: $e');
       rethrow;
     }
   }
@@ -78,7 +80,7 @@ class QAService {
 
       return ProductQA.fromJson(response.data);
     } catch (e) {
-      print('Error submitting answer: $e');
+      debugPrint('Error submitting answer: $e');
       rethrow;
     }
   }
@@ -87,7 +89,7 @@ class QAService {
     try {
       await _api.post('/products/$productId/qa/$qaId/helpful/');
     } catch (e) {
-      print('Error marking Q&A as helpful: $e');
+      debugPrint('Error marking Q&A as helpful: $e');
       rethrow;
     }
   }
@@ -112,7 +114,7 @@ class QAService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => ProductQA.fromJson(json)).toList();
     } catch (e) {
-      print('Error searching questions: $e');
+      debugPrint('Error searching questions: $e');
       rethrow;
     }
   }
@@ -134,16 +136,16 @@ class QAService {
         'unanswered': 0,
       };
     } catch (e) {
-      print('Error fetching Q&A stats: $e');
+      debugPrint('Error fetching Q&A stats: $e');
       return {'total': 0, 'answered': 0, 'unanswered': 0};
     }
   }
 
   Future<void> reportQA(String qaId, String reason) async {
     try {
-      print('Reported Q&A: $qaId, reason: $reason');
+      debugPrint('Reported Q&A: $qaId, reason: $reason');
     } catch (e) {
-      print('Error reporting Q&A: $e');
+      debugPrint('Error reporting Q&A: $e');
       rethrow;
     }
   }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../models/size_chart_model.dart';
 import '../models/product_model.dart' as ProductModule;
@@ -21,7 +23,7 @@ class SizeChartRepository {
 
       return SizeChartModel.fromApiResponse(data as Map<String, dynamic>);
     } catch (e) {
-      print('Error fetching size chart for product ${product.id}: $e');
+      debugPrint('Error fetching size chart for product ${product.id}: $e');
       return _getLegacyFallback(product.categoryId);
     }
   }
@@ -34,7 +36,7 @@ class SizeChartRepository {
       if (data == null) return null;
       return SizeChartModel.fromApiResponse(data as Map<String, dynamic>);
     } catch (e) {
-      print('Error fetching size chart template $templateId: $e');
+      debugPrint('Error fetching size chart template $templateId: $e');
       return null;
     }
   }
@@ -50,7 +52,7 @@ class SizeChartRepository {
       if (data is Map<String, dynamic> && data.isEmpty) return null;
       return SizeChartModel.fromApiResponse(data as Map<String, dynamic>);
     } catch (e) {
-      print('Error fetching size chart for category $categoryId: $e');
+      debugPrint('Error fetching size chart for category $categoryId: $e');
       return null;
     }
   }
@@ -65,7 +67,7 @@ class SizeChartRepository {
               SizeChartModel.fromApiResponse(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching all size chart templates: $e');
+      debugPrint('Error fetching all size chart templates: $e');
       return [];
     }
   }
@@ -100,7 +102,7 @@ class SizeChartRepository {
       final data = response.data as Map<String, dynamic>?;
       return data?['name']?.toString();
     } catch (e) {
-      print('Error fetching category name: $e');
+      debugPrint('Error fetching category name: $e');
       return null;
     }
   }

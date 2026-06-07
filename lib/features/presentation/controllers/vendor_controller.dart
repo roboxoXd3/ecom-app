@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/vendor_model.dart';
 import '../../data/models/product_model.dart';
@@ -34,12 +36,12 @@ class VendorController extends GetxController {
       isVendorsLoading.value = true;
       final fetchedVendors = await _vendorRepository.getApprovedVendors();
       vendors.value = fetchedVendors;
-      print('📦 VendorController: Fetched ${fetchedVendors.length} vendors');
+      debugPrint('📦 VendorController: Fetched ${fetchedVendors.length} vendors');
       if (fetchedVendors.isNotEmpty) {
-        print('📦 First vendor: ${fetchedVendors.first.businessName}');
+        debugPrint('📦 First vendor: ${fetchedVendors.first.businessName}');
       }
     } catch (e) {
-      print('❌ Error fetching vendors: $e');
+      debugPrint('❌ Error fetching vendors: $e');
     } finally {
       isVendorsLoading.value = false;
     }
@@ -51,7 +53,7 @@ class VendorController extends GetxController {
       final fetchedVendors = await _vendorRepository.getFeaturedVendors();
       featuredVendors.value = fetchedVendors;
     } catch (e) {
-      print('Error fetching featured vendors: $e');
+      debugPrint('Error fetching featured vendors: $e');
     }
   }
 
@@ -60,7 +62,7 @@ class VendorController extends GetxController {
     try {
       return await _vendorRepository.getVendorById(vendorId);
     } catch (e) {
-      print('Error fetching vendor by ID: $e');
+      debugPrint('Error fetching vendor by ID: $e');
       return null;
     }
   }
@@ -70,7 +72,7 @@ class VendorController extends GetxController {
     try {
       return await _vendorRepository.searchVendors(query);
     } catch (e) {
-      print('Error searching vendors: $e');
+      debugPrint('Error searching vendors: $e');
       return [];
     }
   }
@@ -108,7 +110,7 @@ class VendorController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Error registering as vendor: $e');
+      debugPrint('Error registering as vendor: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar(
           'Error',
@@ -130,7 +132,7 @@ class VendorController extends GetxController {
       currentUserVendor.value = vendor;
       isCurrentUserVendor.value = vendor != null && vendor.isApproved;
     } catch (e) {
-      print('Error checking vendor status: $e');
+      debugPrint('Error checking vendor status: $e');
     }
   }
 
@@ -140,7 +142,7 @@ class VendorController extends GetxController {
       final vendor = await _vendorRepository.getCurrentUserVendor();
       currentUserVendor.value = vendor;
     } catch (e) {
-      print('Error fetching current user vendor: $e');
+      debugPrint('Error fetching current user vendor: $e');
     }
   }
 
@@ -186,7 +188,7 @@ class VendorController extends GetxController {
       }
       return false;
     } catch (e) {
-      print('Error updating vendor profile: $e');
+      debugPrint('Error updating vendor profile: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar(
           'Error',
@@ -214,14 +216,14 @@ class VendorController extends GetxController {
   Future<void> fetchVendorProducts(String vendorId) async {
     try {
       isLoading.value = true;
-      print('🔄 VendorController: Fetching products for vendor $vendorId');
+      debugPrint('🔄 VendorController: Fetching products for vendor $vendorId');
       final products = await _vendorRepository.getVendorProducts(vendorId);
       vendorProducts.value = products;
-      print(
+      debugPrint(
         '✅ VendorController: Successfully loaded ${products.length} products for vendor $vendorId',
       );
     } catch (e) {
-      print('❌ VendorController: Error fetching vendor products: $e');
+      debugPrint('❌ VendorController: Error fetching vendor products: $e');
       vendorProducts.clear();
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar(
@@ -258,7 +260,7 @@ class VendorController extends GetxController {
         );
       }
     } catch (e) {
-      print('Error following vendor: $e');
+      debugPrint('Error following vendor: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar(
           'Error',
@@ -292,7 +294,7 @@ class VendorController extends GetxController {
         );
       }
     } catch (e) {
-      print('Error unfollowing vendor: $e');
+      debugPrint('Error unfollowing vendor: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar(
           'Error',
@@ -320,7 +322,7 @@ class VendorController extends GetxController {
       final isFollowing = await _vendorRepository.isFollowingVendor(vendorId);
       followStatus[vendorId] = isFollowing;
     } catch (e) {
-      print('Error checking follow status: $e');
+      debugPrint('Error checking follow status: $e');
     }
   }
 
@@ -330,7 +332,7 @@ class VendorController extends GetxController {
       final count = await _vendorRepository.getVendorFollowerCount(vendorId);
       followerCounts[vendorId] = count;
     } catch (e) {
-      print('Error fetching follower count: $e');
+      debugPrint('Error fetching follower count: $e');
     }
   }
 
@@ -345,7 +347,7 @@ class VendorController extends GetxController {
         followStatus[vendor.id] = true;
       }
     } catch (e) {
-      print('Error fetching followed vendors: $e');
+      debugPrint('Error fetching followed vendors: $e');
     }
   }
 

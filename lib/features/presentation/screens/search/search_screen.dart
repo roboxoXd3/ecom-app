@@ -27,10 +27,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _handleSearch(String query) {
     if (query.isNotEmpty) {
-      print('🔵 [SEARCH_SCREEN] Suggestion clicked: "$query"');
-      print('🔵 [SEARCH_SCREEN] Calling searchProducts with query: "$query"');
+      debugPrint('🔵 [SEARCH_SCREEN] Suggestion clicked: "$query"');
+      debugPrint('🔵 [SEARCH_SCREEN] Calling searchProducts with query: "$query"');
       _searchCtrl.searchProducts(query);
-      print(
+      debugPrint(
         '🔵 [SEARCH_SCREEN] Navigating to search-results with query: "$query"',
       );
       Get.toNamed('/search-results', arguments: query);
@@ -45,17 +45,17 @@ class _SearchScreenState extends State<SearchScreen> {
     final productId = suggestion['id'] as String?;
     final displayText = suggestion['display'] as String? ?? '';
 
-    print(
+    debugPrint(
       '🔵 [SEARCH_SCREEN] Suggestion tapped: "$displayText" (type: $type, id: $productId)',
     );
 
     // If it's a product suggestion with valid ID, navigate directly to product details
     if (type == 'product' && productId != null && productId.isNotEmpty) {
-      print('🔵 [SEARCH_SCREEN] Navigating to product details: $productId');
+      debugPrint('🔵 [SEARCH_SCREEN] Navigating to product details: $productId');
       Get.toNamed('/product-details', arguments: productId);
     } else {
       // Otherwise, perform a search (for brands or fallback)
-      print('🔵 [SEARCH_SCREEN] Performing search for: "$displayText"');
+      debugPrint('🔵 [SEARCH_SCREEN] Performing search for: "$displayText"');
       _handleSearch(displayText);
     }
   }
@@ -87,7 +87,7 @@ class _SearchScreenState extends State<SearchScreen> {
         Get.toNamed('/search-results', arguments: 'Image Search');
       }
     } catch (e) {
-      print('Error in image search: $e');
+      debugPrint('Error in image search: $e');
       Get.snackbar(
         'Error',
         'Failed to process image. Please try again.',

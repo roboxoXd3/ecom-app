@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../data/services/currency_service.dart';
@@ -99,7 +101,7 @@ class CurrencyController extends GetxController {
         throw Exception(data['error'] ?? 'Failed to load currency data');
       }
     } catch (e) {
-      print('Error loading currency data: $e');
+      debugPrint('Error loading currency data: $e');
       error.value = 'Failed to load currencies';
 
       // Use default currencies as fallback
@@ -134,7 +136,7 @@ class CurrencyController extends GetxController {
 
       SnackbarUtils.showSuccess('Currency updated to $newCurrency');
     } catch (e) {
-      print('Error updating currency: $e');
+      debugPrint('Error updating currency: $e');
       SnackbarUtils.showError('Failed to update currency');
     }
   }
@@ -144,7 +146,7 @@ class CurrencyController extends GetxController {
     try {
       await _currencyService.updateUserCurrencyPreference(currency);
     } catch (e) {
-      print('Error updating user currency preference: $e');
+      debugPrint('Error updating user currency preference: $e');
       // Don't show error to user as this is not critical
     }
   }
@@ -164,7 +166,7 @@ class CurrencyController extends GetxController {
         return (price * rate * 100).round() / 100; // Round to 2 decimal places
       }
     } catch (e) {
-      print('Error converting price: $e');
+      debugPrint('Error converting price: $e');
     }
 
     // Return original price if conversion fails
@@ -209,7 +211,7 @@ class CurrencyController extends GetxController {
       }
 
       if (usdRate == null) {
-        print('No USD conversion rate found for $fromCurrency');
+        debugPrint('No USD conversion rate found for $fromCurrency');
         return null;
       }
 
@@ -228,7 +230,7 @@ class CurrencyController extends GetxController {
         return usdRate / inverseTargetRate;
       }
 
-      print('No USD conversion rate found for $toCurrency');
+      debugPrint('No USD conversion rate found for $toCurrency');
       return null;
     }
 
@@ -247,7 +249,7 @@ class CurrencyController extends GetxController {
       }
     }
 
-    print('No exchange rate found for $fromCurrency to $toCurrency');
+    debugPrint('No exchange rate found for $fromCurrency to $toCurrency');
     return null;
   }
 

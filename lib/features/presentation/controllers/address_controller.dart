@@ -30,7 +30,7 @@ class AddressController extends GetxController {
       final fetchedAddresses = await _addressRepository.getAddresses();
       addresses.assignAll(fetchedAddresses);
     } catch (e) {
-      print('Error fetching addresses: $e');
+      debugPrint('Error fetching addresses: $e');
       // No-internet is already handled globally by ApiClient interceptor
       if (!SnackbarUtils.isNoInternet(e) && AuthService.isAuthenticated()) {
         Get.snackbar(
@@ -58,7 +58,7 @@ class AddressController extends GetxController {
     String? newAddressId;
     try {
       isLoading.value = true;
-      print('AddressController: Starting address save...');
+      debugPrint('AddressController: Starting address save...');
 
       final address = Address(
         id: '',
@@ -76,13 +76,13 @@ class AddressController extends GetxController {
         createdAt: DateTime.now(),
       );
 
-      print('AddressController: Calling repository.addAddress...');
+      debugPrint('AddressController: Calling repository.addAddress...');
       newAddressId = await _addressRepository.addAddress(address);
-      print(
+      debugPrint(
         'AddressController: Address saved successfully with ID: $newAddressId, fetching addresses...',
       );
       await fetchAddresses();
-      print('AddressController: Addresses fetched, count: ${addresses.length}');
+      debugPrint('AddressController: Addresses fetched, count: ${addresses.length}');
 
       // Show success message
       Get.snackbar(
@@ -96,7 +96,7 @@ class AddressController extends GetxController {
 
       return newAddressId;
     } catch (e) {
-      print('AddressController: Error adding address: $e');
+      debugPrint('AddressController: Error adding address: $e');
 
       String errorMessage = 'Failed to add address';
       if (e.toString().contains('not authenticated')) {
@@ -140,7 +140,7 @@ class AddressController extends GetxController {
         Get.back();
       });
     } catch (e) {
-      print('Error updating address: $e');
+      debugPrint('Error updating address: $e');
       Get.snackbar(
         'Error',
         'Failed to update address',

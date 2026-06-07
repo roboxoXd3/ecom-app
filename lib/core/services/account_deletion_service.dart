@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../network/api_client.dart';
 import 'auth_service.dart';
 
@@ -60,7 +62,7 @@ class AccountDeletionService {
         isVendor: false,
       );
     } catch (e) {
-      print('Error checking deletion eligibility: $e');
+      debugPrint('Error checking deletion eligibility: $e');
       return DeleteAccountResult(
         success: false,
         message: 'An unexpected error occurred while checking account eligibility.',
@@ -102,7 +104,7 @@ class AccountDeletionService {
         isVendor: responseData['error'] == 'vendor_active',
       );
     } catch (e) {
-      print('Error during account deletion: $e');
+      debugPrint('Error during account deletion: $e');
       return DeleteAccountResult(
         success: false,
         message:
@@ -124,7 +126,7 @@ class AccountDeletionService {
 
       return response.data['verified'] == true;
     } catch (e) {
-      print('Error verifying password: $e');
+      debugPrint('Error verifying password: $e');
       return false;
     }
   }

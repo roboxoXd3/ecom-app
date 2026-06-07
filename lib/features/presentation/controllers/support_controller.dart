@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/support_models.dart';
 import '../../data/repositories/support_repository.dart';
@@ -30,7 +32,7 @@ class SupportController extends GetxController {
     final results = await _repository.getFAQs();
     faqs.assignAll(results);
   } catch (e) {
-    print('Error fetching FAQs: $e');
+    debugPrint('Error fetching FAQs: $e');
   }
 }
 
@@ -54,7 +56,7 @@ class SupportController extends GetxController {
       final results = await _repository.getQuickHelp();
       quickHelp.assignAll(results);
     } catch (e) {
-      print('Error fetching quick help: $e');
+      debugPrint('Error fetching quick help: $e');
     }
   }
 
@@ -63,7 +65,7 @@ class SupportController extends GetxController {
       final results = await _repository.getContactOptions();
       contactOptions.assignAll(results);
     } catch (e) {
-      print('Error fetching contact options: $e');
+      debugPrint('Error fetching contact options: $e');
     }
   }
 
@@ -79,7 +81,7 @@ class SupportController extends GetxController {
         // TODO: Implement phone calling
         break;
       default:
-        print('Unknown action type: ${info.actionType}');
+        debugPrint('Unknown action type: ${info.actionType}');
     }
   }
 }

@@ -173,7 +173,7 @@ class SnackbarUtils {
 
   // Fallback method using ScaffoldMessenger
   static void showErrorFallback(String message) {
-    print('🚨 Using fallback snackbar for: $message');
+    debugPrint('🚨 Using fallback snackbar for: $message');
     try {
       if (Get.context != null) {
         ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -189,17 +189,17 @@ class SnackbarUtils {
             ),
           ),
         );
-        print('🚨 Fallback snackbar displayed');
+        debugPrint('🚨 Fallback snackbar displayed');
       } else {
-        print('🚨 No context available for fallback snackbar');
+        debugPrint('🚨 No context available for fallback snackbar');
       }
     } catch (e) {
-      print('🚨 Fallback snackbar also failed: $e');
+      debugPrint('🚨 Fallback snackbar also failed: $e');
     }
   }
 
   static void showSuccessFallback(String message) {
-    print('🎉 Using fallback success snackbar for: $message');
+    debugPrint('🎉 Using fallback success snackbar for: $message');
     try {
       if (Get.context != null) {
         ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -215,12 +215,12 @@ class SnackbarUtils {
             ),
           ),
         );
-        print('🎉 Fallback success snackbar displayed');
+        debugPrint('🎉 Fallback success snackbar displayed');
       } else {
-        print('🎉 No context available for fallback snackbar');
+        debugPrint('🎉 No context available for fallback snackbar');
       }
     } catch (e) {
-      print('🎉 Fallback success snackbar also failed: $e');
+      debugPrint('🎉 Fallback success snackbar also failed: $e');
     }
   }
 }

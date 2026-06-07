@@ -27,7 +27,7 @@ class SizeChartController extends GetxController {
       final chart = await _sizeChartRepository.getSizeChartForProduct(product);
       sizeChart.value = chart;
     } catch (e) {
-      print('Error loading size chart: $e');
+      debugPrint('Error loading size chart: $e');
       // Fallback to legacy charts if database fails
       _loadLegacySizeChart(product);
     } finally {
@@ -52,7 +52,7 @@ class SizeChartController extends GetxController {
         );
       }
     } catch (e) {
-      print('Error loading legacy size chart: $e');
+      debugPrint('Error loading legacy size chart: $e');
     }
   }
 

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/review_model.dart';
 import '../../data/services/reviews_service.dart';
@@ -33,9 +35,9 @@ class ReviewsController extends GetxController {
         userOrderId.value =
             await _reviewsService.getUserOrderForProduct(productId) ?? '';
       }
-      print('🔍 User can review product $productId: ${canUserReview.value}');
+      debugPrint('🔍 User can review product $productId: ${canUserReview.value}');
     } catch (e) {
-      print('❌ Error checking review eligibility: $e');
+      debugPrint('❌ Error checking review eligibility: $e');
       canUserReview.value = false;
       userOrderId.value = '';
     }
@@ -57,7 +59,7 @@ class ReviewsController extends GetxController {
       isLoadingMore.value = !refresh && reviews.isNotEmpty;
       error.value = '';
 
-      print(
+      debugPrint(
         '📝 Loading reviews for product: $productId, page: ${currentPage.value}',
       );
 
@@ -97,10 +99,10 @@ class ReviewsController extends GetxController {
       // Check if user can review this product
       await checkReviewEligibility(productId);
 
-      print('✅ Loaded ${newReviews.length} reviews, total: ${reviews.length}');
+      debugPrint('✅ Loaded ${newReviews.length} reviews, total: ${reviews.length}');
     } catch (e) {
       error.value = 'Failed to load reviews: $e';
-      print('❌ Error loading reviews: $e');
+      debugPrint('❌ Error loading reviews: $e');
 
       if (reviews.isEmpty) {
         SnackbarUtils.showError('Failed to load reviews');
@@ -151,7 +153,7 @@ class ReviewsController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      print('📝 Submitting review for product: $productId');
+      debugPrint('📝 Submitting review for product: $productId');
 
       // Use provided orderId or the stored userOrderId
       final finalOrderId = orderId ?? userOrderId.value;
@@ -175,12 +177,12 @@ class ReviewsController extends GetxController {
       reviewsSummary.value = await _reviewsService.getReviewsSummary(productId);
 
       SnackbarUtils.showSuccess('Review submitted successfully!');
-      print('✅ Review submitted successfully');
+      debugPrint('✅ Review submitted successfully');
 
       return true;
     } catch (e) {
       error.value = 'Failed to submit review: $e';
-      print('❌ Error submitting review: $e');
+      debugPrint('❌ Error submitting review: $e');
       SnackbarUtils.showError('Failed to submit review');
       return false;
     } finally {
@@ -205,7 +207,7 @@ class ReviewsController extends GetxController {
 
       SnackbarUtils.showSuccess('Marked as helpful');
     } catch (e) {
-      print('❌ Error marking review as helpful: $e');
+      debugPrint('❌ Error marking review as helpful: $e');
       SnackbarUtils.showError('Failed to mark as helpful');
     }
   }
@@ -216,7 +218,7 @@ class ReviewsController extends GetxController {
       await _reviewsService.reportReview(reviewId, reason);
       SnackbarUtils.showSuccess('Review reported');
     } catch (e) {
-      print('❌ Error reporting review: $e');
+      debugPrint('❌ Error reporting review: $e');
       SnackbarUtils.showError('Failed to report review');
     }
   }
@@ -232,10 +234,10 @@ class ReviewsController extends GetxController {
       );
 
       reviews.value = mediaReviews;
-      print('📸 Loaded ${mediaReviews.length} reviews with media');
+      debugPrint('📸 Loaded ${mediaReviews.length} reviews with media');
     } catch (e) {
       error.value = 'Failed to load reviews with media: $e';
-      print('❌ Error loading reviews with media: $e');
+      debugPrint('❌ Error loading reviews with media: $e');
       SnackbarUtils.showError('Failed to load reviews with media');
     } finally {
       isLoading.value = false;

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/loyalty_model.dart';
@@ -31,7 +33,7 @@ class LoyaltyService {
 
       return LoyaltyAccount.fromJson(data);
     } catch (e) {
-      print('Error fetching loyalty balance: $e');
+      debugPrint('Error fetching loyalty balance: $e');
       return null;
     }
   }
@@ -55,7 +57,7 @@ class LoyaltyService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => LoyaltyTransaction.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching transaction history: $e');
+      debugPrint('Error fetching transaction history: $e');
       return [];
     }
   }
@@ -67,7 +69,7 @@ class LoyaltyService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => LoyaltyReward.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching rewards: $e');
+      debugPrint('Error fetching rewards: $e');
       return [];
     }
   }
@@ -93,7 +95,7 @@ class LoyaltyService {
 
       return {'success': false, 'error': 'Unexpected response'};
     } catch (e) {
-      print('Error redeeming reward: $e');
+      debugPrint('Error redeeming reward: $e');
       final errMsg = e.toString().contains('Insufficient')
           ? 'Insufficient points to redeem this reward'
           : 'An error occurred while redeeming';
@@ -113,7 +115,7 @@ class LoyaltyService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => LoyaltyVoucher.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching vouchers: $e');
+      debugPrint('Error fetching vouchers: $e');
       return [];
     }
   }
@@ -135,7 +137,7 @@ class LoyaltyService {
           ? Map<String, dynamic>.from(response.data)
           : {'valid': false, 'error': 'Invalid response'};
     } catch (e) {
-      print('Error validating voucher: $e');
+      debugPrint('Error validating voucher: $e');
       return {'valid': false, 'error': 'An error occurred while validating'};
     }
   }
@@ -149,7 +151,7 @@ class LoyaltyService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => LoyaltyBadge.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching badges: $e');
+      debugPrint('Error fetching badges: $e');
       return [];
     }
   }
@@ -163,7 +165,7 @@ class LoyaltyService {
       if (data is Map<String, dynamic>) return data;
       return {};
     } catch (e) {
-      print('Error fetching badge progress: $e');
+      debugPrint('Error fetching badge progress: $e');
       return {};
     }
   }

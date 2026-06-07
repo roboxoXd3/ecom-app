@@ -71,7 +71,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
   }
 
   void _openFullscreen() {
-    print('Fullscreen button tapped!'); // Debug print
+    debugPrint('Fullscreen button tapped!'); // Debug print
     Get.to(
       () => FullscreenVideoPlayer(
         videoUrl: widget.videoUrl,
@@ -83,7 +83,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
   }
 
   void _closeVideo() {
-    print('Close button tapped!'); // Debug print
+    debugPrint('Close button tapped!'); // Debug print
     widget.onClose();
   }
 

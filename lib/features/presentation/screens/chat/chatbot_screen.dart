@@ -599,7 +599,7 @@ class ChatbotScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final product = message.products![index];
                   // Debug: Log product info
-                  print(
+                  debugPrint(
                     '🛍️ Displaying product card: ${product.name} (ID: ${product.id})',
                   );
                   return _buildProductCard(product, screenWidth, context);
@@ -713,7 +713,7 @@ class ChatbotScreen extends StatelessWidget {
         shadowColor: Colors.black.withOpacity(0.1),
         child: InkWell(
           onTap: () {
-            print(
+            debugPrint(
               '🖱️ Product card tapped: ${product.name} (ID: ${product.id})',
             );
             Get.toNamed('/product-details', arguments: product.id);

@@ -93,13 +93,13 @@ class PaymentWebViewController extends GetxController {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            print('Payment page started: $url');
+            debugPrint('Payment page started: $url');
             isLoading.value = true;
             hasError.value = false;
             _startLoadingTimeout();
           },
           onPageFinished: (String url) {
-            print('Payment page finished: $url');
+            debugPrint('Payment page finished: $url');
             isLoading.value = false;
             _loadingTimeout?.cancel();
             _handlePageFinished(url);
@@ -111,7 +111,7 @@ class PaymentWebViewController extends GetxController {
             // Third-party resources (riskified, online-metrix, etc.) are
             // silently ignored — they're not critical for the payment.
             if (_isSquadHost(failedUrl)) {
-              print('Squad page error: ${error.description}');
+              debugPrint('Squad page error: ${error.description}');
               hasError.value = true;
               errorMessage.value = _getUserFriendlyErrorMessage(error);
               isLoading.value = false;
@@ -128,7 +128,7 @@ class PaymentWebViewController extends GetxController {
   // ── JS Bridge ───────────────────────────────────────────────────────
 
   void _handleBridgeMessage(String message) {
-    print('JS bridge: $message');
+    debugPrint('JS bridge: $message');
     if (message == 'payment_success') {
       _verifyPaymentAndComplete(PaymentResult.success);
     } else if (message == 'payment_failed') {
@@ -253,7 +253,7 @@ class PaymentWebViewController extends GetxController {
         _closeWebView(PaymentResult.pending);
       }
     } catch (e) {
-      print('Payment verification error: $e');
+      debugPrint('Payment verification error: $e');
       if (presumedResult == PaymentResult.success) {
         SnackbarUtils.showWarning(
           'Payment may have completed. Please check your orders.',
@@ -318,7 +318,7 @@ class PaymentWebViewController extends GetxController {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     } catch (e) {
-      print('Error launching external URL: $e');
+      debugPrint('Error launching external URL: $e');
     }
   }
 }
