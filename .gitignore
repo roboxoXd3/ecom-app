@@ -16,10 +16,13 @@ assets/.env
 
 # Android signing — never commit keys or passwords
 android/key.properties
+android/key.properties.zip
 android/upload-keystore.jks
 android/app/upload-keystore.jks
 *.jks
 *.keystore
+*.properties.zip
+/Archive.zip
 
 # Android build artifacts
 android/app/.cxx/
