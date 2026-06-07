@@ -109,30 +109,69 @@ class GoogleMapsService {
     }
   }
 
-  /// Reverse geocode coordinates to address
+  /// Reverse geocode coordinates to an [AddressComponents] record.
+  ///
+  /// Uses the platform `geocoding` package's [Placemark], whose field names
+  /// differ from Google Places API but follow the same conceptual hierarchy.
+  /// The city fallback mirrors [AddressComponents.fromGoogleComponents] so
+  /// addresses entered via search and via "Use Current Location" produce
+  /// consistent results — particularly important for Nigerian users whose
+  /// city often arrives as `subLocality` (Lekki, Ikoyi, Maitama) rather
+  /// than `locality`.
   static Future<AddressComponents?> reverseGeocode(
     double lat,
     double lng,
   ) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        return AddressComponents(
-          streetNumber: placemark.subThoroughfare ?? '',
-          streetName: placemark.thoroughfare ?? '',
-          city: placemark.locality ?? '',
-          state: placemark.administrativeArea ?? '',
-          country: placemark.country ?? '',
-          postalCode: placemark.postalCode ?? '',
-          formattedAddress:
-              '${placemark.street}, ${placemark.locality}, ${placemark.administrativeArea} ${placemark.postalCode}, ${placemark.country}',
-        );
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isEmpty) return null;
+
+      final placemark = placemarks.first;
+
+      // First non-empty value from the candidate list (priority order).
+      String firstNonEmpty(List<String?> candidates) {
+        for (final value in candidates) {
+          if (value != null && value.isNotEmpty) return value;
+        }
+        return '';
       }
+
+      // City fallback (mirrors Google Places priority — see fromGoogleComponents):
+      //   locality              — most populated cities
+      //   subLocality           — UK postal towns, NG suburbs (geocoding maps both here)
+      //   subAdministrativeArea — coarse fallback (NG LGAs, US counties)
+      final city = firstNonEmpty([
+        placemark.locality,
+        placemark.subLocality,
+        placemark.subAdministrativeArea,
+      ]);
+
+      final streetNumber = placemark.subThoroughfare ?? '';
+      final streetName = placemark.thoroughfare ?? '';
+      final state = placemark.administrativeArea ?? '';
+      final country = placemark.country ?? '';
+      final postalCode = placemark.postalCode ?? '';
+
+      return AddressComponents(
+        streetNumber: streetNumber,
+        streetName: streetName,
+        city: city,
+        state: state,
+        country: country,
+        postalCode: postalCode,
+        formattedAddress: AddressComponents._formatAddress(
+          streetNumber: streetNumber,
+          streetName: streetName,
+          city: city,
+          state: state,
+          postalCode: postalCode,
+          country: country,
+        ),
+      );
     } catch (e) {
       debugPrint('Error reverse geocoding: $e');
+      return null;
     }
-    return null;
   }
 }
 
@@ -205,31 +244,41 @@ class AddressComponents {
   });
 
   factory AddressComponents.fromGoogleComponents(List<dynamic> components) {
-    String streetNumber = '';
-    String streetName = '';
-    String city = '';
-    String state = '';
-    String country = '';
-    String postalCode = '';
-
-    for (var component in components) {
-      final types = component['types'] as List<dynamic>;
-      final longName = component['long_name'] ?? '';
-
-      if (types.contains('street_number')) {
-        streetNumber = longName;
-      } else if (types.contains('route')) {
-        streetName = longName;
-      } else if (types.contains('locality')) {
-        city = longName;
-      } else if (types.contains('administrative_area_level_1')) {
-        state = longName;
-      } else if (types.contains('country')) {
-        country = longName;
-      } else if (types.contains('postal_code')) {
-        postalCode = longName;
+    // Return the long_name of the first component whose 'types' array
+    // contains any of [typesPriority], scanning in priority order.
+    // Returns empty string if no match.
+    String findFirst(List<String> typesPriority) {
+      for (final type in typesPriority) {
+        for (final component in components) {
+          final types = (component['types'] as List?) ?? const [];
+          if (types.contains(type)) {
+            return component['long_name']?.toString() ?? '';
+          }
+        }
       }
+      return '';
     }
+
+    final streetNumber = findFirst(['street_number']);
+    final streetName = findFirst(['route']);
+
+    // City varies by country in Google's response. Priority order:
+    //   locality                     — US, India, most large NG cities (Lagos, Abuja proper)
+    //   postal_town                  — UK (Telford, Manchester), NL, parts of DE
+    //   sublocality_level_1          — NG suburbs (Lekki, Ikoyi, Maitama, Wuse)
+    //   sublocality                  — broader fallback for sub-areas
+    //   administrative_area_level_2  — last resort: NG LGAs, US counties
+    final city = findFirst([
+      'locality',
+      'postal_town',
+      'sublocality_level_1',
+      'sublocality',
+      'administrative_area_level_2',
+    ]);
+
+    final state = findFirst(['administrative_area_level_1']);
+    final country = findFirst(['country']);
+    final postalCode = findFirst(['postal_code']);
 
     return AddressComponents(
       streetNumber: streetNumber,
@@ -238,12 +287,43 @@ class AddressComponents {
       state: state,
       country: country,
       postalCode: postalCode,
-      formattedAddress:
-          '$streetNumber $streetName, $city, $state $postalCode, $country',
+      formattedAddress: _formatAddress(
+        streetNumber: streetNumber,
+        streetName: streetName,
+        city: city,
+        state: state,
+        postalCode: postalCode,
+        country: country,
+      ),
     );
   }
 
   String get fullStreetAddress => '$streetNumber $streetName'.trim();
+
+  /// Build a human-readable address while eliding empty components.
+  ///
+  /// Many Nigerian addresses have no postal code, and the parser may
+  /// occasionally miss a city/state. Naively joining with commas produces
+  /// noise like `"Lagos, , Nigeria"`. This formatter skips empty parts so
+  /// the output stays clean regardless of which components are present.
+  static String _formatAddress({
+    required String streetNumber,
+    required String streetName,
+    required String city,
+    required String state,
+    required String postalCode,
+    required String country,
+  }) {
+    String joinNonEmpty(List<String> parts, String separator) =>
+        parts.where((p) => p.isNotEmpty).join(separator);
+
+    return joinNonEmpty([
+      joinNonEmpty([streetNumber, streetName], ' '),
+      city,
+      joinNonEmpty([state, postalCode], ' '),
+      country,
+    ], ', ');
+  }
 }
 
 class LocationResult {
