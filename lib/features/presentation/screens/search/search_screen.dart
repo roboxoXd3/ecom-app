@@ -92,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
         'Error',
         'Failed to process image. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
       );
     }
@@ -297,7 +297,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(icon, color: AppTheme.primaryColor, size: 20),
@@ -322,7 +322,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 16,
-                      color: AppTheme.textSecondary.withOpacity(0.5),
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -340,7 +340,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(tag, style: TextStyle(color: AppTheme.primaryColor)),

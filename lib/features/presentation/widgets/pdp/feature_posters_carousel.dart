@@ -88,7 +88,7 @@ class _FeaturePostersCarouselState extends State<FeaturePostersCarousel> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -126,7 +126,7 @@ class _FeaturePostersCarouselState extends State<FeaturePostersCarousel> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                   stops: const [0.5, 1.0],
                 ),
               ),

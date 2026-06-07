@@ -194,7 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.getTextSecondary(context).withOpacity(0.3),
+                  color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -222,7 +222,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       style: IconButton.styleFrom(
                         backgroundColor: AppTheme.getBorder(
                           context,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -260,7 +260,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           decoration: BoxDecoration(
                             color:
                                 isSelected
-                                    ? AppTheme.primaryColor.withOpacity(0.08)
+                                    ? AppTheme.primaryColor.withValues(alpha: 0.08)
                                     : AppTheme.getSurface(context),
                             border: Border.all(
                               color:
@@ -268,7 +268,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ? AppTheme.primaryColor
                                       : AppTheme.getBorder(
                                         context,
-                                      ).withOpacity(0.2),
+                                      ).withValues(alpha: 0.2),
                               width: isSelected ? 2 : 1,
                             ),
                             borderRadius: BorderRadius.circular(16),
@@ -282,12 +282,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 decoration: BoxDecoration(
                                   color:
                                       isSelected
-                                          ? AppTheme.primaryColor.withOpacity(
-                                            0.15,
-                                          )
+                                          ? AppTheme.primaryColor.withValues(alpha: 0.15)
                                           : AppTheme.getBorder(
                                             context,
-                                          ).withOpacity(0.1),
+                                          ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -469,7 +467,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Icons.add_location_alt,
                 color:
                     addressController.isLoading.value
-                        ? AppTheme.getTextSecondary(context).withOpacity(0.5)
+                        ? AppTheme.getTextSecondary(context).withValues(alpha: 0.5)
                         : AppTheme.getTextPrimary(context),
               ),
               tooltip: 'Add New Address',
@@ -573,7 +571,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         color:
                                             isSelected
                                                 ? AppTheme.primaryColor
-                                                    .withOpacity(0.08)
+                                                    .withValues(alpha: 0.08)
                                                 : AppTheme.getSurface(context),
                                       ),
                                       child: Material(
@@ -758,7 +756,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       return Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.withOpacity(0.1),
+                                          color: Colors.green.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -1142,7 +1140,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                               height: 24,
                                               color: AppTheme.getBorder(
                                                 context,
-                                              ).withOpacity(0.5),
+                                              ).withValues(alpha: 0.5),
                                             ),
                                         ],
                                       );

@@ -80,7 +80,7 @@ class ProductListScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(Get.context!).cardColor,
-        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.2))),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +155,7 @@ class ProductListScreen extends StatelessWidget {
       label: Text(label, style: const TextStyle(fontSize: 12)),
       deleteIcon: const Icon(Icons.close, size: 16),
       onDeleted: onRemove,
-      backgroundColor: Theme.of(Get.context!).primaryColor.withOpacity(0.1),
+      backgroundColor: Theme.of(Get.context!).primaryColor.withValues(alpha: 0.1),
       deleteIconColor: Theme.of(Get.context!).primaryColor,
       labelStyle: TextStyle(color: Theme.of(Get.context!).primaryColor),
       padding: const EdgeInsets.symmetric(horizontal: 8),

@@ -148,16 +148,16 @@ class _HeroGalleryState extends State<HeroGallery> {
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.4),
+                                        color: Colors.black.withValues(alpha: 0.4),
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.3),
+                                          color: Colors.white.withValues(alpha: 0.3),
                                           width: 1,
                                         ),
                                       ),
                                       child: Icon(
                                         Icons.zoom_in,
-                                        color: Colors.white.withOpacity(0.9),
+                                        color: Colors.white.withValues(alpha: 0.9),
                                         size: 18,
                                       ),
                                     ),
@@ -182,16 +182,12 @@ class _HeroGalleryState extends State<HeroGallery> {
                                             vertical: 8,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(
-                                              0.8,
-                                            ),
+                                            color: Colors.black.withValues(alpha: 0.8),
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
                                             border: Border.all(
-                                              color: Colors.white.withOpacity(
-                                                0.2,
-                                              ),
+                                              color: Colors.white.withValues(alpha: 0.2),
                                               width: 1,
                                             ),
                                           ),
@@ -254,7 +250,7 @@ class _HeroGalleryState extends State<HeroGallery> {
                                 ? AppTheme.getTextPrimary(context)
                                 : AppTheme.getTextSecondary(
                                   context,
-                                ).withOpacity(0.5),
+                                ).withValues(alpha: 0.5),
                       ),
                     ),
                   );

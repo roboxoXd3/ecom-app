@@ -86,7 +86,7 @@ class SquadPaymentWebView extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             child: Row(
               children: [
                 Icon(Icons.security, color: AppTheme.primaryColor, size: 20),
@@ -104,7 +104,7 @@ class SquadPaymentWebView extends StatelessWidget {
                 Text(
                   'Ref: ${transactionRef.substring(transactionRef.length - 8)}',
                   style: TextStyle(
-                    color: AppTheme.primaryColor.withOpacity(0.7),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),

@@ -102,7 +102,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   gradient: LinearGradient(
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,

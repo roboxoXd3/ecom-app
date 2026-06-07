@@ -147,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(
                     Theme.of(
                           context,
-                        ).textTheme.bodyMedium?.color?.withOpacity(0.6) ??
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6) ??
                         Colors.black54,
                   ),
                 ),

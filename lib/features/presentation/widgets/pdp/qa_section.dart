@@ -82,9 +82,9 @@ class _QASectionState extends State<QASection> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.05),
+        color: AppTheme.primaryColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,7 +283,7 @@ class _QASectionState extends State<QASection> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Icon(
@@ -322,7 +322,7 @@ class _QASectionState extends State<QASection> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: Colors.orange.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
                                 color: Colors.orange,
@@ -353,7 +353,7 @@ class _QASectionState extends State<QASection> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
+                color: Colors.green.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -362,7 +362,7 @@ class _QASectionState extends State<QASection> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Icon(

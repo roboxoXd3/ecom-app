@@ -74,8 +74,8 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
         materialProgressColors: ChewieProgressColors(
           playedColor: AppTheme.primaryColor,
           handleColor: AppTheme.primaryColor,
-          backgroundColor: Colors.white.withOpacity(0.3),
-          bufferedColor: AppTheme.primaryColor.withOpacity(0.3),
+          backgroundColor: Colors.white.withValues(alpha: 0.3),
+          bufferedColor: AppTheme.primaryColor.withValues(alpha: 0.3),
         ),
         placeholder: Container(
           color: Colors.black,
@@ -150,7 +150,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
               right: 16,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: IconButton(
@@ -172,7 +172,7 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

@@ -72,10 +72,10 @@ class VendorsListScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.05),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.05),
                   border: Border(
                     bottom: BorderSide(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -131,7 +131,7 @@ class VendorsListScreen extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child:
@@ -183,7 +183,7 @@ class VendorsListScreen extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: Colors.orange.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -258,7 +258,7 @@ class VendorsListScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               isFollowing
-                                  ? AppTheme.primaryColor.withOpacity(0.1)
+                                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
                                   : AppTheme.primaryColor,
                           foregroundColor:
                               isFollowing

@@ -291,8 +291,8 @@ class AnalyticsScreen extends StatelessWidget {
                                     radius: 16,
                                     backgroundColor:
                                         search['result_count'] > 0
-                                            ? Colors.green.withOpacity(0.2)
-                                            : Colors.red.withOpacity(0.2),
+                                            ? Colors.green.withValues(alpha: 0.2)
+                                            : Colors.red.withValues(alpha: 0.2),
                                     child: Icon(
                                       search['result_count'] > 0
                                           ? Icons.check

@@ -330,7 +330,7 @@ class SearchResultsScreen extends StatelessWidget {
                       ' (${product.reviews})',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.textSecondary.withOpacity(0.7),
+                        color: AppTheme.textSecondary.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

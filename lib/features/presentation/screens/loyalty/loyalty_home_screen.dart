@@ -84,7 +84,7 @@ class LoyaltyHomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -124,7 +124,7 @@ class LoyaltyHomeScreen extends StatelessWidget {
                 Text(
                   '${account.lifetimePoints} lifetime points earned',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -132,7 +132,7 @@ class LoyaltyHomeScreen extends StatelessWidget {
                 Text(
                   account.tierBenefits,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withValues(alpha: 0.95),
                     fontSize: 12,
                   ),
                 ),
@@ -157,7 +157,7 @@ class LoyaltyHomeScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -194,7 +194,7 @@ class LoyaltyHomeScreen extends StatelessWidget {
                     value: account.tierProgress / 100,
                     backgroundColor: Theme.of(
                       context,
-                    ).colorScheme.outline.withOpacity(0.3),
+                    ).colorScheme.outline.withValues(alpha: 0.3),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getTierColor(account.tier, context),
                     ),
@@ -305,9 +305,9 @@ class LoyaltyHomeScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

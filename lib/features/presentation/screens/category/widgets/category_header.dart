@@ -31,11 +31,11 @@ class CategoryHeader extends StatelessWidget {
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -53,11 +53,11 @@ class CategoryHeader extends StatelessWidget {
         Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -96,7 +96,7 @@ class CategoryHeader extends StatelessWidget {
                             Shadow(
                               offset: const Offset(0, 1),
                               blurRadius: 3,
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                             ),
                           ],
                 ),
@@ -114,9 +114,9 @@ class CategoryHeader extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withOpacity(0.2),
-                        Colors.black.withOpacity(0.4),
-                        Colors.black.withOpacity(0.7),
+                        Colors.black.withValues(alpha: 0.2),
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.black.withValues(alpha: 0.7),
                       ],
                       stops: const [0.0, 0.5, 1.0],
                     ),
@@ -133,9 +133,9 @@ class CategoryHeader extends StatelessWidget {
                       height: 50,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withValues(alpha: 0.1),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -152,7 +152,7 @@ class CategoryHeader extends StatelessWidget {
                       height: 30,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.08),
+                        color: Colors.white.withValues(alpha: 0.08),
                       ),
                     ),
                   ),
@@ -180,8 +180,8 @@ class CategoryHeader extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryColor.withOpacity(0.3),
-              AppTheme.primaryColor.withOpacity(0.1),
+              AppTheme.primaryColor.withValues(alpha: 0.3),
+              AppTheme.primaryColor.withValues(alpha: 0.1),
             ],
           ),
         ),
@@ -190,7 +190,7 @@ class CategoryHeader extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(40),
             ),
             child: Icon(
@@ -214,8 +214,8 @@ class CategoryHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.3),
-                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
                 ],
               ),
             ),
@@ -224,7 +224,7 @@ class CategoryHeader extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(40),
                 ),
                 child: Icon(
@@ -242,8 +242,8 @@ class CategoryHeader extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.3),
-                  Colors.deepPurple.withOpacity(0.2),
+                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                  Colors.deepPurple.withValues(alpha: 0.2),
                 ],
               ),
             ),
@@ -252,7 +252,7 @@ class CategoryHeader extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(40),
                 ),
                 child: Icon(
@@ -290,7 +290,7 @@ class CategoryInfoSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 4),
                 spreadRadius: 0,
@@ -305,7 +305,7 @@ class CategoryInfoSection extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(

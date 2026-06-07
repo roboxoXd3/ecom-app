@@ -266,7 +266,7 @@ class FilterBottomSheet extends StatelessWidget {
                           selectedBrands.remove(brand);
                         }
                       },
-                      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+                      selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                       checkmarkColor: AppTheme.primaryColor,
                     );
                   });

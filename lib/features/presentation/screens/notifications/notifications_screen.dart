@@ -194,9 +194,9 @@ class _NotificationItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isRead ? null : AppTheme.primaryColor.withOpacity(0.05),
+          color: isRead ? null : AppTheme.primaryColor.withValues(alpha: 0.05),
           border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
           ),
         ),
         child: Row(
@@ -205,7 +205,7 @@ class _NotificationItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _iconColor.withOpacity(0.1),
+                color: _iconColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(_icon, color: _iconColor, size: 24),

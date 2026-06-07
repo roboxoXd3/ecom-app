@@ -46,7 +46,7 @@ class ChatbotScreen extends StatelessWidget {
     return AppBar(
       backgroundColor: AppTheme.getSurface(context),
       elevation: 0,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       surfaceTintColor: Colors.transparent,
       leading: IconButton(
         icon: Icon(
@@ -73,7 +73,7 @@ class ChatbotScreen extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   spreadRadius: 0,
                   blurRadius: 8,
                   offset: const Offset(0, 2),
@@ -322,7 +322,7 @@ class ChatbotScreen extends StatelessWidget {
             height: 60,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: CircularProgressIndicator(
@@ -358,8 +358,8 @@ class ChatbotScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryColor.withOpacity(0.1),
-                    AppTheme.primaryColor.withOpacity(0.05),
+                    AppTheme.primaryColor.withValues(alpha: 0.1),
+                    AppTheme.primaryColor.withValues(alpha: 0.05),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -430,10 +430,10 @@ class ChatbotScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.08),
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -486,7 +486,7 @@ class ChatbotScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withOpacity(0.3),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
                         spreadRadius: 0,
                         blurRadius: 8,
                         offset: const Offset(0, 2),
@@ -522,7 +522,7 @@ class ChatbotScreen extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           spreadRadius: 0,
                           blurRadius: 10,
                           offset: const Offset(0, 2),
@@ -555,7 +555,7 @@ class ChatbotScreen extends StatelessWidget {
                           style: TextStyle(
                             color:
                                 isUser
-                                    ? Colors.white.withOpacity(0.8)
+                                    ? Colors.white.withValues(alpha: 0.8)
                                     : AppTheme.getTextSecondary(context),
                             fontSize: 11,
                             fontWeight: FontWeight.w400,
@@ -710,7 +710,7 @@ class ChatbotScreen extends StatelessWidget {
         color: AppTheme.getSurface(context),
         borderRadius: BorderRadius.circular(16),
         elevation: 0,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
           onTap: () {
             debugPrint(
@@ -719,8 +719,8 @@ class ChatbotScreen extends StatelessWidget {
             Get.toNamed('/product-details', arguments: product.id);
           },
           borderRadius: BorderRadius.circular(16),
-          splashColor: AppTheme.primaryColor.withOpacity(0.1),
-          highlightColor: AppTheme.primaryColor.withOpacity(0.05),
+          splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+          highlightColor: AppTheme.primaryColor.withValues(alpha: 0.05),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -791,7 +791,7 @@ class ChatbotScreen extends StatelessWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withOpacity(0.1),
+                              color: Colors.amber.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -836,7 +836,7 @@ class ChatbotScreen extends StatelessWidget {
       color: AppTheme.getSurface(context),
       borderRadius: BorderRadius.circular(16),
       elevation: 0,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       child: InkWell(
         onTap: () => Get.toNamed('/order-details', arguments: order.id),
         borderRadius: BorderRadius.circular(16),
@@ -885,14 +885,14 @@ class ChatbotScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Color(
                         int.parse('0xFF${order.status.colorHex.substring(1)}'),
-                      ).withOpacity(0.1),
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: Color(
                           int.parse(
                             '0xFF${order.status.colorHex.substring(1)}',
                           ),
-                        ).withOpacity(0.3),
+                        ).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -997,10 +997,10 @@ class ChatbotScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -1136,7 +1136,7 @@ class ChatbotScreen extends StatelessWidget {
         color: AppTheme.getSurface(context),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, -2),
@@ -1235,7 +1235,7 @@ class ChatbotScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     spreadRadius: 0,
                     blurRadius: 8,
                     offset: const Offset(0, 2),
@@ -1301,21 +1301,21 @@ class ChatbotScreen extends StatelessWidget {
         ),
         a: TextStyle(color: linkColor, decoration: TextDecoration.underline),
         code: TextStyle(
-          backgroundColor: textColor.withOpacity(0.1),
+          backgroundColor: textColor.withValues(alpha: 0.1),
           color: textColor,
           fontFamily: 'monospace',
         ),
         codeblockDecoration: BoxDecoration(
-          color: textColor.withOpacity(0.1),
+          color: textColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
         ),
         blockquote: TextStyle(
-          color: textColor.withOpacity(0.8),
+          color: textColor.withValues(alpha: 0.8),
           fontStyle: FontStyle.italic,
         ),
         blockquoteDecoration: BoxDecoration(
           border: Border(
-            left: BorderSide(color: textColor.withOpacity(0.3), width: 4),
+            left: BorderSide(color: textColor.withValues(alpha: 0.3), width: 4),
           ),
         ),
       ),
