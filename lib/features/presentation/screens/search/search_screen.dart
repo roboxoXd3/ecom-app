@@ -27,10 +27,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _handleSearch(String query) {
     if (query.isNotEmpty) {
-      print('🔵 [SEARCH_SCREEN] Suggestion clicked: "$query"');
-      print('🔵 [SEARCH_SCREEN] Calling searchProducts with query: "$query"');
+      debugPrint('🔵 [SEARCH_SCREEN] Suggestion clicked: "$query"');
+      debugPrint('🔵 [SEARCH_SCREEN] Calling searchProducts with query: "$query"');
       _searchCtrl.searchProducts(query);
-      print(
+      debugPrint(
         '🔵 [SEARCH_SCREEN] Navigating to search-results with query: "$query"',
       );
       Get.toNamed('/search-results', arguments: query);
@@ -45,17 +45,17 @@ class _SearchScreenState extends State<SearchScreen> {
     final productId = suggestion['id'] as String?;
     final displayText = suggestion['display'] as String? ?? '';
 
-    print(
+    debugPrint(
       '🔵 [SEARCH_SCREEN] Suggestion tapped: "$displayText" (type: $type, id: $productId)',
     );
 
     // If it's a product suggestion with valid ID, navigate directly to product details
     if (type == 'product' && productId != null && productId.isNotEmpty) {
-      print('🔵 [SEARCH_SCREEN] Navigating to product details: $productId');
+      debugPrint('🔵 [SEARCH_SCREEN] Navigating to product details: $productId');
       Get.toNamed('/product-details', arguments: productId);
     } else {
       // Otherwise, perform a search (for brands or fallback)
-      print('🔵 [SEARCH_SCREEN] Performing search for: "$displayText"');
+      debugPrint('🔵 [SEARCH_SCREEN] Performing search for: "$displayText"');
       _handleSearch(displayText);
     }
   }
@@ -87,12 +87,12 @@ class _SearchScreenState extends State<SearchScreen> {
         Get.toNamed('/search-results', arguments: 'Image Search');
       }
     } catch (e) {
-      print('Error in image search: $e');
+      debugPrint('Error in image search: $e');
       Get.snackbar(
         'Error',
         'Failed to process image. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
       );
     }
@@ -297,7 +297,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(icon, color: AppTheme.primaryColor, size: 20),
@@ -322,7 +322,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 16,
-                      color: AppTheme.textSecondary.withOpacity(0.5),
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
                     ),
                   ],
                 ),
@@ -340,7 +340,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(tag, style: TextStyle(color: AppTheme.primaryColor)),

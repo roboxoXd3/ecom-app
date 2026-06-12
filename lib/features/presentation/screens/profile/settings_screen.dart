@@ -38,7 +38,7 @@ class SettingsScreen extends StatelessWidget {
           //     leading: Container(
           //       padding: const EdgeInsets.all(8),
           //       decoration: BoxDecoration(
-          //         color: AppTheme.primaryColor.withOpacity(0.1),
+          //         color: AppTheme.primaryColor.withValues(alpha: 0.1),
           //         borderRadius: BorderRadius.circular(8),
           //       ),
           //       child: Text(
@@ -72,10 +72,10 @@ class SettingsScreen extends StatelessWidget {
           //                     vertical: 4,
           //                   ),
           //                   decoration: BoxDecoration(
-          //                     color: AppTheme.primaryColor.withOpacity(0.1),
+          //                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
           //                     borderRadius: BorderRadius.circular(12),
           //                     border: Border.all(
-          //                       color: AppTheme.primaryColor.withOpacity(0.3),
+          //                       color: AppTheme.primaryColor.withValues(alpha: 0.3),
           //                     ),
           //                   ),
           //                   child: Text(

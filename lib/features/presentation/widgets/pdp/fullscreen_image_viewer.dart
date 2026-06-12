@@ -71,7 +71,7 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
                       child: Icon(
                         Icons.image_not_supported,
                         size: 64,
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                       ),
                     ),
                   );
@@ -113,7 +113,7 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -145,7 +145,7 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
                       shape: BoxShape.circle,
                       color: _currentIndex == entry.key
                           ? Colors.white
-                          : Colors.white.withOpacity(0.5),
+                          : Colors.white.withValues(alpha: 0.5),
                     ),
                   );
                 }).toList(),

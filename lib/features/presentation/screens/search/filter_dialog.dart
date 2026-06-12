@@ -113,7 +113,7 @@ class _FilterDialogState extends State<FilterDialog> {
             children:
                 _categoryController.categories.map((category) {
                   return FilterChip(
-                    label: Text(category.name),
+                    label: Text(category!.name),
                     selected: _selectedCategories.contains(category.id),
                     onSelected: (bool selected) {
                       setState(() {
@@ -134,7 +134,7 @@ class _FilterDialogState extends State<FilterDialog> {
           const Text('Vendors', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Obx(() {
-            print(
+            debugPrint(
               '🔍 FilterDialog: ${_vendorController.vendors.length} vendors available',
             );
 

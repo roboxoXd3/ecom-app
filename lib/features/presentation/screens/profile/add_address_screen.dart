@@ -94,11 +94,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       var status = await Permission.location.request();
 
       if (status.isGranted) {
-        print('Location permission granted, getting current location...');
+        debugPrint('Location permission granted, getting current location...');
 
         final locationResult = await GoogleMapsService.getCurrentLocation();
 
-        print('Got location: $locationResult');
+        debugPrint('Got location: $locationResult');
 
         if (locationResult.isSuccess && locationResult.position != null) {
           // Get place details from coordinates using reverse geocoding
@@ -166,7 +166,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         }
       }
     } catch (e) {
-      print('Error getting current location: $e');
+      debugPrint('Error getting current location: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -287,10 +287,10 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -369,8 +369,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        'Please ensure all address fields are filled. Try using the search or current location.',
+                                        "Couldn't read the full address. Please tap a suggestion from the dropdown, or tap 'Use Current Location'.",
                                       ),
+                                      duration: Duration(seconds: 4),
                                     ),
                                   );
                                   return;
@@ -407,7 +408,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                   // Return will be handled by updateAddress's Get.back()
                                 } else {
                                   // Add new address
-                                  print(
+                                  debugPrint(
                                     'AddAddressScreen: Starting address save...',
                                   );
 
@@ -431,13 +432,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       );
 
                                   if (addressIdToReturn != null) {
-                                    print(
+                                    debugPrint(
                                       'AddAddressScreen: Address created successfully with ID: $addressIdToReturn',
                                     );
 
                                     // Navigate back immediately with the address ID
-                                    if (mounted && Navigator.canPop(context)) {
-                                      print(
+                                    if (context.mounted &&
+                                        Navigator.canPop(context)) {
+                                      debugPrint(
                                         'AddAddressScreen: Navigating back with result: $addressIdToReturn',
                                       );
                                       Navigator.of(
@@ -445,7 +447,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                                       ).pop(addressIdToReturn);
                                     }
                                   } else {
-                                    print(
+                                    debugPrint(
                                       'AddAddressScreen: Address creation failed',
                                     );
                                   }

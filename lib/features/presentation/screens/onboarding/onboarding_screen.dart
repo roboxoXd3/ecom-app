@@ -37,9 +37,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(
-                          0.9,
-                        ), // Darker background
+                        color: AppTheme.primaryColor.withValues(alpha: 0.9), // Darker background
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -130,7 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         color:
                             _currentPage == index
                                 ? AppTheme.primaryColor
-                                : AppTheme.primaryColor.withOpacity(0.3),
+                                : AppTheme.primaryColor.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -244,7 +242,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 height: MediaQuery.of(context).size.height * 0.3,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 ),
                 child: Center(
                   child: Lottie.asset(lottieAsset, fit: BoxFit.contain),

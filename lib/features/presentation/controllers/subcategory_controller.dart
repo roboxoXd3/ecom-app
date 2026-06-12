@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 
 import '../../data/models/subcategory_model.dart';
@@ -33,7 +35,7 @@ class SubcategoryController extends GetxController {
     }
     subcategories.value = all;
     isLoading.value = false;
-    print('SubcategoryController: Extracted ${all.length} subcategories from ${catCtrl.categories.length} categories');
+    debugPrint('SubcategoryController: Extracted ${all.length} subcategories from ${catCtrl.categories.length} categories');
   }
 
   List<Subcategory> getSubcategoriesForCategory(String categoryId) {

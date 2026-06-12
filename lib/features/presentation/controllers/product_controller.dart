@@ -174,22 +174,22 @@ class ProductController extends GetxController {
 
   Future<void> fetchAllProducts() async {
     isLoading.value = true;
-    print('ProductController: fetchAllProducts started');
+    debugPrint('ProductController: fetchAllProducts started');
 
     final productsFuture = _repository.getProducts().then((products) {
       allProducts.value = products;
-      print('ProductController: allProducts loaded (${products.length})');
+      debugPrint('ProductController: allProducts loaded (${products.length})');
       isLoading.value = false;
     });
 
     final newArrivalsFuture = _repository.getNewArrivals().then((products) {
       newArrivals.value = products;
-      print('ProductController: newArrivals loaded (${products.length})');
+      debugPrint('ProductController: newArrivals loaded (${products.length})');
     });
 
     final featuredFuture = _repository.getFeaturedProducts().then((products) {
       featuredProducts.value = products;
-      print('ProductController: featured loaded (${products.length})');
+      debugPrint('ProductController: featured loaded (${products.length})');
     });
 
     await Future.wait([productsFuture, newArrivalsFuture, featuredFuture]);
@@ -201,7 +201,7 @@ class ProductController extends GetxController {
         final products = await _repository.getNewArrivals();
         newArrivals.value = products;
       } catch (e) {
-        print('Error fetching new arrivals: $e');
+        debugPrint('Error fetching new arrivals: $e');
         return [];
       }
     }
@@ -214,7 +214,7 @@ class ProductController extends GetxController {
         final products = await _repository.getFeaturedProducts();
         featuredProducts.value = products;
       } catch (e) {
-        print('Error fetching featured products: $e');
+        debugPrint('Error fetching featured products: $e');
         return [];
       }
     }
@@ -231,7 +231,7 @@ class ProductController extends GetxController {
       final ids = await _wishlistRepository.getWishlistProductIds();
       wishlistProductIds.value = ids.toSet();
     } catch (e) {
-      print('Error loading wishlist: $e');
+      debugPrint('Error loading wishlist: $e');
     }
   }
 
@@ -249,7 +249,7 @@ class ProductController extends GetxController {
         SnackbarUtils.showSuccess('Added to wishlist');
       }
     } catch (e) {
-      print('Error toggling wishlist: $e');
+      debugPrint('Error toggling wishlist: $e');
       SnackbarUtils.showError('Failed to update wishlist. Please try again.');
     }
   }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/product_model.dart';
 import '../../data/services/enhanced_product_service.dart';
@@ -79,7 +81,7 @@ class EnhancedProductController extends GetxController {
       _loadAdditionalData(productId);
     } catch (e) {
       if (product.value == null) error.value = e.toString();
-      print('Error loading enhanced product: $e');
+      debugPrint('Error loading enhanced product: $e');
     } finally {
       isLoading.value = false;
     }
@@ -125,7 +127,7 @@ class EnhancedProductController extends GetxController {
       final qa = await _productService.getProductQA(productId, limit: 5);
       qaList.value = qa;
     } catch (e) {
-      print('Error loading product Q&A: $e');
+      debugPrint('Error loading product Q&A: $e');
     } finally {
       isLoadingQA.value = false;
     }
@@ -159,7 +161,7 @@ class EnhancedProductController extends GetxController {
       fromSellerProducts.value = results[1];
       youMightAlsoLike.value = results[2];
     } catch (e) {
-      print('Error loading recommendations: $e');
+      debugPrint('Error loading recommendations: $e');
     } finally {
       isLoadingRecommendations.value = false;
     }

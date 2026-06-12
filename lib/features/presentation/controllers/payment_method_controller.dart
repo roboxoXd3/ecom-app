@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/payment_method_model.dart';
 import '../../data/repositories/payment_method_repository.dart';
@@ -26,7 +28,7 @@ class PaymentMethodController extends GetxController {
 
       paymentMethods.value = await _repository.getPaymentMethods();
     } catch (e) {
-      print('Error fetching payment methods: $e');
+      debugPrint('Error fetching payment methods: $e');
       if (!SnackbarUtils.isNoInternet(e) && AuthService.isAuthenticated()) {
         Get.snackbar('Error', 'Failed to load payment methods');
       }
@@ -69,7 +71,7 @@ class PaymentMethodController extends GetxController {
         Get.snackbar('Error', 'Failed to add card. Please try again.');
       }
     } catch (e) {
-      print('Error adding payment method: $e');
+      debugPrint('Error adding payment method: $e');
       if (!SnackbarUtils.isNoInternet(e)) {
         Get.snackbar('Error', 'Failed to add card. Please try again.');
       }

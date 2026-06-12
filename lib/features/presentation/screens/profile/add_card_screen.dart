@@ -64,10 +64,10 @@ class _AddCardScreenState extends State<AddCardScreen> {
         }
       }
 
-      print(
+      debugPrint(
         'Adding card: ${_detectCardType(cardNumber)} ending in ${cardNumber.substring(cardNumber.length - 4)}',
       );
-      print('Expiry: $expiryMonth/$expiryYear');
+      debugPrint('Expiry: $expiryMonth/$expiryYear');
 
       paymentMethodController.addPaymentMethod(
         type: 'card',
@@ -102,7 +102,7 @@ class _AddCardScreenState extends State<AddCardScreen> {
                   gradient: LinearGradient(
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,

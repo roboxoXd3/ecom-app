@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' hide Category;
+
 import 'package:get/get.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -21,9 +23,9 @@ class CategoryController extends GetxController {
       categories.value = results
           .map((json) => Category.fromJson(json as Map<String, dynamic>))
           .toList();
-      print('CategoryController: Loaded ${categories.length} categories');
+      debugPrint('CategoryController: Loaded ${categories.length} categories');
     } catch (e) {
-      print('Error fetching categories: $e');
+      debugPrint('Error fetching categories: $e');
     } finally {
       isLoading.value = false;
     }

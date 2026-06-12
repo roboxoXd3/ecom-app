@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
@@ -17,7 +19,7 @@ class VendorRepository {
           .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching approved vendors: $e');
+      debugPrint('Error fetching approved vendors: $e');
       return [];
     }
   }
@@ -30,7 +32,7 @@ class VendorRepository {
           .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching featured vendors: $e');
+      debugPrint('Error fetching featured vendors: $e');
       return [];
     }
   }
@@ -41,10 +43,10 @@ class VendorRepository {
       return Vendor.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      print('Error fetching vendor by ID: $e');
+      debugPrint('Error fetching vendor by ID: $e');
       return null;
     } catch (e) {
-      print('Error fetching vendor by ID: $e');
+      debugPrint('Error fetching vendor by ID: $e');
       return null;
     }
   }
@@ -59,7 +61,7 @@ class VendorRepository {
           .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error searching vendors: $e');
+      debugPrint('Error searching vendors: $e');
       return [];
     }
   }
@@ -87,7 +89,7 @@ class VendorRepository {
 
       return Vendor.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      print('Error registering as vendor: $e');
+      debugPrint('Error registering as vendor: $e');
       rethrow;
     }
   }
@@ -99,10 +101,10 @@ class VendorRepository {
       return Vendor.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      print('Error fetching current user vendor: $e');
+      debugPrint('Error fetching current user vendor: $e');
       return null;
     } catch (e) {
-      print('Error fetching current user vendor: $e');
+      debugPrint('Error fetching current user vendor: $e');
       return null;
     }
   }
@@ -139,7 +141,7 @@ class VendorRepository {
       final response = await _api.patch('/vendors/$vendorId/', data: updateData);
       return Vendor.fromJson(response.data as Map<String, dynamic>);
     } catch (e) {
-      print('Error updating vendor: $e');
+      debugPrint('Error updating vendor: $e');
       rethrow;
     }
   }
@@ -152,7 +154,7 @@ class VendorRepository {
           .map((p) => Product.fromJson(p as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching vendor products: $e');
+      debugPrint('Error fetching vendor products: $e');
       return [];
     }
   }
@@ -165,7 +167,7 @@ class VendorRepository {
       await _api.post('/vendors/$vendorId/follow/');
       return true;
     } catch (e) {
-      print('Error following vendor: $e');
+      debugPrint('Error following vendor: $e');
       return false;
     }
   }
@@ -178,7 +180,7 @@ class VendorRepository {
       await _api.delete('/vendors/$vendorId/follow/');
       return true;
     } catch (e) {
-      print('Error unfollowing vendor: $e');
+      debugPrint('Error unfollowing vendor: $e');
       return false;
     }
   }
@@ -190,7 +192,7 @@ class VendorRepository {
       final data = response.data as Map<String, dynamic>;
       return data['is_following'] == true;
     } catch (e) {
-      print('Error checking follow status: $e');
+      debugPrint('Error checking follow status: $e');
       return false;
     }
   }
@@ -204,7 +206,7 @@ class VendorRepository {
           .map((v) => Vendor.fromJson(v as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching followed vendors: $e');
+      debugPrint('Error fetching followed vendors: $e');
       return [];
     }
   }
@@ -219,7 +221,7 @@ class VendorRepository {
       if (data is List) return data.length;
       return 0;
     } catch (e) {
-      print('Error getting vendor follower count: $e');
+      debugPrint('Error getting vendor follower count: $e');
       return 0;
     }
   }
@@ -232,7 +234,7 @@ class VendorRepository {
           .map((f) => VendorFollow.fromJson(f as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching vendor followers: $e');
+      debugPrint('Error fetching vendor followers: $e');
       return [];
     }
   }
@@ -252,7 +254,7 @@ class VendorRepository {
       });
       return true;
     } catch (e) {
-      print('Error adding vendor review: $e');
+      debugPrint('Error adding vendor review: $e');
       return false;
     }
   }
@@ -269,7 +271,7 @@ class VendorRepository {
       });
       return true;
     } catch (e) {
-      print('Error updating vendor review: $e');
+      debugPrint('Error updating vendor review: $e');
       return false;
     }
   }
@@ -279,7 +281,7 @@ class VendorRepository {
       await _api.delete('/vendors/reviews/$reviewId/');
       return true;
     } catch (e) {
-      print('Error deleting vendor review: $e');
+      debugPrint('Error deleting vendor review: $e');
       return false;
     }
   }
@@ -296,7 +298,7 @@ class VendorRepository {
           .map((r) => VendorReview.fromJson(r as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('Error fetching vendor reviews: $e');
+      debugPrint('Error fetching vendor reviews: $e');
       return [];
     }
   }
@@ -308,10 +310,10 @@ class VendorRepository {
       return VendorReview.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) return null;
-      print('Error fetching user vendor review: $e');
+      debugPrint('Error fetching user vendor review: $e');
       return null;
     } catch (e) {
-      print('Error fetching user vendor review: $e');
+      debugPrint('Error fetching user vendor review: $e');
       return null;
     }
   }

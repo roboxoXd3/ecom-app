@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import 'ujunwa_ai_service.dart';
 
@@ -25,7 +27,7 @@ class ConversationContextService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((data) => ConversationContext.fromJson(data)).toList();
     } catch (e) {
-      print('Error getting conversation context: $e');
+      debugPrint('Error getting conversation context: $e');
       return [];
     }
   }
@@ -50,7 +52,7 @@ class ConversationContextService {
       }
       return preferences;
     } catch (e) {
-      print('Error getting user preferences: $e');
+      debugPrint('Error getting user preferences: $e');
       return UserPreferences();
     }
   }
@@ -75,7 +77,7 @@ class ConversationContextService {
         'products_mentioned': productsMentioned,
       });
     } catch (e) {
-      print('Error storing conversation context: $e');
+      debugPrint('Error storing conversation context: $e');
     }
   }
 
@@ -118,7 +120,7 @@ class ConversationContextService {
 
       return summary.toString().trim();
     } catch (e) {
-      print('Error creating conversation summary: $e');
+      debugPrint('Error creating conversation summary: $e');
       return '';
     }
   }
@@ -132,7 +134,7 @@ class ConversationContextService {
         'keep_days': keepDays,
       });
     } catch (e) {
-      print('Error cleaning up old contexts: $e');
+      debugPrint('Error cleaning up old contexts: $e');
     }
   }
 
@@ -150,7 +152,7 @@ class ConversationContextService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((data) => ConversationContext.fromJson(data)).toList();
     } catch (e) {
-      print('Error getting similar conversations: $e');
+      debugPrint('Error getting similar conversations: $e');
       return [];
     }
   }

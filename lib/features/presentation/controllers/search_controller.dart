@@ -58,10 +58,10 @@ class SearchController extends GetxController {
   Future<void> searchProducts(String query) async {
     if (query.isEmpty) return;
 
-    print(
+    debugPrint(
       '🟡 [SEARCH_CONTROLLER] searchProducts() called with query: "$query"',
     );
-    print(
+    debugPrint(
       '🟡 [SEARCH_CONTROLLER] Before search - searchResults: ${searchResults.length}, originalResults: ${originalResults.length}',
     );
 
@@ -71,7 +71,7 @@ class SearchController extends GetxController {
       // Clear previous results immediately to prevent showing stale data
       searchResults.clear();
       originalResults.clear();
-      print('🟡 [SEARCH_CONTROLLER] Cleared previous results');
+      debugPrint('🟡 [SEARCH_CONTROLLER] Cleared previous results');
 
       // Reset filters to default when starting a new search
       // This ensures filters from previous searches don't affect new results
@@ -85,7 +85,7 @@ class SearchController extends GetxController {
         vendors: [],
         minRating: null,
       );
-      print('🟡 [SEARCH_CONTROLLER] Reset filters to default (no price limit)');
+      debugPrint('🟡 [SEARCH_CONTROLLER] Reset filters to default (no price limit)');
 
       // Use hybrid search for better results combining keyword and semantic search
       // Build filters map, only including max_price if it's not infinity (no limit)
@@ -105,23 +105,23 @@ class SearchController extends GetxController {
         filters: filtersMap.isEmpty ? null : filtersMap,
       );
 
-      print(
+      debugPrint(
         '🟡 [SEARCH_CONTROLLER] After hybridSearch - originalResults: ${originalResults.length}',
       );
       _filterResults(); // This will update searchResults
-      print(
+      debugPrint(
         '🟡 [SEARCH_CONTROLLER] After _filterResults() - searchResults: ${searchResults.length}',
       );
 
       // Log first few products for verification
       if (searchResults.isNotEmpty) {
-        print('🟡 [SEARCH_CONTROLLER] First 3 products in searchResults:');
+        debugPrint('🟡 [SEARCH_CONTROLLER] First 3 products in searchResults:');
         for (
           int i = 0;
           i < (searchResults.length > 3 ? 3 : searchResults.length);
           i++
         ) {
-          print(
+          debugPrint(
             '🟡 [SEARCH_CONTROLLER]   [$i] "${searchResults[i].name}" (ID: ${searchResults[i].id})',
           );
         }
@@ -129,7 +129,7 @@ class SearchController extends GetxController {
 
       // Track search analytics
       try {
-        print(
+        debugPrint(
           '🔍 Tracking search analytics for: "$query" with ${searchResults.length} results',
         );
         await _analytics.trackSearch(
@@ -147,14 +147,14 @@ class SearchController extends GetxController {
             'sort_option': currentSort.value.toString(),
           },
         );
-        print('✅ Search analytics tracked successfully');
+        debugPrint('✅ Search analytics tracked successfully');
       } catch (e) {
-        print('❌ Error tracking search analytics: $e');
+        debugPrint('❌ Error tracking search analytics: $e');
       }
 
       addToRecentSearches(query);
     } catch (e) {
-      print('Error searching products: $e');
+      debugPrint('Error searching products: $e');
       // Ensure results are cleared on error to prevent showing incorrect data
       searchResults.clear();
       originalResults.clear();
@@ -174,7 +174,7 @@ class SearchController extends GetxController {
       searchResults.clear();
       originalResults.clear();
 
-      print('🖼️ Starting image-based product search...');
+      debugPrint('🖼️ Starting image-based product search...');
 
       // Use the existing searchByImage method from ProductSearchService
       originalResults.value = await _searchService.searchByImage(
@@ -195,15 +195,15 @@ class SearchController extends GetxController {
             'image_size_mb': _getFileSizeInMB(imageFile),
           },
         );
-        print('✅ Image search analytics tracked successfully');
+        debugPrint('✅ Image search analytics tracked successfully');
       } catch (e) {
-        print('❌ Error tracking image search analytics: $e');
+        debugPrint('❌ Error tracking image search analytics: $e');
       }
 
       // Add to recent searches with a special indicator
       addToRecentSearches('🖼️ Image Search');
     } catch (e) {
-      print('❌ Error in image search: $e');
+      debugPrint('❌ Error in image search: $e');
       // Ensure results are cleared on error to prevent showing incorrect data
       searchResults.clear();
       originalResults.clear();
@@ -211,7 +211,7 @@ class SearchController extends GetxController {
         'Search Error',
         'Failed to search products by image. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.8),
+        backgroundColor: Colors.red.withValues(alpha: 0.8),
         colorText: Colors.white,
       );
     } finally {
@@ -244,7 +244,7 @@ class SearchController extends GetxController {
       );
       suggestions.value = searchSuggestions;
     } catch (e) {
-      print('Error getting suggestions: $e');
+      debugPrint('Error getting suggestions: $e');
       suggestions.clear();
     }
   }
@@ -302,14 +302,14 @@ class SearchController extends GetxController {
   }
 
   void _filterResults() {
-    print('🔍 Filtering ${originalResults.length} products');
+    debugPrint('🔍 Filtering ${originalResults.length} products');
 
     // Format price range for logging
     final maxPrice =
         currentFilter.value.priceRange.end == double.infinity
             ? 'No limit'
             : currentFilter.value.priceRange.end.toString();
-    print(
+    debugPrint(
       '🔍 Current filter - Price: ${currentFilter.value.priceRange.start}-$maxPrice, Categories: ${currentFilter.value.categories.length}, Vendors: ${currentFilter.value.vendors.length}, MinRating: ${currentFilter.value.minRating}',
     );
 
@@ -341,7 +341,7 @@ class SearchController extends GetxController {
               matchesPrice && matchesCategory && matchesVendor && matchesRating;
 
           if (!matches) {
-            print(
+            debugPrint(
               '❌ Product "${product.name}" filtered out - Price: ${product.price} (${matchesPrice ? "✓" : "✗"}), Category: ${matchesCategory ? "✓" : "✗"}), Vendor: ${matchesVendor ? "✓" : "✗"}), Rating: ${product.rating} (${matchesRating ? "✓" : "✗"})',
             );
           }
@@ -349,6 +349,6 @@ class SearchController extends GetxController {
           return matches;
         }).toList();
 
-    print('✅ Filtered to ${searchResults.length} products');
+    debugPrint('✅ Filtered to ${searchResults.length} products');
   }
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/order_model.dart';
 import '../../data/models/order_status.dart';
@@ -27,7 +29,7 @@ class OrderController extends GetxController {
 
       orders.value = await _repository.getUserOrders();
     } catch (e) {
-      print('Error fetching orders: $e');
+      debugPrint('Error fetching orders: $e');
       if (!SnackbarUtils.isNoInternet(e) && AuthService.isAuthenticated()) {
         SnackbarUtils.showError('Failed to fetch orders');
       }
@@ -61,7 +63,7 @@ class OrderController extends GetxController {
       await fetchUserOrders();
       return true;
     } catch (e) {
-      print('OrderController: Error creating order: $e');
+      debugPrint('OrderController: Error creating order: $e');
       SnackbarUtils.showError('Failed to create order: ${e.toString()}');
       return false;
     } finally {
@@ -102,7 +104,7 @@ class OrderController extends GetxController {
       await fetchUserOrders();
       return true;
     } catch (e) {
-      print('OrderController: Error creating order with payment - $e');
+      debugPrint('OrderController: Error creating order with payment - $e');
       SnackbarUtils.showError('Failed to create order with payment details');
       return false;
     } finally {
@@ -126,7 +128,7 @@ class OrderController extends GetxController {
 
       await fetchUserOrders();
     } catch (e) {
-      print('Error updating payment status: $e');
+      debugPrint('Error updating payment status: $e');
       SnackbarUtils.showError('Failed to update payment status');
     }
   }
@@ -156,7 +158,7 @@ class OrderController extends GetxController {
       );
       return order;
     } catch (e) {
-      print('OrderController: Error creating online payment order: $e');
+      debugPrint('OrderController: Error creating online payment order: $e');
       return null;
     }
   }
@@ -181,7 +183,7 @@ class OrderController extends GetxController {
       }
       return success;
     } catch (e) {
-      print('OrderController: Error cancelling order: $e');
+      debugPrint('OrderController: Error cancelling order: $e');
       return false;
     }
   }

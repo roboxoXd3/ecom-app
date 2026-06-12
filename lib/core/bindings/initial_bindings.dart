@@ -13,8 +13,8 @@ import '../../core/services/analytics_service.dart';
 import '../../features/presentation/controllers/order_controller.dart';
 import '../../features/presentation/controllers/vendor_controller.dart';
 import '../../features/presentation/controllers/currency_controller.dart';
+import '../../features/presentation/controllers/filter_controller.dart';
 import '../../features/presentation/screens/notifications/notification_controller.dart';
-// import '../../features/presentation/controllers/category_controller.dart';
 
 class InitialBindings extends Bindings {
   @override
@@ -37,5 +37,9 @@ class InitialBindings extends Bindings {
       CurrencyController(),
       permanent: true,
     ); // Make it permanent for global access
+    // Lazily created on first use (e.g. when the filter bottom sheet opens
+    // from a category page). fenix: true rebuilds it if it ever gets removed,
+    // so Get.find<FilterController>() never throws.
+    Get.lazyPut(() => FilterController(), fenix: true);
   }
 }

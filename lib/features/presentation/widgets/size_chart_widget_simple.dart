@@ -257,7 +257,7 @@ class SizeChartController extends GetxController {
         await _loadLegacySizeChart(product);
       }
     } catch (e) {
-      print('Error loading size chart: $e');
+      debugPrint('Error loading size chart: $e');
       // Fallback to legacy charts if database fails
       await _loadLegacySizeChart(product);
     } finally {
@@ -291,7 +291,7 @@ class SizeChartController extends GetxController {
         }
       }
     } catch (e) {
-      print('Error loading legacy size chart: $e');
+      debugPrint('Error loading legacy size chart: $e');
     }
   }
 

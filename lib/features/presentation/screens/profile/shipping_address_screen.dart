@@ -62,7 +62,7 @@ class ShippingAddressScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Theme.of(
                                 context,
-                              ).primaryColor.withOpacity(0.1),
+                              ).primaryColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -156,7 +156,7 @@ class ShippingAddressScreen extends StatelessWidget {
                       Text(address.addressLine2!),
                     ],
                     const SizedBox(height: 4),
-                    Text('${address.city}, ${address.state} ${address.zip}'),
+                    Text(address.regionDisplay(includeCountry: false)),
                     const SizedBox(height: 4),
                     Text(address.country),
                   ],

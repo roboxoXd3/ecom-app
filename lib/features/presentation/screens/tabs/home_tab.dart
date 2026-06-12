@@ -136,7 +136,7 @@ class HomeTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -191,7 +191,7 @@ class HomeTab extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -270,7 +270,7 @@ class HomeTab extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -363,7 +363,7 @@ class HomeTab extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -425,13 +425,13 @@ class HomeTab extends StatelessWidget {
                       decoration: BoxDecoration(
                         color:
                             isSelected
-                                ? AppTheme.primaryColor.withOpacity(0.1)
+                                ? AppTheme.primaryColor.withValues(alpha: 0.1)
                                 : Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color:
                               isSelected
-                                  ? AppTheme.primaryColor.withOpacity(0.3)
+                                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
                                   : AppTheme.getBorder(
                                     context,
                                   ).withValues(alpha: 0.5),
@@ -932,7 +932,7 @@ class HomeTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   spreadRadius: 0,
                   blurRadius: 20,
                   offset: const Offset(0, 8),
@@ -950,7 +950,7 @@ class HomeTab extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -1024,7 +1024,7 @@ class HomeTab extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Stack(
@@ -1034,7 +1034,7 @@ class HomeTab extends StatelessWidget {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
@@ -1207,7 +1207,7 @@ class HomeTab extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child:

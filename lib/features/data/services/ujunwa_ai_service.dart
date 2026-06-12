@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/product_model.dart';
 import '../../../core/network/api_client.dart';
 import 'conversation_context_service.dart';
@@ -34,7 +36,7 @@ class UjunwaAIService {
     List<ConversationContext>? context,
   }) async {
     try {
-      print('🤖 UJUNWA: Sending to backend: "$userMessage"');
+      debugPrint('🤖 UJUNWA: Sending to backend: "$userMessage"');
 
       final contextList = context
           ?.take(5)
@@ -89,11 +91,11 @@ class UjunwaAIService {
         );
       }
 
-      print('🤖 UJUNWA: Response received (${products.length} products)');
+      debugPrint('🤖 UJUNWA: Response received (${products.length} products)');
       return UjunwaResponse(
           text: text, products: products, suggestions: suggestions, intent: intent);
     } catch (e) {
-      print('❌ UJUNWA Error: $e');
+      debugPrint('❌ UJUNWA Error: $e');
       return UjunwaResponse(
         text:
             "I apologize, but I'm having trouble processing your request right now. Please try again or ask me something else!",
@@ -111,7 +113,7 @@ class UjunwaAIService {
     try {
       return Product.fromJson(map);
     } catch (e) {
-      print('⚠️ UJUNWA: Could not parse product: $e');
+      debugPrint('⚠️ UJUNWA: Could not parse product: $e');
       return null;
     }
   }
@@ -160,7 +162,7 @@ class UjunwaAIService {
         productsMentioned: aiResponse.products.map((p) => p.id).toList(),
       );
     } catch (e) {
-      print('❌ Error storing conversation context: $e');
+      debugPrint('❌ Error storing conversation context: $e');
     }
   }
 

@@ -109,7 +109,7 @@ class EnhancedStickyCTA extends StatelessWidget {
         color: AppTheme.getSurface(context),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -229,7 +229,7 @@ class EnhancedStickyCTA extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Container(
                   height: 1,
-                  color: AppTheme.getBorder(context).withOpacity(0.3),
+                  color: AppTheme.getBorder(context).withValues(alpha: 0.3),
                 ),
               ),
 
@@ -326,7 +326,7 @@ class EnhancedStickyCTA extends StatelessWidget {
         top: false,
         child: Card(
           elevation: 6,
-          shadowColor: AppTheme.primaryColor.withOpacity(0.2),
+          shadowColor: AppTheme.primaryColor.withValues(alpha: 0.2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -483,7 +483,7 @@ class EnhancedStickyCTA extends StatelessWidget {
         border: Border(
           left: BorderSide(color: AppTheme.primaryColor, width: 4),
           top: BorderSide(
-            color: AppTheme.getBorder(context).withOpacity(0.3),
+            color: AppTheme.getBorder(context).withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -491,7 +491,7 @@ class EnhancedStickyCTA extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Container(
-          color: AppTheme.primaryColor.withOpacity(0.03),
+          color: AppTheme.primaryColor.withValues(alpha: 0.03),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -651,16 +651,16 @@ class EnhancedStickyCTA extends StatelessWidget {
               isDark
                   ? [
                     AppTheme.getSurface(context),
-                    AppTheme.primaryColor.withOpacity(0.08),
+                    AppTheme.primaryColor.withValues(alpha: 0.08),
                   ]
                   : [
                     AppTheme.getSurface(context),
-                    AppTheme.primaryColor.withOpacity(0.05),
+                    AppTheme.primaryColor.withValues(alpha: 0.05),
                   ],
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.15),
+            color: AppTheme.primaryColor.withValues(alpha: 0.15),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -817,7 +817,7 @@ class EnhancedStickyCTA extends StatelessWidget {
         color: AppTheme.getSurface(context),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),

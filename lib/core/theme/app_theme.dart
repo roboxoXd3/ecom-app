@@ -233,11 +233,11 @@ class AppTheme {
   }
 
   static Color getDisabledText(BuildContext context) {
-    return Theme.of(context).colorScheme.onSurface.withOpacity(0.38);
+    return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
   }
 
   static Color getHintText(BuildContext context) {
-    return Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7);
+    return Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7);
   }
 
   static Color getOutline(BuildContext context) {

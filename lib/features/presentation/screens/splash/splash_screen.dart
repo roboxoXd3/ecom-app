@@ -64,18 +64,18 @@ class _SplashScreenState extends State<SplashScreen> {
         Future.delayed(const Duration(seconds: 2)),
       ]);
 
-      // if (isLoggedIn) {
+      if (isLoggedIn) {
         Get.offAll(() => const HomeScreen());
-      // } else {
-      //   final bool hasSeenOnboarding = await _hasSeenOnboarding();
-      //   if (hasSeenOnboarding) {
-      //     Get.offAll(() => const LoginScreen());
-      //   } else {
-      //     Get.offAll(() => const OnboardingScreen());
-      //   }
-      // }
+      } else {
+        final bool hasSeenOnboarding = await _hasSeenOnboarding();
+        if (hasSeenOnboarding) {
+          Get.offAll(() => const LoginScreen());
+        } else {
+          Get.offAll(() => const OnboardingScreen());
+        }
+      }
     } catch (e) {
-      print('Error in splash screen: $e');
+      debugPrint('Error in splash screen: $e');
       Get.dialog(
         AlertDialog(
           title: const Text('Error'),
@@ -147,7 +147,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(
                     Theme.of(
                           context,
-                        ).textTheme.bodyMedium?.color?.withOpacity(0.6) ??
+                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6) ??
                         Colors.black54,
                   ),
                 ),

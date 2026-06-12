@@ -73,15 +73,15 @@ class SubcategoryChips extends StatelessWidget {
                           color:
                               selectedSubcategoryIds.length ==
                                       subcategories.length
-                                  ? Colors.red.withOpacity(0.1)
-                                  : AppTheme.primaryColor.withOpacity(0.1),
+                                  ? Colors.red.withValues(alpha: 0.1)
+                                  : AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color:
                                 selectedSubcategoryIds.length ==
                                         subcategories.length
-                                    ? Colors.red.withOpacity(0.3)
-                                    : AppTheme.primaryColor.withOpacity(0.3),
+                                    ? Colors.red.withValues(alpha: 0.3)
+                                    : AppTheme.primaryColor.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -150,7 +150,7 @@ class SubcategoryChips extends StatelessWidget {
                           width: 1.5,
                         ),
                         elevation: isSelected ? 4 : 0,
-                        shadowColor: AppTheme.primaryColor.withOpacity(0.3),
+                        shadowColor: AppTheme.primaryColor.withValues(alpha: 0.3),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,

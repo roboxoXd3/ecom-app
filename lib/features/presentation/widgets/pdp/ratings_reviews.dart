@@ -270,7 +270,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
               onSelected: (selected) {
                 reviewsController.applyFilter(filter);
               },
-              selectedColor: AppTheme.primaryColor.withOpacity(0.2),
+              selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
               checkmarkColor: AppTheme.primaryColor,
             ),
           );
@@ -819,6 +819,7 @@ class _RatingsReviewsState extends State<RatingsReviews> {
                                       );
 
                                   if (success) {
+                                    if (!context.mounted) return;
                                     Navigator.pop(context);
                                     SnackbarUtils.showSuccess(
                                       'Review submitted successfully!',

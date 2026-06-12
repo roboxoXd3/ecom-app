@@ -107,7 +107,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
       }
     } catch (e) {
       _isLoading.value = false;
-      print('Error during account deletion: $e');
+      debugPrint('Error during account deletion: $e');
       SnackbarUtils.showError(
         'An unexpected error occurred. Please try again or contact support.',
       );

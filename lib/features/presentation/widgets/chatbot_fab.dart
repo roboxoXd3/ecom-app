@@ -83,7 +83,7 @@ class _ChatbotFABState extends State<ChatbotFAB> with TickerProviderStateMixin {
                     height: 70,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     ),
                   ),
                 ),
@@ -104,7 +104,7 @@ class _ChatbotFABState extends State<ChatbotFAB> with TickerProviderStateMixin {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withOpacity(0.4),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
                         spreadRadius: 2,
                         blurRadius: 8,
                         offset: const Offset(0, 4),

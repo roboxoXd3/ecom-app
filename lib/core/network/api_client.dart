@@ -91,8 +91,16 @@ class ApiClient {
               path.contains('/users/register') ||
               path.contains('/users/token/refresh');
 
+          // Each request can be retried at most once after a token refresh.
+          // Without this guard, _dio.fetch(opts) below re-enters this same
+          // interceptor and, if the retry still returns 401/403, refreshes
+          // and retries forever — hammering the backend.
+          final alreadyRetried =
+              error.requestOptions.extra['__refreshed'] == true;
+
           if ((statusCode == 401 || statusCode == 403) &&
               !isAuthEndpoint &&
+              !alreadyRetried &&
               AuthService.isAuthenticated()) {
             final refreshed = await _refreshTokenOnce();
             if (refreshed) {
@@ -100,6 +108,7 @@ class ApiClient {
               if (token != null && token.isNotEmpty) {
                 final opts = error.requestOptions;
                 opts.headers['Authorization'] = 'Bearer $token';
+                opts.extra['__refreshed'] = true;
                 try {
                   final response = await _dio.fetch(opts);
                   return handler.resolve(response);
@@ -173,13 +182,13 @@ class ApiClient {
   Future<bool> _refreshToken() async {
     final refreshToken = AuthService.getRefreshToken();
     if (refreshToken == null || refreshToken.isEmpty) {
-      print('🔑 Token refresh: No refresh token — forcing re-login');
+      debugPrint('🔑 Token refresh: No refresh token — forcing re-login');
       await _forceReLogin();
       return false;
     }
 
     try {
-      print('🔑 Token refresh: Attempting refresh...');
+      debugPrint('🔑 Token refresh: Attempting refresh...');
       final response = await Dio(
         BaseOptions(
           baseUrl: ApiConfig.fullBaseUrl,
@@ -193,11 +202,11 @@ class ApiClient {
         if (data['refresh_token'] != null) {
           await AuthService.updateRefreshToken(data['refresh_token']);
         }
-        print('🔑 Token refresh: Success');
+        debugPrint('🔑 Token refresh: Success');
         return true;
       }
     } catch (e) {
-      print('🔑 Token refresh: Failed — forcing re-login');
+      debugPrint('🔑 Token refresh: Failed — forcing re-login');
       await _forceReLogin();
     }
     return false;

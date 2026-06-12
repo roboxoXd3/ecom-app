@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 import '../models/review_model.dart';
@@ -39,7 +41,7 @@ class ReviewsService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => Review.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching reviews: $e');
+      debugPrint('Error fetching reviews: $e');
       rethrow;
     }
   }
@@ -83,7 +85,7 @@ class ReviewsService {
         );
       }
     } catch (e) {
-      print('Error fetching reviews summary: $e');
+      debugPrint('Error fetching reviews summary: $e');
       return ReviewsSummary(
         averageRating: 0.0,
         totalReviews: 0,
@@ -99,7 +101,7 @@ class ReviewsService {
       final response = await _api.get('/products/$productId/can-review/');
       return response.data['can_review'] == true;
     } catch (e) {
-      print('Error checking review eligibility: $e');
+      debugPrint('Error checking review eligibility: $e');
       return false;
     }
   }
@@ -111,7 +113,7 @@ class ReviewsService {
       final response = await _api.get('/products/$productId/can-review/');
       return response.data['order_id']?.toString();
     } catch (e) {
-      print('Error getting user order for product: $e');
+      debugPrint('Error getting user order for product: $e');
       return null;
     }
   }
@@ -144,7 +146,7 @@ class ReviewsService {
 
       return Review.fromJson(response.data);
     } catch (e) {
-      print('Error submitting review: $e');
+      debugPrint('Error submitting review: $e');
       rethrow;
     }
   }
@@ -153,7 +155,7 @@ class ReviewsService {
     try {
       await _api.post('/reviews/$reviewId/helpful/');
     } catch (e) {
-      print('Error marking review as helpful: $e');
+      debugPrint('Error marking review as helpful: $e');
       rethrow;
     }
   }
@@ -162,7 +164,7 @@ class ReviewsService {
     try {
       await _api.post('/reviews/$reviewId/report/', data: {'reason': reason});
     } catch (e) {
-      print('Error reporting review: $e');
+      debugPrint('Error reporting review: $e');
       rethrow;
     }
   }
@@ -186,7 +188,7 @@ class ReviewsService {
       final results = data is Map ? (data['results'] as List?) ?? [] : data as List;
       return results.map((json) => Review.fromJson(json)).toList();
     } catch (e) {
-      print('Error fetching reviews with media: $e');
+      debugPrint('Error fetching reviews with media: $e');
       rethrow;
     }
   }

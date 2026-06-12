@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:mime/mime.dart';
@@ -21,7 +23,7 @@ class ImageSearchService {
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('🖼️ Image search via backend (attempt $attempt/$maxRetries)');
+        debugPrint('🖼️ Image search via backend (attempt $attempt/$maxRetries)');
 
         final mimeType = lookupMimeType(imageFile.path) ?? 'image/jpeg';
         final formData = FormData.fromMap({
@@ -50,17 +52,17 @@ class ImageSearchService {
             .whereType<Product>()
             .toList();
 
-        print('🧠 Image analysis result: $description (${products.length} products)');
+        debugPrint('🧠 Image analysis result: $description (${products.length} products)');
         return ImageSearchResult(description: description, products: products);
       } catch (e) {
-        print('❌ Image search attempt $attempt/$maxRetries failed: $e');
+        debugPrint('❌ Image search attempt $attempt/$maxRetries failed: $e');
         if (attempt < maxRetries) {
           await Future.delayed(Duration(milliseconds: 1000 * attempt));
         }
       }
     }
 
-    print('⚠️ All image search attempts failed, returning fallback');
+    debugPrint('⚠️ All image search attempts failed, returning fallback');
     return const ImageSearchResult(description: 'product search', products: []);
   }
 

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
@@ -45,10 +47,10 @@ class OrderRepository {
       final response = await _api.post('/orders/', data: data);
       return Order.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print('OrderRepository: Error creating order: ${e.response?.statusCode} — ${e.response?.data}');
+      debugPrint('OrderRepository: Error creating order: ${e.response?.statusCode} — ${e.response?.data}');
       rethrow;
     } catch (e) {
-      print('OrderRepository: Error creating order: $e');
+      debugPrint('OrderRepository: Error creating order: $e');
       rethrow;
     }
   }
@@ -114,10 +116,10 @@ class OrderRepository {
       final response = await _api.post('/orders/', data: data);
       return Order.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
-      print('OrderRepository: Error creating order with payment: ${e.response?.statusCode} — ${e.response?.data}');
+      debugPrint('OrderRepository: Error creating order with payment: ${e.response?.statusCode} — ${e.response?.data}');
       rethrow;
     } catch (e) {
-      print('OrderRepository: Error creating order with payment: $e');
+      debugPrint('OrderRepository: Error creating order with payment: $e');
       rethrow;
     }
   }
@@ -139,7 +141,7 @@ class OrderRepository {
 
       await _api.patch('/orders/$orderId/payment-status/', data: data);
     } catch (e) {
-      print('OrderRepository: Error updating payment status: $e');
+      debugPrint('OrderRepository: Error updating payment status: $e');
       rethrow;
     }
   }
@@ -155,7 +157,7 @@ class OrderRepository {
       await _api.post('/orders/$orderId/cancel/');
       return true;
     } catch (e) {
-      print('OrderRepository: Error cancelling order: $e');
+      debugPrint('OrderRepository: Error cancelling order: $e');
       return false;
     }
   }

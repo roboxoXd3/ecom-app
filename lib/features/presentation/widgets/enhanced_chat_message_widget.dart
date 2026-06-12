@@ -75,7 +75,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 2),
@@ -115,7 +115,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             spreadRadius: 0,
             blurRadius: 12,
             offset: const Offset(0, 3),
@@ -149,7 +149,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
             style: TextStyle(
               color:
                   isUser
-                      ? Colors.white.withOpacity(0.8)
+                      ? Colors.white.withValues(alpha: 0.8)
                       : AppTheme.getTextSecondary(context),
               fontSize: 11,
               fontWeight: FontWeight.w500,
@@ -199,7 +199,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
           TextSpan(
             text: line,
             style: TextStyle(
-              color: baseColor.withOpacity(0.9),
+              color: baseColor.withValues(alpha: 0.9),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -306,7 +306,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             spreadRadius: 0,
             blurRadius: 12,
             offset: const Offset(0, 4),
@@ -329,7 +329,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
                 child: Container(
                   height: 140,
                   width: double.infinity,
-                  color: AppTheme.getOutline(context).withOpacity(0.1),
+                  color: AppTheme.getOutline(context).withValues(alpha: 0.1),
                   child:
                       product.images.isNotEmpty
                           ? Image.network(
@@ -417,7 +417,7 @@ class EnhancedChatMessageWidget extends StatelessWidget {
 
   Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
-      color: AppTheme.getOutline(context).withOpacity(0.1),
+      color: AppTheme.getOutline(context).withValues(alpha: 0.1),
       child: Icon(
         Icons.image_outlined,
         size: 40,
@@ -460,10 +460,10 @@ class EnhancedChatMessageWidget extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
               width: 1,
             ),
           ),

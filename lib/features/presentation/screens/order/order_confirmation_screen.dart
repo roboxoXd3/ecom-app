@@ -29,10 +29,10 @@ class OrderConfirmationScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
@@ -79,7 +79,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                           color: AppTheme.getSurface(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.getBorder(context).withOpacity(0.2),
+                            color: AppTheme.getBorder(context).withValues(alpha: 0.2),
                           ),
                         ),
                         child: Column(
@@ -171,7 +171,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.warning.withOpacity(0.15),
+                                    color: AppTheme.warning.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(

@@ -286,7 +286,7 @@ class EnhancedPriceBlock extends StatelessWidget {
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  color: AppTheme.primaryColor.withOpacity(0.05),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.05),
                 ),
                 child: Row(
                   children: [

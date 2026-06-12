@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 
@@ -24,7 +26,7 @@ class SquadPaymentService {
       });
 
       // Log the raw response so we can see Django's exact shape
-      print('Squad initiate raw response: ${response.data}');
+      debugPrint('Squad initiate raw response: ${response.data}');
 
       final raw = response.data;
       String? checkoutUrl;
@@ -62,7 +64,7 @@ class SquadPaymentService {
         currency: currency,
       );
     } on DioException catch (e) {
-      print('Squad initiate DioException: ${e.response?.data}');
+      debugPrint('Squad initiate DioException: ${e.response?.data}');
       final responseData = e.response?.data;
       String msg = 'Payment initiation failed';
       if (responseData is Map) {

@@ -71,7 +71,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
   }
 
   void _openFullscreen() {
-    print('Fullscreen button tapped!'); // Debug print
+    debugPrint('Fullscreen button tapped!'); // Debug print
     Get.to(
       () => FullscreenVideoPlayer(
         videoUrl: widget.videoUrl,
@@ -83,7 +83,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
   }
 
   void _closeVideo() {
-    print('Close button tapped!'); // Debug print
+    debugPrint('Close button tapped!'); // Debug print
     widget.onClose();
   }
 
@@ -104,7 +104,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
             spreadRadius: 0,
@@ -129,7 +129,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                    colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                   ),
                 ),
                 child: Row(
@@ -211,7 +211,7 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black.withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Icon(
@@ -246,8 +246,8 @@ class _InlineVideoPlayerState extends State<InlineVideoPlayer> {
                       allowScrubbing: true,
                       colors: VideoProgressColors(
                         playedColor: AppTheme.primaryColor,
-                        bufferedColor: AppTheme.primaryColor.withOpacity(0.3),
-                        backgroundColor: Colors.white.withOpacity(0.3),
+                        bufferedColor: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        backgroundColor: Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                   ),

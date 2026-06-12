@@ -28,16 +28,16 @@ void main() async {
 
     // Initialize GetStorage first (fastest)
     await GetStorage.init();
-    print('GetStorage initialized');
+    debugPrint('GetStorage initialized');
 
 
     // Initialize Django API client
     ApiClient.instance.init();
     ApiClient.onSessionExpired = () {
-      print('🔑 Session expired — redirecting to login');
+      debugPrint('🔑 Session expired — redirecting to login');
       Get.offAllNamed('/login');
     };
-    print('ApiClient initialized');
+    debugPrint('ApiClient initialized');
 
     // Initialize controllers in background after app starts
     // Note: This will run after InitialBindings
@@ -46,10 +46,10 @@ void main() async {
     });
 
     runApp(const MyApp());
-    print('App started');
+    debugPrint('App started');
   } catch (e, stackTrace) {
-    print('Error during initialization: $e');
-    print('Stack trace: $stackTrace');
+    debugPrint('Error during initialization: $e');
+    debugPrint('Stack trace: $stackTrace');
   }
 }
 
@@ -63,17 +63,17 @@ Future<void> _initializeControllersInBackground() async {
   // Run each fetch independently — one failure should not block others
   await Future.wait([
     productController.fetchAllProducts().catchError((e) {
-      print('❌ fetchAllProducts failed: $e');
+      debugPrint('❌ fetchAllProducts failed: $e');
     }),
     categoryController.fetchCategories().catchError((e) {
-      print('❌ fetchCategories failed: $e');
+      debugPrint('❌ fetchCategories failed: $e');
     }),
     vendorController.fetchVendors().catchError((e) {
-      print('❌ fetchVendors failed: $e');
+      debugPrint('❌ fetchVendors failed: $e');
     }),
   ]);
 
-  print('✅ Background initialization complete');
+  debugPrint('✅ Background initialization complete');
 }
 
 class MyApp extends StatelessWidget {

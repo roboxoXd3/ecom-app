@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../network/api_client.dart';
 
@@ -18,7 +20,7 @@ class AnalyticsService extends GetxService {
         'filters': filters,
       });
     } catch (e) {
-      print('Error tracking search analytics: $e');
+      debugPrint('Error tracking search analytics: $e');
     }
   }
 
@@ -37,7 +39,7 @@ class AnalyticsService extends GetxService {
       }
       return [];
     } catch (e) {
-      print('Error getting popular searches: $e');
+      debugPrint('Error getting popular searches: $e');
       return [];
     }
   }
@@ -64,7 +66,7 @@ class AnalyticsService extends GetxService {
       final response = await _api.get('/analytics/search/', queryParameters: params);
       return response.data is Map ? Map<String, dynamic>.from(response.data) : {};
     } catch (e) {
-      print('Error fetching analytics: $e');
+      debugPrint('Error fetching analytics: $e');
       return {};
     }
   }
@@ -79,7 +81,7 @@ class AnalyticsService extends GetxService {
       }
       return [];
     } catch (e) {
-      print('Error fetching search trends: $e');
+      debugPrint('Error fetching search trends: $e');
       return [];
     }
   }
@@ -93,7 +95,7 @@ class AnalyticsService extends GetxService {
         'latest': data['latest'] != null ? DateTime.parse(data['latest']) : null,
       };
     } catch (e) {
-      print('Error getting date range: $e');
+      debugPrint('Error getting date range: $e');
       return {'earliest': null, 'latest': null};
     }
   }

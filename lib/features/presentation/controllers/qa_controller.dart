@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/qa_model.dart';
 import '../../data/services/qa_service.dart';
@@ -36,7 +38,7 @@ class QAController extends GetxController {
       isLoadingMore.value = !refresh && questions.isNotEmpty;
       error.value = '';
 
-      print(
+      debugPrint(
         '❓ Loading Q&A for product: $productId, page: ${currentPage.value}',
       );
 
@@ -71,12 +73,12 @@ class QAController extends GetxController {
         currentPage.value++;
       }
 
-      print(
+      debugPrint(
         '✅ Loaded ${newQuestions.length} questions, total: ${questions.length}',
       );
     } catch (e) {
       error.value = 'Failed to load Q&A: $e';
-      print('❌ Error loading Q&A: $e');
+      debugPrint('❌ Error loading Q&A: $e');
 
       if (questions.isEmpty) {
         SnackbarUtils.showError('Failed to load Q&A');
@@ -123,7 +125,7 @@ class QAController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      print('❓ Submitting question for product: $productId');
+      debugPrint('❓ Submitting question for product: $productId');
 
       final newQuestion = await _qaService.submitQuestion(
         productId: productId,
@@ -140,12 +142,12 @@ class QAController extends GetxController {
       qaStats.value = currentStats;
 
       // Success message handled in UI
-      print('✅ Question submitted successfully');
+      debugPrint('✅ Question submitted successfully');
 
       return true;
     } catch (e) {
       error.value = 'Failed to submit question: $e';
-      print('❌ Error submitting question: $e');
+      debugPrint('❌ Error submitting question: $e');
       SnackbarUtils.showError('Failed to submit question');
       return false;
     } finally {
@@ -162,7 +164,7 @@ class QAController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      print('💬 Submitting answer for question: $questionId');
+      debugPrint('💬 Submitting answer for question: $questionId');
 
       final updatedQA = await _qaService.submitAnswer(
         questionId: questionId,
@@ -183,12 +185,12 @@ class QAController extends GetxController {
       qaStats.value = currentStats;
 
       // Success message handled in UI
-      print('✅ Answer submitted successfully');
+      debugPrint('✅ Answer submitted successfully');
 
       return true;
     } catch (e) {
       error.value = 'Failed to submit answer: $e';
-      print('❌ Error submitting answer: $e');
+      debugPrint('❌ Error submitting answer: $e');
       SnackbarUtils.showError('Failed to submit answer');
       return false;
     } finally {
@@ -213,7 +215,7 @@ class QAController extends GetxController {
 
       // Success message handled in UI
     } catch (e) {
-      print('❌ Error marking Q&A as helpful: $e');
+      debugPrint('❌ Error marking Q&A as helpful: $e');
       SnackbarUtils.showError('Failed to mark as helpful');
     }
   }
@@ -227,7 +229,7 @@ class QAController extends GetxController {
       isLoading.value = true;
       error.value = '';
 
-      print('🔍 Searching questions: $searchTerm');
+      debugPrint('🔍 Searching questions: $searchTerm');
 
       final searchResults = await _qaService.searchQuestions(
         productId: productId,
@@ -235,10 +237,10 @@ class QAController extends GetxController {
       );
 
       questions.value = searchResults;
-      print('🔍 Found ${searchResults.length} matching questions');
+      debugPrint('🔍 Found ${searchResults.length} matching questions');
     } catch (e) {
       error.value = 'Failed to search questions: $e';
-      print('❌ Error searching questions: $e');
+      debugPrint('❌ Error searching questions: $e');
       SnackbarUtils.showError('Failed to search questions');
     } finally {
       isLoading.value = false;
@@ -251,7 +253,7 @@ class QAController extends GetxController {
       await _qaService.reportQA(qaId, reason);
       // Success message handled in UI
     } catch (e) {
-      print('❌ Error reporting Q&A: $e');
+      debugPrint('❌ Error reporting Q&A: $e');
       SnackbarUtils.showError('Failed to report Q&A');
     }
   }

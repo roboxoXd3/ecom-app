@@ -46,17 +46,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Auto-select address when addresses are loaded or updated
     // Store the worker reference so we can dispose it later
     _addressWorker = ever(addressController.addresses, (addresses) {
-      print('CheckoutScreen: Address list updated, count: ${addresses.length}');
+      debugPrint('CheckoutScreen: Address list updated, count: ${addresses.length}');
       if (addresses.isNotEmpty) {
         final currentSelectedId = checkoutController.selectedAddressId.value;
-        print('CheckoutScreen: Current selected ID: "$currentSelectedId"');
+        debugPrint('CheckoutScreen: Current selected ID: "$currentSelectedId"');
 
         // Check if currently selected address still exists
         final currentSelectedExists =
             currentSelectedId.isNotEmpty &&
             addresses.any((addr) => addr.id == currentSelectedId);
 
-        print('CheckoutScreen: Current address exists: $currentSelectedExists');
+        debugPrint('CheckoutScreen: Current address exists: $currentSelectedExists');
 
         // Auto-select logic:
         // 1. If no address is selected, select default or first
@@ -67,7 +67,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             (addr) => addr.isDefault,
             orElse: () => addresses.first,
           );
-          print(
+          debugPrint(
             'CheckoutScreen: Auto-selecting address: "${defaultAddress.id}" (isDefault: ${defaultAddress.isDefault})',
           );
           checkoutController.setSelectedAddress(defaultAddress.id);
@@ -83,19 +83,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           // and it's actually marked as default, switch to it
           if (defaultAddress.isDefault &&
               defaultAddress.id != currentSelectedId) {
-            print(
+            debugPrint(
               'CheckoutScreen: Switching to new default address: "${defaultAddress.id}"',
             );
             checkoutController.setSelectedAddress(defaultAddress.id);
             _scrollToSelectedAddress(defaultAddress.id);
           } else {
-            print(
+            debugPrint(
               'CheckoutScreen: Keeping current selection: "$currentSelectedId"',
             );
           }
         }
       } else {
-        print('CheckoutScreen: No addresses available');
+        debugPrint('CheckoutScreen: No addresses available');
         checkoutController.selectedAddressId.value = '';
       }
     });
@@ -136,11 +136,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   // Method to handle adding a new address
   Future<void> _handleAddNewAddress() async {
-    print('CheckoutScreen: Opening add address screen...');
+    debugPrint('CheckoutScreen: Opening add address screen...');
 
     final result = await Get.to(() => const AddAddressScreen());
 
-    print('CheckoutScreen: Returned from add address with result: $result');
+    debugPrint('CheckoutScreen: Returned from add address with result: $result');
 
     // Always refresh addresses when returning, regardless of result
     await addressController.fetchAddresses();
@@ -148,7 +148,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Handle different return types
     if (result is String) {
       // New address ID returned - select it directly
-      print(
+      debugPrint(
         'CheckoutScreen: New address created with ID: $result, selecting it...',
       );
       await Future.delayed(const Duration(milliseconds: 100));
@@ -157,14 +157,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       checkoutController.update();
     } else if (result == true) {
       // Old boolean success - use existing logic
-      print(
+      debugPrint(
         'CheckoutScreen: Address added successfully (legacy), refreshing state...',
       );
       await Future.delayed(const Duration(milliseconds: 100));
       checkoutController.refreshAddressSelection();
       checkoutController.update();
     } else {
-      print('CheckoutScreen: Address addition was not successful or cancelled');
+      debugPrint('CheckoutScreen: Address addition was not successful or cancelled');
       // Still refresh the selection in case there were changes
       checkoutController.refreshAddressSelection();
     }
@@ -194,7 +194,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.getTextSecondary(context).withOpacity(0.3),
+                  color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -222,7 +222,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       style: IconButton.styleFrom(
                         backgroundColor: AppTheme.getBorder(
                           context,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -260,7 +260,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           decoration: BoxDecoration(
                             color:
                                 isSelected
-                                    ? AppTheme.primaryColor.withOpacity(0.08)
+                                    ? AppTheme.primaryColor.withValues(alpha: 0.08)
                                     : AppTheme.getSurface(context),
                             border: Border.all(
                               color:
@@ -268,7 +268,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ? AppTheme.primaryColor
                                       : AppTheme.getBorder(
                                         context,
-                                      ).withOpacity(0.2),
+                                      ).withValues(alpha: 0.2),
                               width: isSelected ? 2 : 1,
                             ),
                             borderRadius: BorderRadius.circular(16),
@@ -282,12 +282,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 decoration: BoxDecoration(
                                   color:
                                       isSelected
-                                          ? AppTheme.primaryColor.withOpacity(
-                                            0.15,
-                                          )
+                                          ? AppTheme.primaryColor.withValues(alpha: 0.15)
                                           : AppTheme.getBorder(
                                             context,
-                                          ).withOpacity(0.1),
+                                          ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -469,7 +467,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Icons.add_location_alt,
                 color:
                     addressController.isLoading.value
-                        ? AppTheme.getTextSecondary(context).withOpacity(0.5)
+                        ? AppTheme.getTextSecondary(context).withValues(alpha: 0.5)
                         : AppTheme.getTextPrimary(context),
               ),
               tooltip: 'Add New Address',
@@ -573,7 +571,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         color:
                                             isSelected
                                                 ? AppTheme.primaryColor
-                                                    .withOpacity(0.08)
+                                                    .withValues(alpha: 0.08)
                                                 : AppTheme.getSurface(context),
                                       ),
                                       child: Material(
@@ -672,7 +670,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                       const SizedBox(height: 8),
                                                       // Address text
                                                       Text(
-                                                        '${address.addressLine1}${address.addressLine2 != null ? ", ${address.addressLine2}" : ""}',
+                                                        address.streetDisplay,
                                                         style: TextStyle(
                                                           fontSize: 14,
                                                           color:
@@ -688,7 +686,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                       ),
                                                       const SizedBox(height: 4),
                                                       Text(
-                                                        '${address.city}, ${address.state} ${address.zip}, ${address.country}',
+                                                        address.regionDisplay(),
                                                         style: TextStyle(
                                                           fontSize: 14,
                                                           color:
@@ -758,7 +756,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       return Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.withOpacity(0.1),
+                                          color: Colors.green.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -1142,7 +1140,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                               height: 24,
                                               color: AppTheme.getBorder(
                                                 context,
-                                              ).withOpacity(0.5),
+                                              ).withValues(alpha: 0.5),
                                             ),
                                         ],
                                       );
@@ -1331,7 +1329,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       final canProceed =
                           selectedAddressId.isNotEmpty && cartItems > 0;
 
-                      print(
+                      debugPrint(
                         'CheckoutScreen: Button Obx rebuild - addressId: "$selectedAddressId", cartItems: $cartItems, canProceed: $canProceed',
                       );
 

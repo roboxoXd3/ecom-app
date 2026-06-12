@@ -34,7 +34,7 @@ class VendorProfileScreen extends StatelessWidget {
               title: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -62,7 +62,7 @@ class VendorProfileScreen extends StatelessWidget {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     AppTheme.primaryColor,
-                                    AppTheme.primaryColor.withOpacity(0.8),
+                                    AppTheme.primaryColor.withValues(alpha: 0.8),
                                   ],
                                 ),
                               ),
@@ -75,7 +75,7 @@ class VendorProfileScreen extends StatelessWidget {
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     AppTheme.primaryColor,
-                                    AppTheme.primaryColor.withOpacity(0.8),
+                                    AppTheme.primaryColor.withValues(alpha: 0.8),
                                   ],
                                 ),
                               ),
@@ -95,7 +95,7 @@ class VendorProfileScreen extends StatelessWidget {
                             end: Alignment.bottomCenter,
                             colors: [
                               AppTheme.primaryColor,
-                              AppTheme.primaryColor.withOpacity(0.8),
+                              AppTheme.primaryColor.withValues(alpha: 0.8),
                             ],
                           ),
                         ),
@@ -115,7 +115,7 @@ class VendorProfileScreen extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.4),
+                          Colors.black.withValues(alpha: 0.4),
                         ],
                       ),
                     ),
@@ -127,7 +127,7 @@ class VendorProfileScreen extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: IconButton(
@@ -153,7 +153,7 @@ class VendorProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -198,7 +198,7 @@ class VendorProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.08),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -212,7 +212,7 @@ class VendorProfileScreen extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Icon(
@@ -279,7 +279,7 @@ class VendorProfileScreen extends StatelessWidget {
                                   ? [Colors.grey[400]!, Colors.grey[600]!]
                                   : [
                                     AppTheme.primaryColor,
-                                    AppTheme.primaryColor.withOpacity(0.8),
+                                    AppTheme.primaryColor.withValues(alpha: 0.8),
                                   ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -288,7 +288,7 @@ class VendorProfileScreen extends StatelessWidget {
                             color: (isFollowing
                                     ? Colors.grey[400]!
                                     : AppTheme.primaryColor)
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -344,7 +344,7 @@ class VendorProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -358,7 +358,7 @@ class VendorProfileScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.purple.withOpacity(0.1),
+                              color: Colors.purple.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -384,7 +384,7 @@ class VendorProfileScreen extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: TextButton(
@@ -427,7 +427,7 @@ class VendorProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -467,7 +467,7 @@ class VendorProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -542,9 +542,9 @@ class VendorProfileScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.2)),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
             ),
             child: Icon(icon, color: color, size: 24),
           ),

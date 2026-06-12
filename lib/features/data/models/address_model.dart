@@ -60,4 +60,38 @@ class Address {
       'created_at': createdAt.toIso8601String(),
     };
   }
+
+  // ---------- Display helpers ----------
+  //
+  // All display getters elide empty fields, so a Nigerian address with no
+  // postal code (common) renders cleanly instead of producing artifacts
+  // like "Lagos, , Nigeria" or "Plot 5, , Lekki".
+
+  /// First display line: address line 1, with address line 2 appended after
+  /// a comma when present and non-empty.
+  String get streetDisplay {
+    return [
+      addressLine1,
+      addressLine2 ?? '',
+    ].where((s) => s.isNotEmpty).join(', ');
+  }
+
+  /// Second display line: `"city, state zip"`, optionally followed by the
+  /// country. Set [includeCountry] = false when the surrounding UI renders
+  /// the country on its own line (e.g. the address list).
+  String regionDisplay({bool includeCountry = true}) {
+    final stateZip = [state, zip].where((p) => p.isNotEmpty).join(' ');
+    final parts = [city, stateZip, if (includeCountry) country];
+    return parts.where((p) => p.isNotEmpty).join(', ');
+  }
+
+  /// Compact single-line summary suitable for narrow UI slots
+  /// (order details, notification snippets). Country is omitted to keep
+  /// the line short; it's almost always implied by context.
+  String get summaryLine {
+    return [
+      streetDisplay,
+      regionDisplay(includeCountry: false),
+    ].where((p) => p.isNotEmpty).join(', ');
+  }
 }

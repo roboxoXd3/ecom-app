@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/network/api_client.dart';
 import '../../../core/services/auth_service.dart';
 
@@ -9,7 +11,7 @@ class CurrencyService {
       final response = await _api.get('/currency/rates/');
       return {'success': true, 'data': response.data};
     } catch (e) {
-      print('Error getting currency data: $e');
+      debugPrint('Error getting currency data: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -41,7 +43,7 @@ class CurrencyService {
 
       return {'success': true, 'data': response.data};
     } catch (e) {
-      print('Error converting amount: $e');
+      debugPrint('Error converting amount: $e');
       return {'success': false, 'error': e.toString()};
     }
   }
@@ -54,7 +56,7 @@ class CurrencyService {
         'preferred_currency': currency,
       });
     } catch (e) {
-      print('Error updating user currency preference: $e');
+      debugPrint('Error updating user currency preference: $e');
     }
   }
 
@@ -65,7 +67,7 @@ class CurrencyService {
       final response = await _api.get('/currency/preference/');
       return response.data?['preferred_currency'];
     } catch (e) {
-      print('Error getting user currency preference: $e');
+      debugPrint('Error getting user currency preference: $e');
       return null;
     }
   }
@@ -84,7 +86,7 @@ class CurrencyService {
       }
       return null;
     } catch (e) {
-      print('Error getting exchange rate: $e');
+      debugPrint('Error getting exchange rate: $e');
       return null;
     }
   }
@@ -115,7 +117,7 @@ class CurrencyService {
 
       return convertedPrices;
     } catch (e) {
-      print('Error converting product prices: $e');
+      debugPrint('Error converting product prices: $e');
       rethrow;
     }
   }

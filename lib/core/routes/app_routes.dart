@@ -7,6 +7,7 @@ import '../../features/presentation/screens/profile/add_address_screen.dart';
 import '../../features/presentation/screens/profile/my_orders_screen.dart';
 import '../../features/presentation/screens/profile/order_details_screen.dart';
 import '../../features/presentation/screens/profile/shipping_address_screen.dart';
+import '../../features/presentation/screens/profile/help_support_screen.dart';
 import '../../features/presentation/screens/order/order_confirmation_screen.dart';
 import '../../features/presentation/screens/splash/splash_screen.dart';
 import '../../features/presentation/screens/auth/login_screen.dart';
@@ -52,6 +53,7 @@ class AppRoutes {
   static const String myVouchers = '/my-vouchers';
   static const String transactionHistory = '/transaction-history';
   static const String badges = '/badges';
+  static const String helpSupport = '/help-support';
 
   static final routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -163,5 +165,6 @@ class AppRoutes {
         Get.put(LoyaltyController());
       }),
     ),
+    GetPage(name: helpSupport, page: () => HelpSupportScreen()),
   ];
 }

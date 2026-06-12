@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:get/get.dart';
 import '../../data/models/loyalty_model.dart';
 import '../../data/services/loyalty_service.dart';
@@ -50,7 +52,7 @@ class LoyaltyController extends GetxController {
       }
     } catch (e) {
       error.value = 'Failed to load loyalty balance';
-      print('Error refreshing balance: $e');
+      debugPrint('Error refreshing balance: $e');
     } finally {
       isLoading.value = false;
     }
@@ -79,7 +81,7 @@ class LoyaltyController extends GetxController {
       }
     } catch (e) {
       error.value = 'Failed to load transactions';
-      print('Error loading transactions: $e');
+      debugPrint('Error loading transactions: $e');
     } finally {
       isLoadingTransactions.value = false;
     }
@@ -95,7 +97,7 @@ class LoyaltyController extends GetxController {
       rewards.value = rewardsList;
     } catch (e) {
       error.value = 'Failed to load rewards';
-      print('Error loading rewards: $e');
+      debugPrint('Error loading rewards: $e');
     } finally {
       isLoadingRewards.value = false;
     }
@@ -134,7 +136,7 @@ class LoyaltyController extends GetxController {
       }
     } catch (e) {
       error.value = 'An error occurred';
-      print('Error redeeming reward: $e');
+      debugPrint('Error redeeming reward: $e');
       Get.snackbar(
         'Error',
         'An error occurred while redeeming',
@@ -158,7 +160,7 @@ class LoyaltyController extends GetxController {
       vouchers.value = vouchersList;
     } catch (e) {
       error.value = 'Failed to load vouchers';
-      print('Error loading vouchers: $e');
+      debugPrint('Error loading vouchers: $e');
     } finally {
       isLoadingVouchers.value = false;
     }
@@ -208,7 +210,7 @@ class LoyaltyController extends GetxController {
       }
     } catch (e) {
       error.value = 'An error occurred';
-      print('Error validating voucher: $e');
+      debugPrint('Error validating voucher: $e');
       Get.snackbar(
         'Error',
         'An error occurred while validating voucher',
@@ -237,7 +239,7 @@ class LoyaltyController extends GetxController {
       badges.value = badgesList;
     } catch (e) {
       error.value = 'Failed to load badges';
-      print('Error loading badges: $e');
+      debugPrint('Error loading badges: $e');
     } finally {
       isLoadingBadges.value = false;
     }

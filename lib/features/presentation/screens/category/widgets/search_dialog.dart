@@ -85,13 +85,13 @@ class _SearchDialogState extends State<SearchDialog>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 40,
                   offset: const Offset(0, 8),
                   spreadRadius: 0,
                 ),
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                   spreadRadius: 0,
@@ -298,7 +298,7 @@ class _SearchDialogState extends State<SearchDialog>
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
+                    AppTheme.primaryColor.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -306,7 +306,7 @@ class _SearchDialogState extends State<SearchDialog>
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),

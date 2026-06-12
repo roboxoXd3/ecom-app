@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
@@ -28,7 +30,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error searching products: $e');
+      debugPrint('Error searching products: $e');
       return [];
     }
   }
@@ -69,7 +71,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error getting recommendations: $e');
+      debugPrint('Error getting recommendations: $e');
       return [];
     }
   }
@@ -83,7 +85,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error getting trending products: $e');
+      debugPrint('Error getting trending products: $e');
       return [];
     }
   }
@@ -97,7 +99,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error getting sale products: $e');
+      debugPrint('Error getting sale products: $e');
       return [];
     }
   }
@@ -122,7 +124,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error getting products by category: $e');
+      debugPrint('Error getting products by category: $e');
       return searchProducts(query: categoryName, limit: 10);
     }
   }
@@ -151,7 +153,7 @@ class ProductSearchService {
       }
       return suggestions;
     } catch (e) {
-      print('Error getting suggestions: $e');
+      debugPrint('Error getting suggestions: $e');
       return [];
     }
   }
@@ -166,7 +168,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(data);
       return results.map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (e) {
-      print('Error getting categories: $e');
+      debugPrint('Error getting categories: $e');
       return [];
     }
   }
@@ -181,7 +183,7 @@ class ProductSearchService {
       final results = ApiClient.unwrapResults(response.data);
       return results.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error getting all products: $e');
+      debugPrint('Error getting all products: $e');
       return [];
     }
   }
@@ -206,7 +208,7 @@ class ProductSearchService {
       final products = data['products'] as List<dynamic>? ?? [];
       return products.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error in image search: $e');
+      debugPrint('Error in image search: $e');
       throw Exception('Image search failed: $e');
     }
   }

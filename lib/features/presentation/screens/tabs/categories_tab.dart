@@ -407,8 +407,8 @@ class CategoriesTab extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _getCategoryColor(index).withOpacity(0.8),
-            _getCategoryColor(index).withOpacity(0.6),
+            _getCategoryColor(index).withValues(alpha: 0.8),
+            _getCategoryColor(index).withValues(alpha: 0.6),
           ],
         ),
       ),

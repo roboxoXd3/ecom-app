@@ -97,7 +97,7 @@ class MyVouchersScreen extends StatelessWidget {
             colors:
                 isActive
                     ? [
-                      const Color(0xFF10B981).withOpacity(0.1),
+                      const Color(0xFF10B981).withValues(alpha: 0.1),
                       Theme.of(context).colorScheme.surface,
                     ]
                     : [

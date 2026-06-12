@@ -176,7 +176,7 @@ class ChatbotController extends GetxController {
       // Debug: Check auth status
       _debugAuth();
     } catch (e) {
-      print('Error initializing chat: $e');
+      debugPrint('Error initializing chat: $e');
       _addWelcomeMessage(); // Fallback to welcome message
     } finally {
       isLoading.value = false;
@@ -194,7 +194,7 @@ class ChatbotController extends GetxController {
         conversations.assignAll(userConversations);
       }
     } catch (e) {
-      print('Error loading conversations: $e');
+      debugPrint('Error loading conversations: $e');
     }
   }
 
@@ -211,7 +211,7 @@ class ChatbotController extends GetxController {
         currentConversation = conversations.first;
       }
     } catch (e) {
-      print('Error starting conversation: $e');
+      debugPrint('Error starting conversation: $e');
     }
   }
 
@@ -220,7 +220,7 @@ class ChatbotController extends GetxController {
     if (productIds.isEmpty) return [];
     
     try {
-      print('Fetching products with IDs: ${productIds.take(5).join(", ")}${productIds.length > 5 ? "..." : ""}');
+      debugPrint('Fetching products with IDs: ${productIds.take(5).join(", ")}${productIds.length > 5 ? "..." : ""}');
       final api = ApiClient.instance;
       final products = <Product>[];
       for (final id in productIds) {
@@ -230,11 +230,11 @@ class ChatbotController extends GetxController {
         } catch (_) {}
       }
       
-      print('✅ Fetched ${products.length} products (requested ${productIds.length})');
+      debugPrint('✅ Fetched ${products.length} products (requested ${productIds.length})');
       return products;
     } catch (e) {
-      print('❌ Error fetching products for chat history: $e');
-      print('   Product IDs: $productIds');
+      debugPrint('❌ Error fetching products for chat history: $e');
+      debugPrint('   Product IDs: $productIds');
       return [];
     }
   }
@@ -271,14 +271,14 @@ class ChatbotController extends GetxController {
         final productIds = List<String>.from(
           dbMessage.metadata!['product_ids'] as List
         );
-        print('🔄 Restoring ${productIds.length} products for message ${dbMessage.id}');
+        debugPrint('🔄 Restoring ${productIds.length} products for message ${dbMessage.id}');
         products = await _fetchProductsByIds(productIds);
-        print('✅ Successfully restored ${products.length} products for message ${dbMessage.id}');
+        debugPrint('✅ Successfully restored ${products.length} products for message ${dbMessage.id}');
         if (products.isEmpty && productIds.isNotEmpty) {
-          print('⚠️ Warning: No products found for IDs: $productIds');
+          debugPrint('⚠️ Warning: No products found for IDs: $productIds');
         }
       } catch (e) {
-        print('❌ Error fetching products for message: $e');
+        debugPrint('❌ Error fetching products for message: $e');
         products = null; // Show message without products on error
       }
     } else {
@@ -286,7 +286,7 @@ class ChatbotController extends GetxController {
       if (dbMessage.metadata != null && 
           dbMessage.metadata!['products_count'] != null &&
           (dbMessage.metadata!['products_count'] as int) > 0) {
-        print('⚠️ Message ${dbMessage.id} has products_count but no product_ids (old message format)');
+        debugPrint('⚠️ Message ${dbMessage.id} has products_count but no product_ids (old message format)');
       }
     }
 
@@ -364,7 +364,7 @@ class ChatbotController extends GetxController {
         _scrollToBottom();
       }
     } catch (e) {
-      print('Error loading chat history: $e');
+      debugPrint('Error loading chat history: $e');
     } finally {
       isLoading.value = false;
     }
@@ -425,7 +425,7 @@ class ChatbotController extends GetxController {
         currentOffset.value += messagesPerPage;
       }
     } catch (e) {
-      print('Error loading older messages: $e');
+      debugPrint('Error loading older messages: $e');
     } finally {
       isLoadingMoreMessages.value = false;
     }
@@ -546,7 +546,7 @@ class ChatbotController extends GetxController {
         _showSuggestions(suggestions.cast<String>());
       }
     } catch (e) {
-      print('❌ Error in UJUNWA response: $e');
+      debugPrint('❌ Error in UJUNWA response: $e');
       isTyping.value = false;
 
       final fallbackMessage = ChatMessage(
@@ -583,7 +583,7 @@ class ChatbotController extends GetxController {
   /// Show suggestions as quick action buttons
   void _showSuggestions(List<String> suggestions) {
     // For now, we'll just print them. In the future, we can show them as quick action buttons
-    print('💡 UJUNWA Suggestions: ${suggestions.join(', ')}');
+    debugPrint('💡 UJUNWA Suggestions: ${suggestions.join(', ')}');
   }
 
   void sendMessage(String text) async {
@@ -634,7 +634,7 @@ class ChatbotController extends GetxController {
         conversations.clear();
         await _startNewConversationIfNeeded();
       } catch (e) {
-        print('Error clearing chat: $e');
+        debugPrint('Error clearing chat: $e');
       }
     }
     _addWelcomeMessage();
@@ -667,7 +667,7 @@ class ChatbotController extends GetxController {
       messages.add(botMessage);
       _scrollToBottom();
     } catch (e) {
-      print('Error getting sale products: $e');
+      debugPrint('Error getting sale products: $e');
       isTyping.value = false;
     }
   }
@@ -694,7 +694,7 @@ class ChatbotController extends GetxController {
       messages.add(botMessage);
       _scrollToBottom();
     } catch (e) {
-      print('Error getting trending products: $e');
+      debugPrint('Error getting trending products: $e');
       isTyping.value = false;
     }
   }
@@ -745,7 +745,7 @@ class ChatbotController extends GetxController {
       messages.add(botMessage);
       _scrollToBottom();
     } catch (e) {
-      print('Error getting user orders: $e');
+      debugPrint('Error getting user orders: $e');
 
       // Show error message
       final errorMessage = ChatMessage(
@@ -791,7 +791,7 @@ class ChatbotController extends GetxController {
       messages.add(botMessage);
       _scrollToBottom();
     } catch (e) {
-      print('Error getting category products: $e');
+      debugPrint('Error getting category products: $e');
       isTyping.value = false;
     }
   }
@@ -831,7 +831,7 @@ class ChatbotController extends GetxController {
         _showSizeChartOption(sizeGuideResponse.sizeChart!);
       }
     } catch (e) {
-      print('Error getting size guide: $e');
+      debugPrint('Error getting size guide: $e');
 
       // Fallback message
       final fallbackMessage = ChatMessage(
@@ -877,19 +877,19 @@ class ChatbotController extends GetxController {
   void _debugProducts() async {
     try {
       final allProducts = await _searchService.getAllProducts();
-      print('🐛 Debug: Found ${allProducts.length} products in database');
+      debugPrint('🐛 Debug: Found ${allProducts.length} products in database');
     } catch (e) {
-      print('🐛 Debug error: $e');
+      debugPrint('🐛 Debug error: $e');
     }
   }
 
   void _debugAuth() {
     final isLoggedIn = AuthService.isAuthenticated();
-    print('Debug Auth Status:');
-    print('   - User logged in: $isLoggedIn');
+    debugPrint('Debug Auth Status:');
+    debugPrint('   - User logged in: $isLoggedIn');
     if (isLoggedIn) {
-      print('   - User ID: ${AuthService.getCurrentUserId()}');
-      print('   - User: ${AuthService.getUserEmail()}');
+      debugPrint('   - User ID: ${AuthService.getCurrentUserId()}');
+      debugPrint('   - User: ${AuthService.getUserEmail()}');
     }
   }
 
@@ -928,7 +928,7 @@ class ChatbotController extends GetxController {
       // Process image search
       await _processImageSearch(File(pickedFile.path));
     } catch (e) {
-      print('❌ Error in image search: $e');
+      debugPrint('❌ Error in image search: $e');
       Get.snackbar(
         'Image Search Error',
         'Failed to process image: ${e.toString()}',
@@ -978,7 +978,7 @@ class ChatbotController extends GetxController {
       messages.add(botMessage);
       _scrollToBottom();
     } catch (e) {
-      print('❌ Error processing image search: $e');
+      debugPrint('❌ Error processing image search: $e');
 
       // Add simple error message
       final errorMessage = ChatMessage(
