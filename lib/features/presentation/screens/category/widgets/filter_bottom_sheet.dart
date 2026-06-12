@@ -186,22 +186,41 @@ class FilterBottomSheet extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Obx(
-          () => RangeSlider(
-            values: RangeValues(minPrice.value, maxPrice.value),
+        Obx(() {
+          // Upper bound of the slider track = the most expensive product in
+          // this category. Previously hard-coded to 1000, which crashed the
+          // RangeSlider ('values.start >= min && values.start <= max') for any
+          // category whose prices exceed 1000 (common in NGN/INR).
+          final categoryProducts =
+              productController.allProducts
+                  .where((p) => p.categoryId == category.id)
+                  .toList();
+          double ceiling = 1000;
+          if (categoryProducts.isNotEmpty) {
+            ceiling = categoryProducts
+                .map((p) => p.price)
+                .reduce((a, b) => a > b ? a : b);
+          }
+          // Slider needs a positive track (max > 0).
+          final double sliderMax = ceiling <= 0 ? 1000 : ceiling.ceilToDouble();
+          // Clamp the current selection so values always sit within [0, max]
+          // and start <= end, regardless of how minPrice/maxPrice were set.
+          final double startV = minPrice.value.clamp(0.0, sliderMax).toDouble();
+          final double endV = maxPrice.value
+              .clamp(startV, sliderMax)
+              .toDouble();
+          return RangeSlider(
+            values: RangeValues(startV, endV),
             min: 0,
-            max: 1000,
+            max: sliderMax,
             divisions: 20,
-            labels: RangeLabels(
-              '₹${minPrice.value.round()}',
-              '₹${maxPrice.value.round()}',
-            ),
+            labels: RangeLabels('₹${startV.round()}', '₹${endV.round()}'),
             onChanged: (RangeValues values) {
               minPrice.value = values.start;
               maxPrice.value = values.end;
             },
-          ),
-        ),
+          );
+        }),
         Obx(
           () => Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
