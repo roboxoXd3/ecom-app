@@ -192,7 +192,9 @@ class DeliveryInfo {
       returnWindowDays: json['return_window_days'] ?? 7,
       codEligible: json['cod_eligible'] ?? false,
       freeDelivery: json['free_delivery'] ?? false,
-      shippingFee: json['shipping_fee']?.toDouble(),
+     shippingFee: json['shipping_fee'] != null
+    ? double.tryParse(json['shipping_fee'].toString())
+    : null,
       etaMinDays: json['eta_min_days'],
       etaMaxDays: json['eta_max_days'],
     );
@@ -471,7 +473,9 @@ class Product {
 
       // NEW PDP FIELDS FROM DATABASE
       subtitle: json['subtitle'],
-      mrp: json['mrp']?.toDouble(),
+     mrp: json['mrp'] != null
+    ? double.tryParse(json['mrp'].toString())
+    : null,
       currency: json['currency'] ?? 'NGN',
       ordersCount: json['orders_count'],
 

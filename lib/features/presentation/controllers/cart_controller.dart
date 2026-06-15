@@ -34,7 +34,9 @@ class CartController extends GetxController {
 
       items.value =
           cartItems
-              .where((item) => item['product'] != null || item['products'] != null)
+              .where(
+                (item) => item['product'] != null || item['products'] != null,
+              )
               .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
               .toList();
     } catch (e) {
@@ -64,12 +66,15 @@ class CartController extends GetxController {
         return;
       }
 
-      await _api.post('/cart/items/', data: {
-        'product_id': product.id,
-        'quantity': quantity,
-        'selected_size': size,
-        'selected_color': color,
-      });
+      await _api.post(
+        '/cart/items/',
+        data: {
+          'product_id': product.id,
+          'quantity': quantity,
+          'selected_size': size,
+          'selected_color': color,
+        },
+      );
 
       await fetchCartItems();
     } catch (e) {
@@ -127,9 +132,10 @@ class CartController extends GetxController {
 
     try {
       if (item.id != null) {
-        await _api.patch('/cart/items/${item.id}/', data: {
-          'quantity': quantity,
-        });
+        await _api.patch(
+          '/cart/items/${item.id}/',
+          data: {'quantity': quantity},
+        );
       }
     } catch (e) {
       debugPrint('Error updating quantity: $e');

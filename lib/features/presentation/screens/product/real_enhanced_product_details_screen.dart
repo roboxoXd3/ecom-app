@@ -1,3 +1,4 @@
+import 'package:ecom_app/features/presentation/controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:share_plus/share_plus.dart';
@@ -350,8 +351,11 @@ class _RealEnhancedProductDetailsScreenState
                       RatingsReviews(product: product),
 
                       // 13. Q&A Section
+                      if(Get.find<AuthController>().isLoggedIn() ==true)...[
                       QASection(productId: product.id),
-
+                      ]else...[
+                        SizedBox(height: 20)
+                      ],
                       // 14. Recommendation Shelves
                       RecommendationShelves(
                         recommendations: product.recommendations,
