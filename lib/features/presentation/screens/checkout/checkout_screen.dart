@@ -1,3 +1,4 @@
+import 'package:ecom_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -46,7 +47,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Auto-select address when addresses are loaded or updated
     // Store the worker reference so we can dispose it later
     _addressWorker = ever(addressController.addresses, (addresses) {
-      debugPrint('CheckoutScreen: Address list updated, count: ${addresses.length}');
+      debugPrint(
+        'CheckoutScreen: Address list updated, count: ${addresses.length}',
+      );
       if (addresses.isNotEmpty) {
         final currentSelectedId = checkoutController.selectedAddressId.value;
         debugPrint('CheckoutScreen: Current selected ID: "$currentSelectedId"');
@@ -56,7 +59,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             currentSelectedId.isNotEmpty &&
             addresses.any((addr) => addr.id == currentSelectedId);
 
-        debugPrint('CheckoutScreen: Current address exists: $currentSelectedExists');
+        debugPrint(
+          'CheckoutScreen: Current address exists: $currentSelectedExists',
+        );
 
         // Auto-select logic:
         // 1. If no address is selected, select default or first
@@ -140,7 +145,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     final result = await Get.to(() => const AddAddressScreen());
 
-    debugPrint('CheckoutScreen: Returned from add address with result: $result');
+    debugPrint(
+      'CheckoutScreen: Returned from add address with result: $result',
+    );
 
     // Always refresh addresses when returning, regardless of result
     await addressController.fetchAddresses();
@@ -164,7 +171,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       checkoutController.refreshAddressSelection();
       checkoutController.update();
     } else {
-      debugPrint('CheckoutScreen: Address addition was not successful or cancelled');
+      debugPrint(
+        'CheckoutScreen: Address addition was not successful or cancelled',
+      );
       // Still refresh the selection in case there were changes
       checkoutController.refreshAddressSelection();
     }
@@ -194,7 +203,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
+                  color: AppTheme.getTextSecondary(
+                    context,
+                  ).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -260,7 +271,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           decoration: BoxDecoration(
                             color:
                                 isSelected
-                                    ? AppTheme.primaryColor.withValues(alpha: 0.08)
+                                    ? AppTheme.primaryColor.withValues(
+                                      alpha: 0.08,
+                                    )
                                     : AppTheme.getSurface(context),
                             border: Border.all(
                               color:
@@ -282,7 +295,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 decoration: BoxDecoration(
                                   color:
                                       isSelected
-                                          ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                                          ? AppTheme.primaryColor.withValues(
+                                            alpha: 0.15,
+                                          )
                                           : AppTheme.getBorder(
                                             context,
                                           ).withValues(alpha: 0.1),
@@ -467,7 +482,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Icons.add_location_alt,
                 color:
                     addressController.isLoading.value
-                        ? AppTheme.getTextSecondary(context).withValues(alpha: 0.5)
+                        ? AppTheme.getTextSecondary(
+                          context,
+                        ).withValues(alpha: 0.5)
                         : AppTheme.getTextPrimary(context),
               ),
               tooltip: 'Add New Address',
@@ -756,7 +773,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       return Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.withValues(alpha: 0.1),
+                                          color: Colors.green.withValues(
+                                            alpha: 0.1,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -1328,13 +1347,36 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       final cartItems = cartController.items.length;
                       final canProceed =
                           selectedAddressId.isNotEmpty && cartItems > 0;
-
                       debugPrint(
                         'CheckoutScreen: Button Obx rebuild - addressId: "$selectedAddressId", cartItems: $cartItems, canProceed: $canProceed',
                       );
 
                       return ElevatedButton(
-                        onPressed: !canProceed ? null : showPaymentMethodDialog,
+                        onPressed:
+                            !canProceed
+                                ? null
+                                : () {
+                                  final selectedAddress = addressController
+                                      .addresses
+                                      .firstWhere(
+                                        (address) =>
+                                            address.id == selectedAddressId,
+                                      );
+                                  isNigeria.value =
+                                      selectedAddress.country
+                                          .toLowerCase()
+                                          .trim() ==
+                                      'nigeria';
+                                  if (isNigeria.value == true) {
+                                    showPaymentMethodDialog;
+                                  } else {
+                                    checkoutController
+                                            .selectedPaymentMethod
+                                            .value ==
+                                        'cash_on_delivery';
+                                    checkoutController.initiatePayment();
+                                  }
+                                },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Theme.of(context).colorScheme.primary,

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/routes/app_routes.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../auth/login_screen.dart';
 import '../profile/my_orders_screen.dart';
 import '../profile/wishlist_screen.dart';
 import '../profile/shipping_address_screen.dart';
-import '../profile/payment_methods_screen.dart';
 import '../profile/help_support_screen.dart';
 import '../profile/settings_screen.dart';
 import '../vendor/followed_vendors_screen.dart';

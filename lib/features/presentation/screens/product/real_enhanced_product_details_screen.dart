@@ -189,15 +189,15 @@ class _RealEnhancedProductDetailsScreenState
                   backgroundColor: AppTheme.getSurface(context),
                   elevation: 0,
                   pinned: true,
-                  leading: IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
+                  leading: GestureDetector(
+                    child: Icon(
+                      Icons.arrow_back_ios_new_rounded,
                       color: AppTheme.getTextPrimary(context),
                     ),
-                    onPressed: () => Get.back(),
+                    onTap: () => Get.back(),
                   ),
                   title: Text(
-                    product.name,
+                    "Product Detail",
                     style: TextStyle(
                       color: AppTheme.getTextPrimary(context),
                       fontSize: 18,
@@ -206,7 +206,7 @@ class _RealEnhancedProductDetailsScreenState
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  centerTitle: true,
+                  centerTitle: false,
                   actions: [
                     IconButton(
                       icon: Icon(

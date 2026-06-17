@@ -11,7 +11,7 @@ import 'features/presentation/controllers/product_controller.dart';
 import 'features/presentation/controllers/category_controller.dart';
 import 'features/presentation/controllers/vendor_controller.dart';
 import 'features/data/services/product_search_service.dart';
-
+RxBool isNigeria = false.obs;
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
