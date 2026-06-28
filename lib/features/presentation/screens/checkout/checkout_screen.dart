@@ -1368,7 +1368,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           .trim() ==
                                       'nigeria';
                                   if (isNigeria.value == true) {
-                                    showPaymentMethodDialog;
+                                    print("Opening bottom sheet");
+                                    showPaymentMethodDialog();
                                   } else {
                                     checkoutController
                                             .selectedPaymentMethod
