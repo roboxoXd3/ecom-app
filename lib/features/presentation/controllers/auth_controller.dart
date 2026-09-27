@@ -155,7 +155,9 @@ class AuthController extends GetxController {
 
   // ---------------------------------------------------------------------------
   // Login — POST /api/users/login/
-  // Django returns { session: { access_token, refresh_token, ... }, user: {...} }
+  // Backend returns tokens at the top level:
+  //   { message, user, access_token, refresh_token, token_type, expires_* }
+  // (older builds nested them under `session` — both shapes are handled below).
   // We save tokens and user info to local GetStorage.
   // ---------------------------------------------------------------------------
   Future<void> login() async {
@@ -178,23 +180,23 @@ class AuthController extends GetxController {
       );
 
       final data = response.data as Map<String, dynamic>;
-      final rawSession = data['session'];
-
-      if (rawSession == null) {
-        SnackbarUtils.showError(
-          'Email not verified! Please check your email and click the verification link before signing in.',
-        );
-        isLoading.value = false;
-        return;
-      }
-
-      final session = _normalizeSession(rawSession);
+      // The backend login response shape changed: access/refresh tokens used to
+      // be nested under a `session` object, but are now returned at the top
+      // level (e.g. { access_token, refresh_token, user, ... }). Accept both so
+      // the app keeps working across backend versions.
+      final session = _normalizeSession(data['session'] ?? data);
 
       final accessToken = session['access_token'] as String?;
       final refreshToken = session['refresh_token'] as String?;
 
       if (accessToken == null || accessToken.isEmpty) {
-        SnackbarUtils.showError('Login failed — no access token received.');
+        // No token means either an unverified email or an unexpected response.
+        final serverMsg = data['message']?.toString().toLowerCase() ?? '';
+        SnackbarUtils.showError(
+          serverMsg.contains('verif')
+              ? 'Email not verified! Please check your email and click the verification link before signing in.'
+              : 'Login failed — no access token received.',
+        );
         isLoading.value = false;
         return;
       }
