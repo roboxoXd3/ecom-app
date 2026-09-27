@@ -155,7 +155,9 @@ class AuthController extends GetxController {
 
   // ---------------------------------------------------------------------------
   // Login — POST /api/users/login/
-  // Django returns { session: { access_token, refresh_token, ... }, user: {...} }
+  // Backend returns tokens at the top level:
+  //   { message, user, access_token, refresh_token, token_type, expires_* }
+  // (older builds nested them under `session` — both shapes are handled below).
   // We save tokens and user info to local GetStorage.
   // ---------------------------------------------------------------------------
   Future<void> login() async {
