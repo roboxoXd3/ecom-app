@@ -1,4 +1,4 @@
-package com.smartmall.app
+package com.besmartmalls.app
 
 import io.flutter.embedding.android.FlutterActivity
 

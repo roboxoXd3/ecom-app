@@ -15,13 +15,13 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.smartmall.app"
+    namespace = "com.besmartmalls.app"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
-        applicationId = "com.smartmall.app"
-        minSdk = 23
+        applicationId = "com.besmartmalls.app"
+        minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
